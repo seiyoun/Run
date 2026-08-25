@@ -1,0 +1,21 @@
+{
+    "name": "Runner.Gameplay",
+    "rootNamespace": "Runner",
+    "references": [
+        "Runner.Input",
+        "Shiyuan.Foundation.Core",
+        "Shiyuan.Foundation.Addressables",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "Unity.Cinemachine"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

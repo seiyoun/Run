@@ -1,0 +1,17 @@
+{
+    "name": "Runner.Input",
+    "rootNamespace": "Runner",
+    "references": [
+        "Shiyuan.Foundation.Core",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

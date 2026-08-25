@@ -1,0 +1,5 @@
+{
+  "characterName": "Hero",
+  "maxHp": 100,
+  "moveSpeed": 6.0
+}

@@ -1,0 +1,22 @@
+{
+    "name": "Runner.Scenes",
+    "rootNamespace": "Runner",
+    "references": [
+        "Runner.Gameplay",
+        "Runner.Input",
+        "Runner.UI",
+        "Shiyuan.Foundation.Core",
+        "Shiyuan.Foundation.Scenes",
+        "Shiyuan.Foundation.Addressables",
+        "Unity.Cinemachine"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
