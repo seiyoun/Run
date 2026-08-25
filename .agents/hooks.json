@@ -1,0 +1,34 @@
+{
+  "command-safety-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/safety_guard.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "diff-summary-reminder": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "./scripts/inject_diff_summary.py",
+        "timeout": 5
+      }
+    ]
+  },
+  "task-completion-validator": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "./scripts/validate_completion.py",
+        "timeout": 5
+      }
+    ]
+  }
+}
