@@ -1,7 +1,7 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: メインカメラおよび URP カメラスタック（システムカメラ等）を一元管理する。
+ * スクリプト説明: メインカメラおよび URP カメラスタック（通常UIカメラ・システムカメラ）を一元管理する。
  */
 
 using Shiyuan.Foundation.Core;
@@ -11,7 +11,7 @@ using UnityEngine.Rendering.Universal;
 namespace Runner
 {
     /// <summary>
-    /// メインカメラ（Base Camera）として動作し、Inspector またはコンポーネントから指定されたシステムカメラを URP カメラスタックに登録・管理する。
+    /// メインカメラ（Base Camera）として動作し、UICamera（通常UI）および SystemCamera（ダイアログ/ローディング）を URP カメラスタックに登録・管理する。
     /// </summary>
     [RequireComponent(typeof(Camera))]
     [DisallowMultipleComponent]
@@ -19,7 +19,11 @@ namespace Runner
     public sealed class CameraManager : SingletonMonoBehaviour<CameraManager>
     {
         [Header("Camera Stack Settings")]
-        [Tooltip("システム UI・ローディング・通知などを描画するオーバーレイカメラ")]
+        [Tooltip("ゲーム内通常 UI（ポーズボタン・経験値バー・HUD・メニュー等）を描画するオーバーレイカメラ")]
+        [SerializeField]
+        private Camera uiCamera;
+
+        [Tooltip("システムダイアログ（バトル終了リザルト・ローディング・エラーポップアップ等）を描画する最前面オーバーレイカメラ")]
         [SerializeField]
         private Camera systemCamera;
 
@@ -27,12 +31,17 @@ namespace Runner
         private UniversalAdditionalCameraData mainCameraData;
 
         /// <summary>
-        /// メインカメラ（Base Camera）を取得する。
+        /// メインカメラ（Base Camera）を取得する。ワールド空間（キャラクター・背景・頭上HPバー等）を描画。
         /// </summary>
         public Camera MainCamera => mainCamera != null ? mainCamera : (mainCamera = GetComponent<Camera>());
 
         /// <summary>
-        /// システムカメラ（Overlay Camera）を取得する。
+        /// 通常 UI カメラ（Overlay Camera）を取得する。
+        /// </summary>
+        public Camera UICamera => uiCamera;
+
+        /// <summary>
+        /// システムカメラ（Overlay Camera）を取得する。最前面に描画。
         /// </summary>
         public Camera SystemCamera => systemCamera;
 
@@ -71,7 +80,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// メインカメラを Base Camera に設定し、登録されたシステムカメラを Overlay としてカメラスタックに自動同期する。
+        /// メインカメラを Base Camera に設定し、UICamera および SystemCamera を Overlay としてカメラスタックに自動同期する。
         /// </summary>
         public void SetupCameras()
         {
@@ -91,13 +100,30 @@ namespace Runner
                 gameObject.tag = "MainCamera";
             }
 
-            // メインカメラを URP Base Camera に設定
+            // メインカメラを URP Base Camera に設定（UI レイヤーは Overlay カメラに任せるため除外）
+            mainCamera.cullingMask &= ~(1 << 5);
+
             var cameraData = MainCameraData;
             if (cameraData != null)
             {
                 cameraData.renderType = CameraRenderType.Base;
 
-                // システムカメラがインスペクター等で設定されている場合
+                // 1. 通常 UI カメラ (Overlay: スタック1番目) の登録
+                if (uiCamera != null)
+                {
+                    var uiData = uiCamera.GetUniversalAdditionalCameraData();
+                    if (uiData != null)
+                    {
+                        uiData.renderType = CameraRenderType.Overlay;
+                    }
+
+                    if (!cameraData.cameraStack.Contains(uiCamera))
+                    {
+                        cameraData.cameraStack.Add(uiCamera);
+                    }
+                }
+
+                // 2. システムカメラ (Overlay: スタック2番目 / 最前面) の登録
                 if (systemCamera != null)
                 {
                     var sysData = systemCamera.GetUniversalAdditionalCameraData();
@@ -112,65 +138,6 @@ namespace Runner
                     }
                 }
             }
-        }
-
-        /// <summary>
-        /// システムカメラを動的に設定・更新する。
-        /// </summary>
-        /// <param name="overlayCamera">オーバーレイとして追加するシステムカメラ</param>
-        public void SetSystemCamera(Camera overlayCamera)
-        {
-            if (systemCamera != null && mainCameraData != null)
-            {
-                mainCameraData.cameraStack.Remove(systemCamera);
-            }
-
-            systemCamera = overlayCamera;
-            SetupCameras();
-        }
-
-        /// <summary>
-        /// 任意のオーバーレイカメラをメインカメラのカメラスタックに追加する。
-        /// </summary>
-        /// <param name="overlayCamera">スタックに追加するカメラ</param>
-        public void AddOverlayCamera(Camera overlayCamera)
-        {
-            if (overlayCamera == null)
-            {
-                return;
-            }
-
-            var cameraData = MainCameraData;
-            if (cameraData == null)
-            {
-                return;
-            }
-
-            var overlayData = overlayCamera.GetUniversalAdditionalCameraData();
-            if (overlayData != null)
-            {
-                overlayData.renderType = CameraRenderType.Overlay;
-            }
-
-            if (!cameraData.cameraStack.Contains(overlayCamera))
-            {
-                cameraData.cameraStack.Add(overlayCamera);
-            }
-        }
-
-        /// <summary>
-        /// 任意のオーバーレイカメラをカメラスタックから削除する。
-        /// </summary>
-        /// <param name="overlayCamera">スタックから削除するカメラ</param>
-        public void RemoveOverlayCamera(Camera overlayCamera)
-        {
-            if (overlayCamera == null)
-            {
-                return;
-            }
-
-            var cameraData = MainCameraData;
-            cameraData?.cameraStack.Remove(overlayCamera);
         }
     }
 }

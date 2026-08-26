@@ -225,7 +225,7 @@ GameObject:
   - component: {fileID: 100021}
   - component: {fileID: 100022}
   - component: {fileID: 100023}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: HeadHpBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -305,7 +305,7 @@ GameObject:
   m_Component:
   - component: {fileID: 100025}
   - component: {fileID: 100026}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -372,7 +372,7 @@ GameObject:
   m_Component:
   - component: {fileID: 100028}
   - component: {fileID: 100029}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
