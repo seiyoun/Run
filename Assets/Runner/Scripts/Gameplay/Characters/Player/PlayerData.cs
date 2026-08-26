@@ -24,6 +24,12 @@ namespace Runner
         [Tooltip("移動速度")]
         public float moveSpeed = 6.0f;
 
+        [Tooltip("攻撃力")]
+        public int attackPower = 10;
+
+        [Tooltip("攻撃間隔 (秒)")]
+        public float attackInterval = 1.0f;
+
         /// <summary>
         /// JSON 文字列から PlayerData を生成する。
         /// </summary>
