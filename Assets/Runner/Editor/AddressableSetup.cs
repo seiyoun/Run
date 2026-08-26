@@ -19,11 +19,15 @@ namespace Runner.Editor
         private const string PlayerPrefabPath = "Assets/Runner/Prefabs/Player.prefab";
         private const string PlayerAddress = "Player";
 
+        private const string BackgroundPrefabPath = "Assets/Runner/Prefabs/Background.prefab";
+        private const string BackgroundAddress = "Background";
+
         [MenuItem("Tools/Runner/Setup All Addressables")]
         public static void RegisterAllAddressables()
         {
             RegisterAddressable(LoadingViewPrefabPath, LoadingViewAddress);
             RegisterAddressable(PlayerPrefabPath, PlayerAddress);
+            RegisterAddressable(BackgroundPrefabPath, BackgroundAddress);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[AddressableSetup] すべての Addressables 登録が完了しました。");
@@ -41,6 +45,14 @@ namespace Runner.Editor
         public static void RegisterPlayerAddressable()
         {
             RegisterAddressable(PlayerPrefabPath, PlayerAddress);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem("Tools/Runner/Setup Addressables For Background")]
+        public static void RegisterBackgroundAddressable()
+        {
+            RegisterAddressable(BackgroundPrefabPath, BackgroundAddress);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }

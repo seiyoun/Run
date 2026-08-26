@@ -1,19 +1,21 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: ゲーム初期化時のロードステート。PlayerSpawner を呼び出してプレイヤーを生成し、ゲームプレイの準備を整える。
+ * スクリプト説明: ゲーム初期化時のロードステート。背景プレハブおよびプレイヤープレハブをロード・生成し、ゲームプレイの準備を整える。
  */
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Shiyuan.Foundation.Core;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Runner
 {
     /// <summary>
     /// ゲーム開始前のロード・初期化ステート。
-    /// PlayerSpawner を呼び出してプレイヤーを生成し、Playing ステートへ遷移します。
+    /// 背景およびプレイヤーをロード・生成し、Playing ステートへ遷移します。
     /// </summary>
     public sealed class GameLoadingState : IState<GamePlayState>
     {
@@ -27,6 +29,46 @@ namespace Runner
         }
 
         public async Task EnterAsync(object parameter, CancellationToken cancellationToken)
+        {
+            DebugLogger.Log("[GameLoadingState] ゲームプレイのロードを開始します...");
+
+            // 1. 背景プレハブのロード・生成
+            await LoadBackgroundAsync(cancellationToken);
+
+            // 2. プレイヤーのロード・生成
+            await LoadPlayerAsync(cancellationToken);
+
+            // ロード完了後、Playing ステートへ遷移
+            if (context.StateMachine != null)
+            {
+                await context.StateMachine.ChangeStateAsync(GamePlayState.Playing, cancellationToken);
+            }
+        }
+
+        private async Task LoadBackgroundAsync(CancellationToken cancellationToken)
+        {
+            DebugLogger.Log("[GameLoadingState] BackgroundSpawner を呼び出して背景プレハブ生成を開始します...");
+
+            var bgSpawner = Object.FindFirstObjectByType<BackgroundSpawner>();
+            if (bgSpawner != null)
+            {
+                var bg = await bgSpawner.SpawnBackgroundAsync(cancellationToken);
+                if (bg != null)
+                {
+                    DebugLogger.Log("[GameLoadingState] BackgroundSpawner による背景プレハブ生成が完了しました。");
+                }
+                else
+                {
+                    DebugLogger.Error("[GameLoadingState] BackgroundSpawner による背景プレハブ生成に失敗しました。");
+                }
+            }
+            else
+            {
+                DebugLogger.Error("[GameLoadingState] シーン上に BackgroundSpawner が見つかりません。");
+            }
+        }
+
+        private async Task LoadPlayerAsync(CancellationToken cancellationToken)
         {
             DebugLogger.Log("[GameLoadingState] PlayerSpawner を呼び出してプレイヤー生成を開始します...");
 
@@ -47,12 +89,6 @@ namespace Runner
             else
             {
                 DebugLogger.Error("[GameLoadingState] シーン上に PlayerSpawner が見つかりません。");
-            }
-
-            // ロード完了後、Playing ステートへ遷移
-            if (context.StateMachine != null)
-            {
-                await context.StateMachine.ChangeStateAsync(GamePlayState.Playing, cancellationToken);
             }
         }
 

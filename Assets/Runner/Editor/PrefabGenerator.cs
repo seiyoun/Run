@@ -23,9 +23,26 @@ namespace Runner.Editor
             EnsureDirectoryExists(PrefabDir);
             CreateLoadingViewPrefab();
             CreateCameraManagerPrefab();
+            CreateBackgroundPrefab();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[PrefabGenerator] すべてのプレハブを正常に生成しました: " + PrefabDir);
+        }
+
+        [MenuItem("Tools/Runner/Generate Background Prefab")]
+        public static void CreateBackgroundPrefab()
+        {
+            EnsureDirectoryExists(PrefabDir);
+            var path = $"{PrefabDir}/Background.prefab";
+
+            var rootObj = new GameObject("Background");
+            rootObj.AddComponent<SpriteRenderer>();
+            rootObj.AddComponent<ArenaBackground>();
+
+            PrefabUtility.SaveAsPrefabAsset(rootObj, path);
+            Object.DestroyImmediate(rootObj);
+
+            Debug.Log($"[PrefabGenerator] Background プレハブを作成しました: {path}");
         }
 
         [MenuItem("Tools/Runner/Generate LoadingView Prefab")]

@@ -197,13 +197,22 @@ namespace Runner.Editor
                 binder = vcamObj.AddComponent<CinemachinePlayerBinder>();
             }
 
-            // 6. Arena Background
-            var bgArenaObj = GameObject.Find("ArenaBackground");
-            if (bgArenaObj == null)
+            // 6. BackgroundSpawner (Addressables 動的生成用)
+            var oldBgArenaObj = GameObject.Find("ArenaBackground");
+            if (oldBgArenaObj != null)
             {
-                bgArenaObj = new GameObject("ArenaBackground");
-                bgArenaObj.AddComponent<SpriteRenderer>();
-                bgArenaObj.AddComponent<ArenaBackground>();
+                Object.DestroyImmediate(oldBgArenaObj);
+            }
+
+            var bgSpawnerObj = GameObject.Find("BackgroundSpawner");
+            if (bgSpawnerObj == null)
+            {
+                bgSpawnerObj = new GameObject("BackgroundSpawner");
+            }
+            var bgSpawner = bgSpawnerObj.GetComponent<BackgroundSpawner>();
+            if (bgSpawner == null)
+            {
+                bgSpawner = bgSpawnerObj.AddComponent<BackgroundSpawner>();
             }
 
             // 7. EventSystem & Input Actions セットアップ
