@@ -7,7 +7,8 @@
         "Shiyuan.Foundation.Addressables",
         "Unity.InputSystem",
         "Unity.TextMeshPro",
-        "Unity.Cinemachine"
+        "Unity.Cinemachine",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -174,7 +174,6 @@ namespace Runner
             if (boundInputController != null)
             {
                 boundInputController.OnMoveInput += HandleMoveInput;
-                boundInputController.OnAttackInput += HandleAttackInput;
                 DebugLogger.Log($"[PlayerController] InputController ({inputController.name}) にバインド完了");
             }
         }
@@ -184,7 +183,6 @@ namespace Runner
             if (boundInputController != null)
             {
                 boundInputController.OnMoveInput -= HandleMoveInput;
-                boundInputController.OnAttackInput -= HandleAttackInput;
                 boundInputController = null;
                 DebugLogger.Log("[PlayerController] InputController の接続を解除しました。");
             }
@@ -197,7 +195,10 @@ namespace Runner
             Move(input);
         }
 
-        private void HandleAttackInput()
+        /// <summary>
+        /// プレイヤーの攻撃を実行する（敵接近時の自動攻撃やスキル等から呼び出し）。
+        /// </summary>
+        public void Attack()
         {
             if (characterStatus != null && characterStatus.IsDead) return;
             characterAnimator?.TriggerAttack();

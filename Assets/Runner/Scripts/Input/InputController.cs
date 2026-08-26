@@ -33,17 +33,11 @@ namespace Runner
         public event Action<Vector2> OnMoveInput;
 
         /// <summary>
-        /// 攻撃ボタンが押された際に発火するイベント。
-        /// </summary>
-        public event Action OnAttackInput;
-
-        /// <summary>
         /// 現在の移動入力ベクトル。
         /// </summary>
         public Vector2 MoveVector { get; private set; }
 
         private InputAction moveAction;
-        private InputAction attackAction;
 
         // タッチ / マウスドラッグ用
         private Vector2 touchStartPos;
@@ -82,7 +76,6 @@ namespace Runner
                 playerMap?.Enable();
 
                 moveAction = inputActionsAsset.FindAction("Player/Move") ?? inputActionsAsset.FindAction("Move");
-                attackAction = inputActionsAsset.FindAction("Player/Attack") ?? inputActionsAsset.FindAction("Attack");
             }
 
             // アセット未設定時のフォールバック
@@ -102,14 +95,6 @@ namespace Runner
                 moveAction.AddBinding("<Gamepad>/dpad");
             }
 
-            if (attackAction == null)
-            {
-                attackAction = new InputAction("Attack", InputActionType.Button);
-                attackAction.AddBinding("<Keyboard>/space");
-                attackAction.AddBinding("<Gamepad>/buttonSouth");
-            }
-
-            attackAction.performed += OnAttackPerformed;
             EnableActions();
         }
 
@@ -118,35 +103,21 @@ namespace Runner
             inputActionsAsset?.Enable();
             moveAction?.actionMap?.Enable();
             moveAction?.Enable();
-            attackAction?.Enable();
         }
 
         private void DisableActions()
         {
             moveAction?.Disable();
-            attackAction?.Disable();
             inputActionsAsset?.Disable();
         }
 
         private void DisposeActions()
         {
-            if (attackAction != null)
-            {
-                attackAction.performed -= OnAttackPerformed;
-                attackAction.Dispose();
-                attackAction = null;
-            }
-
             if (moveAction != null)
             {
                 moveAction.Dispose();
                 moveAction = null;
             }
-        }
-
-        private void OnAttackPerformed(InputAction.CallbackContext context)
-        {
-            OnAttackInput?.Invoke();
         }
 
         private void Update()

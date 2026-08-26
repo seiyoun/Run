@@ -38,12 +38,25 @@ namespace Runner
             // 2. プレイヤーのロード・生成
             await LoadPlayerAsync(cancellationToken);
 
+#if SANDBOX || UNITY_EDITOR
+            // 3. SANDBOX 定義時（または Unity エディタ実行時）のみ DebugCanvas を動的ロード・生成
+            SpawnDebugHUD();
+#endif
+
             // ロード完了後、Playing ステートへ遷移
             if (context.StateMachine != null)
             {
                 await context.StateMachine.ChangeStateAsync(GamePlayState.Playing, cancellationToken);
             }
         }
+
+#if SANDBOX || UNITY_EDITOR
+        private void SpawnDebugHUD()
+        {
+            GameDebugHUD.Create();
+            DebugLogger.Log("[GameLoadingState] SANDBOX 用 DebugCanvas をコードから動的生成しました。");
+        }
+#endif
 
         private async Task LoadBackgroundAsync(CancellationToken cancellationToken)
         {
