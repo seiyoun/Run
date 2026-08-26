@@ -8,7 +8,9 @@
         "Shiyuan.Foundation.Core",
         "Shiyuan.Foundation.Scenes",
         "Shiyuan.Foundation.Addressables",
-        "Unity.Cinemachine"
+        "Unity.Cinemachine",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

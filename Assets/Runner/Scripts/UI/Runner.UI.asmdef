@@ -3,8 +3,10 @@
     "rootNamespace": "Runner",
     "references": [
         "Shiyuan.Foundation.Core",
+        "Runner.Gameplay",
         "Unity.InputSystem",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

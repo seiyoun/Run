@@ -80,6 +80,9 @@ namespace Runner
         public ICharacterVisual CharacterVisual => characterVisual;
         public ICharacterAnimator CharacterAnimator => characterAnimator;
         public ICharacterStatus Status => characterStatus;
+        public PlayerExperience Experience => playerExperience;
+
+        private PlayerExperience playerExperience;
 
         private void Awake()
         {
@@ -107,6 +110,12 @@ namespace Runner
             if (characterStatus == null)
             {
                 characterStatus = gameObject.AddComponent<CharacterStatus>();
+            }
+
+            playerExperience = GetComponent<PlayerExperience>();
+            if (playerExperience == null)
+            {
+                playerExperience = gameObject.AddComponent<PlayerExperience>();
             }
 
             LoadPlayerData();
