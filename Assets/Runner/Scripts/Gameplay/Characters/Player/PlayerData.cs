@@ -30,6 +30,15 @@ namespace Runner
         [Tooltip("攻撃間隔 (秒)")]
         public float attackInterval = 1.0f;
 
+        [Tooltip("アイテム吸い込み範囲の半径 (m)")]
+        public float magnetRadius = 3.5f;
+
+        [Tooltip("1歩と判定する移動距離 (m)")]
+        public float stepDistanceThreshold = 0.65f;
+
+        [Tooltip("1歩あたりに獲得するポイント額")]
+        public long pointsPerStep = 2;
+
         /// <summary>
         /// JSON 文字列から PlayerData を生成する。
         /// </summary>

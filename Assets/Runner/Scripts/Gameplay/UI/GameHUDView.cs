@@ -91,10 +91,11 @@ namespace Runner
         {
             if (distance <= 0f) return;
 
-            // ポイ活・歩数加算
-            if (pointStepHUD != null)
+            var player = PlayerController.Instance;
+            if (player != null && pointStepHUD != null)
             {
-                pointStepHUD.OnDistanceMoved(distance);
+                pointStepHUD.SetSteps(player.CurrentSteps);
+                pointStepHUD.SetPoints(player.CurrentMoney);
             }
 
             // 一定ポイント到達によるタイムセール通知のトリガー判定

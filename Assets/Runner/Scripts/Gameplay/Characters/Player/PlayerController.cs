@@ -1,7 +1,8 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: IMovable, IAttacker, IDamageable, IHealable, ICharacterVisual, ICharacterAnimator, ICharacterStatus を協調させてプレイヤーを制御するクラス。
+ * スクリプト説明: IMovable, IAttacker, IDamageable, IHealable, IMoneyCollector を実装し、
+ *                PlayerData のデータに基づいてプレイヤーの移動・戦闘・歩数・アイテム吸引を制御するクラス。
  */
 
 using System;
@@ -10,52 +11,54 @@ using UnityEngine;
 
 namespace Runner
 {
+    /// <summary>
+    /// プレイヤーの移動、戦闘、ステータス、歩数、およびアイテム吸引（マグネット）を統合制御するクラス。
+    /// Inspector の SerializeField は持たず、PlayerData（JSON/データクラス）からすべてのパラメータをロードして動作します。
+    /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CircleCollider2D))]
     [DisallowMultipleComponent]
     public sealed class PlayerController : MonoBehaviour, IMovable, IAttacker, IDamageable, IHealable, IMoneyCollector
     {
+        // -------------------------------------------------------------
+        // 1. const / static フィールド
+        // -------------------------------------------------------------
         public static PlayerController Instance { get; private set; }
 
-        #region Serialized Fields
+        private const float DefaultMagnetCheckInterval = 0.05f;
 
-        [Header("Data Configuration")]
-        [Tooltip("プレイヤー専用パラメータ JSON アセット (未設定時は Inspector のデフォルト値を使用)")]
-        [SerializeField]
-        private TextAsset playerDataAsset;
+        private static readonly ContactFilter2D ItemContactFilter = new ContactFilter2D
+        {
+            useTriggers = true
+        };
 
-        [Header("Movement Settings")]
-        [Tooltip("移動速度 (PlayerData が設定されている場合はそちらが優先されます)")]
-        [SerializeField]
-        private float moveSpeed = 6f;
+        // -------------------------------------------------------------
+        // 2. [SerializeField] シリアライズフィールド (※PlayerDataのみを使用するため全廃)
+        // -------------------------------------------------------------
 
-        [Header("Combat Settings")]
-        [Tooltip("攻撃力 (PlayerData が設定されている場合はそちらが優先されます)")]
-        [SerializeField]
-        private int attackPower = 10;
-
-        [Tooltip("攻撃間隔/クールダウン時間(秒) (PlayerData が設定されている場合はそちらが優先されます)")]
-        [SerializeField]
-        private float attackInterval = 1.0f;
-
-        [Header("Item Magnet Settings")]
-        [Tooltip("周囲のアイテムを吸い込む範囲の半径(m)")]
-        [SerializeField]
-        private float magnetRadius = 3.5f;
-
-        [Tooltip("周囲のアイテムを検索する間隔(秒)")]
-        [SerializeField]
-        private float magnetCheckInterval = 0.05f;
-
-        #endregion
-
-        #region Private Fields
-
+        // -------------------------------------------------------------
+        // 3. private インスタンス変数
+        // -------------------------------------------------------------
         private Rigidbody2D rb;
         private Vector2 moveInput;
         private Vector2 facingDirection = Vector2.right;
+
+        // PlayerData から反映されるパラメータ（初期値は持たず、PlayerData の適用時に設定）
+        private float moveSpeed;
+        private int attackPower;
+        private float attackInterval;
         private float attackCooldownTimer;
+
+        private float magnetRadius;
         private float magnetCheckTimer;
+
+        // 歩数・移動距離・所持金ステート
+        private int currentSteps;
+        private float totalDistanceMoved;
+        private float stepAccumulator;
+        private float stepDistanceThreshold;
+        private long pointsPerStep;
+        private long currentMoney;
 
         /// <summary>GC Alloc を発生させずに周囲のアイテムを取得するためのキャッシュバッファ</summary>
         private readonly Collider2D[] itemColliderBuffer = new Collider2D[32];
@@ -75,19 +78,69 @@ namespace Runner
         /// <summary>適用中のプレイヤーパラメータデータ</summary>
         private PlayerData currentPlayerData;
 
-        #endregion
+        // -------------------------------------------------------------
+        // 4. public インスタンス変数
+        // -------------------------------------------------------------
+        // (public 変数は使用せずプロパティにカプセル化)
 
-        #region Properties & Events
-
+        // -------------------------------------------------------------
+        // 5. プロパティ & イベント (Properties & Events)
+        // -------------------------------------------------------------
         public PlayerData CurrentData => currentPlayerData;
         public ICharacterVisual CharacterVisual => characterVisual;
         public ICharacterAnimator CharacterAnimator => characterAnimator;
         public ICharacterStatus Status => characterStatus;
 
-        #endregion
+        public float MoveSpeed
+        {
+            get => moveSpeed;
+            set => moveSpeed = Mathf.Max(0.1f, value);
+        }
 
-        #region Unity Lifecycle
+        public Vector2 MoveInput => moveInput;
+        public Vector2 FacingDirection => facingDirection;
 
+        public int AttackPower
+        {
+            get => attackPower;
+            set => attackPower = Mathf.Max(1, value);
+        }
+
+        public float AttackInterval
+        {
+            get => attackInterval;
+            set => attackInterval = Mathf.Max(0.05f, value);
+        }
+
+        public bool CanAttack => (characterStatus == null || !characterStatus.IsDead) && attackCooldownTimer <= 0f;
+        public bool IsDead => characterStatus?.IsDead ?? false;
+
+        public float MagnetRadius
+        {
+            get => magnetRadius;
+            set => magnetRadius = Mathf.Max(0f, value);
+        }
+
+        public int CurrentSteps => currentSteps;
+        public float TotalDistanceMoved => totalDistanceMoved;
+        public long CurrentMoney => currentMoney;
+
+        // イベント
+        public event Action OnAttack;
+        public event Action<int> OnTakeDamage;
+        public event Action OnDead;
+        public event Action<int> OnHeal;
+        public event Action<int> OnStepsChanged;
+        public event Action<float> OnDistanceMoved;
+        public event Action<long> OnMoneyCollected;
+
+        // -------------------------------------------------------------
+        // 6. Unity ライフサイクル関数
+        // -------------------------------------------------------------
+
+        /// <summary>
+        /// シングルトンの初期化、物理コンポーネントの設定、およびパラメータのロードを行う。
+        /// </summary>
         private void Awake()
         {
             Instance = this;
@@ -102,6 +155,9 @@ namespace Runner
             LoadPlayerData();
         }
 
+        /// <summary>
+        /// 入力コントローラー（InputController）が存在する場合にバインドを行う。
+        /// </summary>
         private void Start()
         {
             if (boundInputController == null && InputController.Instance != null)
@@ -110,9 +166,11 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// 毎フレームの攻撃クールダウン更新、見た目・アニメーション同期、およびアイテム吸引検知を行う。
+        /// </summary>
         private void Update()
         {
-            // 攻撃クールダウンタイマーの更新
             if (attackCooldownTimer > 0f)
             {
                 attackCooldownTimer -= Time.deltaTime;
@@ -129,6 +187,9 @@ namespace Runner
             UpdateItemAttraction();
         }
 
+        /// <summary>
+        /// 固定フレームごとの物理移動処理、歩数蓄積判定、およびポイント加算イベント通知を行う。
+        /// </summary>
         private void FixedUpdate()
         {
             if (characterStatus != null && characterStatus.IsDead)
@@ -142,13 +203,33 @@ namespace Runner
             rb.MovePosition(rb.position + delta);
             rb.linearVelocity = moveInput * moveSpeed;
 
-            // 移動によるポイ活・歩数・怒りゲージの蓄積
-            if (delta.sqrMagnitude > 0f && GameHUDView.Instance != null)
+            // 移動による歩数加算・ポイ活・イベント通知
+            float distance = delta.magnitude;
+            if (distance > 0f)
             {
-                GameHUDView.Instance.OnPlayerMoved(delta.magnitude);
+                totalDistanceMoved += distance;
+                stepAccumulator += distance;
+
+                while (stepAccumulator >= stepDistanceThreshold)
+                {
+                    stepAccumulator -= stepDistanceThreshold;
+                    currentSteps++;
+                    CollectMoney(pointsPerStep);
+                    OnStepsChanged?.Invoke(currentSteps);
+                }
+
+                OnDistanceMoved?.Invoke(distance);
+
+                if (GameHUDView.Instance != null)
+                {
+                    GameHUDView.Instance.OnPlayerMoved(distance);
+                }
             }
         }
 
+        /// <summary>
+        /// インスタンス破棄時に入力バインドの解除およびステータスイベントの購読解除を行う。
+        /// </summary>
         private void OnDestroy()
         {
             if (Instance == this)
@@ -164,19 +245,41 @@ namespace Runner
             }
         }
 
-        #endregion
+        /// <summary>
+        /// インスペクター選択時にアイテム吸引範囲（MagnetRadius）をシーンビュー上にギズモ描画する。
+        /// </summary>
+        private void OnDrawGizmosSelected()
+        {
+            if (magnetRadius > 0f)
+            {
+                Gizmos.color = new Color(0f, 0.9f, 1f, 0.35f);
+                Gizmos.DrawWireSphere(transform.position, magnetRadius);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 7. override 関数
+        // -------------------------------------------------------------
+
+        /// <summary>
+        /// プレイヤーの現在の主要ステータスを表す文字列を返す。
+        /// </summary>
+        /// <returns>プレイヤー情報文字列</returns>
+        public override string ToString()
+        {
+            return $"PlayerController (Steps: {currentSteps}, Money: {currentMoney}, Speed: {moveSpeed})";
+        }
+
+        // -------------------------------------------------------------
+        // 8. public 関数
+        // -------------------------------------------------------------
 
         #region IMovable Implementation
 
-        public float MoveSpeed
-        {
-            get => moveSpeed;
-            set => moveSpeed = Mathf.Max(0f, value);
-        }
-
-        public Vector2 MoveInput => moveInput;
-        public Vector2 FacingDirection => facingDirection;
-
+        /// <summary>
+        /// 指定された方向へ移動入力を適用する。
+        /// </summary>
+        /// <param name="direction">移動入力ベクトル</param>
         public void Move(Vector2 direction)
         {
             if (characterStatus != null && characterStatus.IsDead)
@@ -198,33 +301,24 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// 移動入力を停止し、物理速度をゼロにする。
+        /// </summary>
         public void Stop()
         {
             moveInput = Vector2.zero;
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+            }
         }
 
         #endregion
 
         #region IAttacker Implementation
 
-        public int AttackPower
-        {
-            get => attackPower;
-            set => attackPower = Mathf.Max(0, value);
-        }
-
-        public float AttackInterval
-        {
-            get => attackInterval;
-            set => attackInterval = Mathf.Max(0.01f, value);
-        }
-
-        public bool CanAttack => (characterStatus == null || !characterStatus.IsDead) && attackCooldownTimer <= 0f;
-
-        public event Action OnAttack;
-
         /// <summary>
-        /// プレイヤーの攻撃を実行する（正面または向いている方向への攻撃）。
+        /// プレイヤーが現在向いている方向に向けて攻撃を実行する。
         /// </summary>
         public void Attack()
         {
@@ -254,13 +348,8 @@ namespace Runner
 
         #region IDamageable Implementation
 
-        public bool IsDead => characterStatus?.IsDead ?? false;
-
-        public event Action<int> OnTakeDamage;
-        public event Action OnDead;
-
         /// <summary>
-        /// プレイヤーにダメージを与える。
+        /// プレイヤーに指定量のダメージを与える。
         /// </summary>
         /// <param name="amount">ダメージ量</param>
         public void TakeDamage(int amount)
@@ -272,10 +361,8 @@ namespace Runner
 
         #region IHealable Implementation
 
-        public event Action<int> OnHeal;
-
         /// <summary>
-        /// プレイヤーのHPを回復する。
+        /// プレイヤーのHPを指定量回復する。
         /// </summary>
         /// <param name="amount">回復量</param>
         public void Heal(int amount)
@@ -287,32 +374,31 @@ namespace Runner
 
         #region IMoneyCollector Implementation
 
-        public long CurrentMoney => GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null 
-            ? GameHUDView.Instance.PointStepHUD.CurrentPoint 
-            : 0;
-
-        public event Action<long> OnMoneyCollected;
-
         /// <summary>
-        /// お金・ポイントを回収して加算する。
+        /// お金・ポイントを回収して加算し、HUDへ反映する。
         /// </summary>
         /// <param name="amount">獲得金額/ポイント</param>
         public void CollectMoney(long amount)
         {
             if (amount <= 0) return;
 
+            currentMoney += amount;
+            OnMoneyCollected?.Invoke(amount);
+
             if (GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null)
             {
-                GameHUDView.Instance.PointStepHUD.AddPoints(amount);
+                GameHUDView.Instance.PointStepHUD.SetPoints(currentMoney);
             }
-
-            OnMoneyCollected?.Invoke(amount);
         }
 
         #endregion
 
-        #region Input Handling
+        #region Input Binding
 
+        /// <summary>
+        /// InputController の入力イベントを購読する。
+        /// </summary>
+        /// <param name="inputController">バインド対象の InputController</param>
         public void BindInput(InputController inputController)
         {
             if (boundInputController != null)
@@ -324,72 +410,106 @@ namespace Runner
             if (boundInputController != null)
             {
                 boundInputController.OnMoveInput += HandleMoveInput;
-                DebugLogger.Log($"[PlayerController] InputController ({inputController.name}) にバインド完了");
             }
         }
 
+        /// <summary>
+        /// InputController の入力イベント購読を解除する。
+        /// </summary>
         public void UnbindInput()
         {
             if (boundInputController != null)
             {
                 boundInputController.OnMoveInput -= HandleMoveInput;
                 boundInputController = null;
-                DebugLogger.Log("[PlayerController] InputController の接続を解除しました。");
             }
-
-            Stop();
-        }
-
-        private void HandleMoveInput(Vector2 input)
-        {
-            Move(input);
         }
 
         #endregion
 
         #region Data & Configuration
 
+        /// <summary>
+        /// PlayerData をロードし、プレイヤーの全パラメータに適用する。
+        /// </summary>
         public void LoadPlayerData()
         {
-            if (playerDataAsset != null && !string.IsNullOrWhiteSpace(playerDataAsset.text))
+            var jsonAsset = Resources.Load<TextAsset>("Data/PlayerData");
+            if (jsonAsset != null && !string.IsNullOrWhiteSpace(jsonAsset.text))
             {
-                var data = PlayerData.FromJson(playerDataAsset.text);
+                var data = PlayerData.FromJson(jsonAsset.text);
                 ApplyData(data);
             }
             else
             {
-                var defaultData = new PlayerData
-                {
-                    maxHp = characterStatus != null ? characterStatus.MaxHp : 100,
-                    moveSpeed = moveSpeed > 0f ? moveSpeed : 6f,
-                    attackPower = attackPower > 0 ? attackPower : 10,
-                    attackInterval = attackInterval > 0f ? attackInterval : 1.0f
-                };
-                ApplyData(defaultData);
+                ApplyData(new PlayerData());
             }
         }
 
+        /// <summary>
+        /// 外部またはロードした PlayerData をプレイヤーに適用する。
+        /// </summary>
+        /// <param name="data">適用する PlayerData</param>
         public void ApplyData(PlayerData data)
         {
             if (data == null) return;
 
             currentPlayerData = data;
-            MoveSpeed = data.moveSpeed > 0f ? data.moveSpeed : 6f;
-            AttackPower = data.attackPower > 0 ? data.attackPower : 10;
-            AttackInterval = data.attackInterval > 0f ? data.attackInterval : 1.0f;
+            moveSpeed = data.moveSpeed;
+            attackPower = data.attackPower;
+            attackInterval = data.attackInterval;
+            magnetRadius = data.magnetRadius;
+            stepDistanceThreshold = data.stepDistanceThreshold;
+            pointsPerStep = data.pointsPerStep;
 
             if (characterStatus != null)
             {
-                characterStatus.SetMaxHp(data.maxHp > 0 ? data.maxHp : 100);
+                characterStatus.SetMaxHp(data.maxHp);
             }
 
-            DebugLogger.Log($"[PlayerController] PlayerData 適用: Name={data.characterName}, MaxHP={data.maxHp}, Speed={data.moveSpeed}, Atk={data.attackPower}, AtkInterval={data.attackInterval}");
+            DebugLogger.Log($"[PlayerController] PlayerData 適用: Name={data.characterName}, MaxHP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m, StepDist={data.stepDistanceThreshold}m");
+        }
+
+        /// <summary>
+        /// 見た目制御インターフェースを設定する。
+        /// </summary>
+        /// <param name="newVisual">新しい ICharacterVisual</param>
+        public void SetVisual(ICharacterVisual newVisual) => characterVisual = newVisual;
+
+        /// <summary>
+        /// アニメーション制御インターフェースを設定する。
+        /// </summary>
+        /// <param name="newAnimator">新しい ICharacterAnimator</param>
+        public void SetAnimator(ICharacterAnimator newAnimator) => characterAnimator = newAnimator;
+
+        /// <summary>
+        /// ステータス管理インターフェースを設定し、イベントの購読を更新する。
+        /// </summary>
+        /// <param name="newStatus">新しい ICharacterStatus</param>
+        public void SetStatus(ICharacterStatus newStatus)
+        {
+            if (characterStatus != null)
+            {
+                UnsubscribeStatusEvents(characterStatus);
+            }
+
+            characterStatus = newStatus;
+
+            if (characterStatus != null)
+            {
+                SubscribeStatusEvents(characterStatus);
+            }
         }
 
         #endregion
 
-        #region Private Helper Methods
+        // -------------------------------------------------------------
+        // 9. private 関数 / 内部ヘルパー
+        // -------------------------------------------------------------
 
+        /// <summary>
+        /// 見た目・アニメーション・ステータスコンポーネントの自動検出・初期アタッチを行う。
+        /// </summary>
         private void InitializeComponents()
         {
             characterVisual = GetComponent<ICharacterVisual>() ?? GetComponentInChildren<ICharacterVisual>();
@@ -412,6 +532,9 @@ namespace Runner
             SetStatus(status);
         }
 
+        /// <summary>
+        /// 見た目の向きおよびスプライトの移動エフェクトを更新する。
+        /// </summary>
         private void UpdateVisuals()
         {
             if (characterVisual == null) return;
@@ -420,6 +543,9 @@ namespace Runner
             characterVisual.UpdateMovementVisuals(moveInput, moveSpeed, Time.deltaTime);
         }
 
+        /// <summary>
+        /// 移動状態に応じたアニメーション（移動/待機）を再生する。
+        /// </summary>
         private void UpdateAnimation()
         {
             if (characterAnimator == null) return;
@@ -434,51 +560,8 @@ namespace Runner
             }
         }
 
-        private void SubscribeStatusEvents(ICharacterStatus status)
-        {
-            if (status == null) return;
-            status.OnTakeDamage += HandleTakeDamage;
-            status.OnHeal += HandleHeal;
-            status.OnDead += HandleDead;
-        }
-
-        private void UnsubscribeStatusEvents(ICharacterStatus status)
-        {
-            if (status == null) return;
-            status.OnTakeDamage -= HandleTakeDamage;
-            status.OnHeal -= HandleHeal;
-            status.OnDead -= HandleDead;
-        }
-
-        private void HandleTakeDamage(int damage)
-        {
-            OnTakeDamage?.Invoke(damage);
-        }
-
-        private void HandleHeal(int healAmount)
-        {
-            OnHeal?.Invoke(healAmount);
-        }
-
-        private void HandleDead()
-        {
-            Stop();
-            characterAnimator?.PlayDie();
-            OnDead?.Invoke();
-            DebugLogger.Log("[PlayerController] プレイヤーが死亡しました。");
-        }
-
-        #endregion
-
-        #region Item Magnet Attraction
-
-        private static readonly ContactFilter2D ItemContactFilter = new ContactFilter2D
-        {
-            useTriggers = true
-        };
-
         /// <summary>
-        /// プレイヤー周囲のアイテム（IAttractable）を検索し、自身に向かって吸い寄せを開始させる。
+        /// プレイヤー周囲のアイテム（IAttractable）を検知し、自身（transform）への吸引を開始させる。
         /// </summary>
         private void UpdateItemAttraction()
         {
@@ -486,7 +569,7 @@ namespace Runner
 
             magnetCheckTimer -= Time.deltaTime;
             if (magnetCheckTimer > 0f) return;
-            magnetCheckTimer = magnetCheckInterval;
+            magnetCheckTimer = DefaultMagnetCheckInterval;
 
             // 最新の Unity 物理 API（ContactFilter2D によるゼロGC検出）
             int hitCount = Physics2D.OverlapCircle(transform.position, magnetRadius, ItemContactFilter, itemColliderBuffer);
@@ -498,43 +581,71 @@ namespace Runner
                 var attractable = hit.GetComponent<IAttractable>();
                 if (attractable != null && !attractable.IsAttracted)
                 {
-                    // プレイヤー自身（transform）を渡して吸い込みを開始
                     attractable.AttractTo(transform);
                 }
             }
         }
 
-        private void OnDrawGizmosSelected()
+        /// <summary>
+        /// InputController からの移動入力コールバックを処理する。
+        /// </summary>
+        /// <param name="input">入力ベクトル</param>
+        private void HandleMoveInput(Vector2 input)
         {
-            if (magnetRadius > 0f)
-            {
-                Gizmos.color = new Color(0f, 0.9f, 1f, 0.35f);
-                Gizmos.DrawWireSphere(transform.position, magnetRadius);
-            }
+            Move(input);
         }
 
-        #endregion
-
-        #region Dependency Injection / Setters
-
-        public void SetVisual(ICharacterVisual newVisual) => characterVisual = newVisual;
-        public void SetAnimator(ICharacterAnimator newAnimator) => characterAnimator = newAnimator;
-
-        public void SetStatus(ICharacterStatus newStatus)
+        /// <summary>
+        /// ステータスインターフェースからの各種イベントを購読する。
+        /// </summary>
+        /// <param name="status">購読対象の ICharacterStatus</param>
+        private void SubscribeStatusEvents(ICharacterStatus status)
         {
-            if (characterStatus != null)
-            {
-                UnsubscribeStatusEvents(characterStatus);
-            }
-
-            characterStatus = newStatus;
-
-            if (characterStatus != null)
-            {
-                SubscribeStatusEvents(characterStatus);
-            }
+            if (status == null) return;
+            status.OnTakeDamage += HandleTakeDamage;
+            status.OnHeal += HandleHeal;
+            status.OnDead += HandleDead;
         }
 
-        #endregion
+        /// <summary>
+        /// ステータスインターフェースからの各種イベントの購読を解除する。
+        /// </summary>
+        /// <param name="status">解除対象の ICharacterStatus</param>
+        private void UnsubscribeStatusEvents(ICharacterStatus status)
+        {
+            if (status == null) return;
+            status.OnTakeDamage -= HandleTakeDamage;
+            status.OnHeal -= HandleHeal;
+            status.OnDead -= HandleDead;
+        }
+
+        /// <summary>
+        /// 被ダメージイベントを転送発火する。
+        /// </summary>
+        /// <param name="damage">ダメージ量</param>
+        private void HandleTakeDamage(int damage)
+        {
+            OnTakeDamage?.Invoke(damage);
+        }
+
+        /// <summary>
+        /// 回復イベントを転送発火する。
+        /// </summary>
+        /// <param name="healAmount">回復量</param>
+        private void HandleHeal(int healAmount)
+        {
+            OnHeal?.Invoke(healAmount);
+        }
+
+        /// <summary>
+        /// 死亡イベントを処理し、移動停止および死亡アニメーションを再生する。
+        /// </summary>
+        private void HandleDead()
+        {
+            Stop();
+            characterAnimator?.PlayDie();
+            OnDead?.Invoke();
+            DebugLogger.Log("[PlayerController] プレイヤーが死亡しました。");
+        }
     }
 }
