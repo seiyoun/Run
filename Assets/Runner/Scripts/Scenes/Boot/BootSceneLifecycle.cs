@@ -2,41 +2,62 @@
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
  * スクリプト説明: Boot シーンのライフサイクル管理と初期化処理を定義する。
+ *                SceneManager を介して AddressablePrefabLoader による LoadingView 常駐ロードを行い、Title シーンへ遷移します。
  */
 
 using System.Threading;
 using System.Threading.Tasks;
-using Shiyuan.Foundation.Addressables;
 using Shiyuan.Foundation.Core;
 using Shiyuan.Foundation.Scenes;
-using UnityEngine;
 
 namespace Runner
 {
     /// <summary>
     /// Boot シーンにおける初期化および次シーンへの遷移ライフサイクル。
+    /// SceneManager を通じて AddressablePrefabLoader による LoadingView ロードを行い、Title シーンへ遷移します。
     /// </summary>
     public sealed class BootSceneLifecycle : SceneLifecycleBase
     {
-        private const string LoadingViewAddress = "LoadingView";
-        private readonly AddressablePrefabLoader addressablePrefabLoader = new();
+        // -------------------------------------------------------------
+        // 1. const / static フィールド
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 2. [SerializeField] シリアライズフィールド
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 3. private インスタンス変数
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 4. public インスタンス変数
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 5. プロパティ & イベント
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 6. Unity ライフサイクル関数
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 7. override 関数 (SceneLifecycleBase のライフサイクル実装)
+        // -------------------------------------------------------------
 
         /// <summary>
         /// Boot シーン初期化前の通信・データ読み込み待機処理。
-        /// Addressables から LoadingView プレハブを非同期ロードする。
+        /// SceneManager 側の AddressablePrefabLoader を通じて LoadingView を非同期ロード・常駐化する。
         /// </summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
         protected override async Task OnWaitForCommunicationAsync(CancellationToken cancellationToken)
         {
-            DebugLogger.Log("[BootScene] LoadingView を Addressables からロード中...");
+            DebugLogger.Log("[BootScene] SceneManager を介して LoadingView をロード中...");
 
-            // LoadingView が未生成なら Addressables からロードして常駐化
-            if (LoadingView.Instance == null)
+            if (SceneManager.Instance != null)
             {
-                var loadingObj = await addressablePrefabLoader.LoadAsync(LoadingViewAddress, cancellationToken);
-                if (loadingObj != null)
-                {
-                    DebugLogger.Log("[BootScene] LoadingView の Addressables ロードが完了しました。");
-                }
+                await SceneManager.Instance.EnsureLoadingViewAsync(cancellationToken);
             }
 
             await Task.Yield();
@@ -45,6 +66,8 @@ namespace Runner
         /// <summary>
         /// Boot シーンの初期化処理を実行し、完了後に Title シーンへ遷移する。
         /// </summary>
+        /// <param name="parameter">初期化パラメータ</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
         protected override async Task OnInitializeAsync(object parameter, CancellationToken cancellationToken)
         {
             DebugLogger.Log("[BootScene] 初期化完了。Title シーンへ遷移します。");
@@ -54,12 +77,19 @@ namespace Runner
         }
 
         /// <summary>
-        /// Boot シーン離脱時のクリーンアップ処理。
+        /// Boot シーン離脱時のクリーンアップ処理を行う。
         /// </summary>
         protected override void OnDestroy()
         {
             DebugLogger.Log("[BootScene] 破棄処理完了。");
-            // ※ LoadingView はアプリ全体で常駐するため Dispose は呼び出さず維持します
         }
+
+        // -------------------------------------------------------------
+        // 8. public 関数
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 9. private 関数 / 内部ヘルパー
+        // -------------------------------------------------------------
     }
 }

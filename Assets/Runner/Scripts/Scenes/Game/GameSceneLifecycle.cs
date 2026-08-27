@@ -6,6 +6,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using Shiyuan.Foundation.Addressables;
 using Shiyuan.Foundation.Core;
 using Shiyuan.Foundation.Scenes;
 using UnityEngine;
@@ -18,27 +19,53 @@ namespace Runner
     /// </summary>
     public sealed class GameSceneLifecycle : SceneLifecycleBase, IGameContext
     {
+        // -------------------------------------------------------------
+        // 1. const / static フィールド
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 2. [SerializeField] シリアライズフィールド
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 3. private インスタンス変数
+        // -------------------------------------------------------------
         private StateMachine<GamePlayState> stateMachine;
         private PlayerController playerInstance;
 
-        #region IGameContext Implementation
+        // -------------------------------------------------------------
+        // 4. public インスタンス変数
+        // -------------------------------------------------------------
 
+        // -------------------------------------------------------------
+        // 5. プロパティ & イベント
+        // -------------------------------------------------------------
         public StateMachine<GamePlayState> StateMachine => stateMachine;
         public PlayerController Player => playerInstance;
 
-        public void SetPlayerInstance(PlayerController player)
-        {
-            playerInstance = player;
-        }
+        // -------------------------------------------------------------
+        // 6. Unity ライフサイクル関数
+        // -------------------------------------------------------------
 
-        #endregion
+        // -------------------------------------------------------------
+        // 7. override 関数 (SceneLifecycleBase のライフサイクル実装)
+        // -------------------------------------------------------------
 
+        /// <summary>
+        /// Game シーン初期化前の通信およびアセット読み込み待機処理。
+        /// </summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
         protected override async Task OnWaitForCommunicationAsync(CancellationToken cancellationToken)
         {
             DebugLogger.Log("[GameScene] 通信・アセットロード待機中...");
             await Task.Yield();
         }
 
+        /// <summary>
+        /// Game シーンの初期化処理を実行し、ステートマシンを構築して Loading ステートへ遷移する。
+        /// </summary>
+        /// <param name="parameter">初期化パラメータ</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
         protected override async Task OnInitializeAsync(object parameter, CancellationToken cancellationToken)
         {
             DebugLogger.Log("[GameScene] GameSceneLifecycle 初期化開始。ステートマシンをセットアップします。");
@@ -55,6 +82,9 @@ namespace Runner
             await stateMachine.ChangeStateAsync(GamePlayState.Loading, cancellationToken);
         }
 
+        /// <summary>
+        /// Game シーンの毎フレーム処理を実行し、現在のアクティブステートを更新する。
+        /// </summary>
         protected override void OnUpdate()
         {
             if (stateMachine != null && stateMachine.HasCurrentState)
@@ -64,6 +94,9 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// Game シーン離脱時のクリーンアップ処理を行い、ステートマシンを破棄する。
+        /// </summary>
         protected override void OnDestroy()
         {
             if (stateMachine != null)
@@ -75,5 +108,22 @@ namespace Runner
             playerInstance = null;
             DebugLogger.Log("[GameScene] GameSceneLifecycle 破棄処理完了。");
         }
+
+        // -------------------------------------------------------------
+        // 8. public 関数
+        // -------------------------------------------------------------
+
+        /// <summary>
+        /// 生成された PlayerController インスタンスを GameContext に登録する。
+        /// </summary>
+        /// <param name="player">登録する PlayerController</param>
+        public void SetPlayerInstance(PlayerController player)
+        {
+            playerInstance = player;
+        }
+
+        // -------------------------------------------------------------
+        // 9. private 関数 / 内部ヘルパー
+        // -------------------------------------------------------------
     }
 }

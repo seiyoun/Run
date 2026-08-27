@@ -16,25 +16,52 @@ namespace Runner
 {
     /// <summary>
     /// Addressables からプレイヤーをロード・生成するスポナークラス。
-    /// GameLoadingState から呼び出されてインスタンス化を実行します。
+    /// GameLoadingState から呼び出されてインスタンス化を実行し、破棄時に AddressablePrefabLoader を Dispose します。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PlayerSpawner : MonoBehaviour
     {
+        // -------------------------------------------------------------
+        // 1. const / static フィールド
+        // -------------------------------------------------------------
         private const string PlayerAddress = "Player";
 
+        // -------------------------------------------------------------
+        // 2. [SerializeField] シリアライズフィールド
+        // -------------------------------------------------------------
         [Header("Spawn Settings")]
         [Tooltip("スポーン位置（未指定の場合は本オブジェクトの位置）")]
         [SerializeField]
         private Transform spawnPoint;
 
+        // -------------------------------------------------------------
+        // 3. private インスタンス変数
+        // -------------------------------------------------------------
         private AddressablePrefabLoader addressableLoader;
 
+        // -------------------------------------------------------------
+        // 4. public インスタンス変数
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 5. プロパティ & イベント
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 6. Unity ライフサイクル関数
+        // -------------------------------------------------------------
+
+        /// <summary>
+        /// AddressablePrefabLoader のインスタンスを初期化する。
+        /// </summary>
         private void Awake()
         {
             addressableLoader = new AddressablePrefabLoader();
         }
 
+        /// <summary>
+        /// オブジェクト破棄時に AddressablePrefabLoader を Dispose してロードしたアセットを解放する。
+        /// </summary>
         private void OnDestroy()
         {
             if (addressableLoader != null)
@@ -44,9 +71,19 @@ namespace Runner
             }
         }
 
+        // -------------------------------------------------------------
+        // 7. override 関数
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 8. public 関数
+        // -------------------------------------------------------------
+
         /// <summary>
         /// Addressables からプレイヤーアセットをロードし、シーン上に生成する。
         /// </summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>生成された PlayerController インスタンス</returns>
         public async Task<PlayerController> SpawnPlayerAsync(CancellationToken cancellationToken = default)
         {
             var spawnPos = spawnPoint != null ? spawnPoint.position : transform.position;
@@ -82,6 +119,14 @@ namespace Runner
             return player;
         }
 
+        // -------------------------------------------------------------
+        // 9. private 関数 / 内部ヘルパー
+        // -------------------------------------------------------------
+
+        /// <summary>
+        /// Cinemachine カメラの追従ターゲットをプレイヤーに設定する。
+        /// </summary>
+        /// <param name="player">追従対象の PlayerController</param>
         private void SetupPlayerCamera(PlayerController player)
         {
             var vcam = FindFirstObjectByType<CinemachineCamera>();
