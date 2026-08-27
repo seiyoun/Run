@@ -3,6 +3,7 @@
  * 連絡先: shiyuan0106bot@gmail.com
  * スクリプト説明: アプリケーション全体のシーン遷移を管理するマネージャークラスを定義する。
  *                AddressablePrefabLoader を保持し、常駐 UI（LoadingView）のロードと破棄時 Dispose を一元管理します。
+ *                PlayMode 開始時およびシーン起動時に古い Addressables 静的キャッシュを安全にリセットします。
  */
 
 using System.Threading;
@@ -49,6 +50,15 @@ namespace Runner
         // -------------------------------------------------------------
         // 6. Unity ライフサイクル関数
         // -------------------------------------------------------------
+
+        /// <summary>
+        /// アプリ起動前（シーンロード前）に Addressables 静的キャッシュを初期化する。
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void OnSubsystemRegistration()
+        {
+            AddressableManager.ReleaseAll();
+        }
 
         /// <summary>
         /// シングルトンの初期化を行い、プライマリインスタンスであれば AddressablePrefabLoader を生成する。
