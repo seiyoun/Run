@@ -3,6 +3,7 @@
  * 連絡先: shiyuan0106bot@gmail.com
  * スクリプト説明: Game シーン用のデバッグ情報表示・テスト操作用 UI コンポーネント。
  *                SANDBOX またはエディタ実行時のみコード駆動でプロシージャル生成され、アセット(Resources/Prefab)を残しません。
+ *                アイテム吸引範囲の GameView 表示トグルボタン、コイン生成、各アクションテストを完備します。
  */
 
 #if SANDBOX || UNITY_EDITOR
@@ -18,19 +19,28 @@ using UnityEngine.UI;
 namespace Runner
 {
     /// <summary>
-    /// ゲーム実行中にプレイヤーのステータス・入力・アニメーション状態・EXPをリアルタイム表示し、
-    /// デバッグ操作（攻撃、被弾、回復、EXP獲得テスト）を提供する UI クラス。
-    /// C# コードから完全動的（プロシージャル）に Canvas ごと生成されるため、ROM 作成時に余計なアセットを含めません。
+    /// ゲーム実行中にプレイヤーのステータス・入力・アニメーション状態・ポイ活をリアルタイム表示し、
+    /// デバッグ操作（攻撃、被弾、回復、コイン生成、吸引範囲表示トグル、覚醒、セール、出口開放テスト）を提供する UI クラス。
+    /// C# コードから完全動的（プロシージャル）に Canvas ごと生成されます。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class GameDebugHUD : MonoBehaviour
     {
+        // -------------------------------------------------------------
+        // 1. const / static フィールド
+        // -------------------------------------------------------------
         private const string MoneyItemAddress = "MoneyItem";
 
+        // -------------------------------------------------------------
+        // 2. [SerializeField] シリアライズフィールド
+        // -------------------------------------------------------------
         [Header("Settings")]
         [SerializeField] private bool showOnStart = false;
         [SerializeField] private float updateInterval = 0.1f;
 
+        // -------------------------------------------------------------
+        // 3. private インスタンス変数
+        // -------------------------------------------------------------
         private GameObject debugPanel;
         private TextMeshProUGUI statusText;
         private Button toggleButton;
@@ -38,6 +48,8 @@ namespace Runner
         private Button damageButton;
         private Button healButton;
         private Button pointButton;
+        private TextMeshProUGUI magnetRangeBtnText;
+        private Image magnetRangeBtnImage;
 
         private float nextUpdateTime;
         private float fpsTimer;
@@ -46,11 +58,72 @@ namespace Runner
 
         private AddressablePrefabLoader addressableLoader;
 
+        // -------------------------------------------------------------
+        // 4. public インスタンス変数
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 5. プロパティ & イベント
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 6. Unity ライフサイクル関数
+        // -------------------------------------------------------------
+
+        /// <summary>
+        /// AddressablePrefabLoader のインスタンスを初期化する。
+        /// </summary>
         private void Awake()
         {
             addressableLoader = new AddressablePrefabLoader();
         }
 
+        /// <summary>
+        /// ショートカットキー監視、FPS 計測、およびステータステキストの定期更新を行う。
+        /// </summary>
+        private void Update()
+        {
+            // ショートカットキー（F1 / Backquote / Tab）でのパネル開閉
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                if (keyboard.f1Key.wasPressedThisFrame || keyboard.backquoteKey.wasPressedThisFrame || keyboard.tabKey.wasPressedThisFrame)
+                {
+                    TogglePanel();
+                }
+            }
+
+            // モバイル用 3本指タップでのパネル開閉
+            var touchscreen = Touchscreen.current;
+            if (touchscreen != null && touchscreen.touches.Count >= 3)
+            {
+                if (touchscreen.touches[0].press.wasPressedThisFrame)
+                {
+                    TogglePanel();
+                }
+            }
+
+            // FPS 計測
+            frameCount++;
+            fpsTimer += Time.unscaledDeltaTime;
+            if (fpsTimer >= 0.5f)
+            {
+                currentFps = frameCount / fpsTimer;
+                frameCount = 0;
+                fpsTimer = 0f;
+            }
+
+            // 情報テキストの定期更新
+            if (Time.unscaledTime >= nextUpdateTime)
+            {
+                nextUpdateTime = Time.unscaledTime + updateInterval;
+                UpdateDebugInfo();
+            }
+        }
+
+        /// <summary>
+        /// オブジェクト破棄時に AddressablePrefabLoader を Dispose してリソースを解放する。
+        /// </summary>
         private void OnDestroy()
         {
             if (addressableLoader != null)
@@ -60,9 +133,18 @@ namespace Runner
             }
         }
 
+        // -------------------------------------------------------------
+        // 7. override 関数
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 8. public 関数
+        // -------------------------------------------------------------
+
         /// <summary>
         /// コードから動的に DebugCanvas および全 UI をプロシージャル生成する。
         /// </summary>
+        /// <returns>生成された GameDebugHUD インスタンス</returns>
         public static GameDebugHUD Create()
         {
             var canvasObj = new GameObject("DebugCanvas");
@@ -83,6 +165,25 @@ namespace Runner
             return hud;
         }
 
+        /// <summary>
+        /// デバッグパネルの表示・非表示をトグル切り替えする。
+        /// </summary>
+        public void TogglePanel()
+        {
+            if (debugPanel != null)
+            {
+                debugPanel.SetActive(!debugPanel.activeSelf);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 9. private 関数 / 内部ヘルパー
+        // -------------------------------------------------------------
+
+        /// <summary>
+        /// デバッグ UI の階層構造および全ボタン群を動的に構築する。
+        /// </summary>
+        /// <param name="root">Canvas の Transform</param>
         private void BuildUI(Transform root)
         {
             var defaultFont = TMP_Settings.defaultFontAsset;
@@ -135,35 +236,44 @@ namespace Runner
             var pointBtn = pointObj.GetComponent<Button>();
             pointBtn.onClick.AddListener(OnAddPointClicked);
 
-            // 2段目: アイテム生成 & イベント (Y: 95)
+            // 2段目: アイテム生成 & 範囲表示 & イベント (Y: 95)
             var spawnItemObj = CreateButton("SpawnItemButton", debugPanel.transform, new Vector2(-230, 95), new Vector2(140, 55), new Color(1f, 0.75f, 0.1f, 1f), "🪙 コインx5", defaultFont);
             var spawnItemBtn = spawnItemObj.GetComponent<Button>();
             spawnItemBtn.onClick.AddListener(OnSpawnMoneyItemsClicked);
 
-            var saleObj = CreateButton("SaleButton", debugPanel.transform, new Vector2(-78, 95), new Vector2(140, 55), new Color(0.95f, 0.7f, 0.1f, 1f), "⚡ セール", defaultFont);
+            var rangeObj = CreateButton("MagnetRangeButton", debugPanel.transform, new Vector2(-78, 95), new Vector2(140, 55), new Color(0.1f, 0.65f, 0.85f, 1f), "🧲 範囲表示", defaultFont);
+            magnetRangeBtnImage = rangeObj.GetComponent<Image>();
+            magnetRangeBtnText = rangeObj.GetComponentInChildren<TextMeshProUGUI>();
+            var rangeBtn = rangeObj.GetComponent<Button>();
+            rangeBtn.onClick.AddListener(OnToggleMagnetRangeClicked);
+
+            var saleObj = CreateButton("SaleButton", debugPanel.transform, new Vector2(78, 95), new Vector2(140, 55), new Color(0.95f, 0.7f, 0.1f, 1f), "⚡ セール", defaultFont);
             var saleBtn = saleObj.GetComponent<Button>();
             saleBtn.onClick.AddListener(OnTriggerSaleClicked);
 
-            var rageObj = CreateButton("RageButton", debugPanel.transform, new Vector2(78, 95), new Vector2(140, 55), new Color(1f, 0.25f, 0.15f, 1f), "🔥 覚醒", defaultFont);
+            var rageObj = CreateButton("RageButton", debugPanel.transform, new Vector2(230, 95), new Vector2(140, 55), new Color(1f, 0.25f, 0.15f, 1f), "🔥 覚醒", defaultFont);
             var rageBtn = rageObj.GetComponent<Button>();
             rageBtn.onClick.AddListener(OnTriggerAwakeningClicked);
 
-            var dodgeObj = CreateButton("DodgeButton", debugPanel.transform, new Vector2(230, 95), new Vector2(140, 60), new Color(0.7f, 0.3f, 0.9f, 1f), "✨ 回避", defaultFont);
+            // 3段目: 回避 & 非常口即時開放 (Y: 30)
+            var dodgeObj = CreateButton("DodgeButton", debugPanel.transform, new Vector2(-150, 30), new Vector2(180, 55), new Color(0.7f, 0.3f, 0.9f, 1f), "✨ ジャスト回避", defaultFont);
             var dodgeBtn = dodgeObj.GetComponent<Button>();
             dodgeBtn.onClick.AddListener(OnJustDodgeClicked);
 
-            // 3段目: 非常口即時開放 (Y: 30)
-            var exitObj = CreateButton("ExitButton", debugPanel.transform, new Vector2(0, 30), new Vector2(280, 55), new Color(0.1f, 0.8f, 0.4f, 1f), "🚪 出口即時開放", defaultFont);
+            var exitObj = CreateButton("ExitButton", debugPanel.transform, new Vector2(120, 30), new Vector2(240, 55), new Color(0.1f, 0.8f, 0.4f, 1f), "🚪 出口即時開放", defaultFont);
             var exitBtn = exitObj.GetComponent<Button>();
             exitBtn.onClick.AddListener(OnOpenExitClicked);
 
             debugPanel.SetActive(showOnStart);
         }
 
+        /// <summary>
+        /// RectTransform を持つ UI GameObject を作成する。
+        /// </summary>
         private GameObject CreateUIObject(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPos, Vector2 sizeDelta)
         {
             var obj = new GameObject(name, typeof(RectTransform));
-            obj.layer = 5; // UI Layer
+            obj.layer = 5;
             obj.transform.SetParent(parent, false);
             var rt = (RectTransform)obj.transform;
             rt.anchorMin = anchorMin;
@@ -174,6 +284,9 @@ namespace Runner
             return obj;
         }
 
+        /// <summary>
+        /// デバッグ用ボタンスタイルの UI オブジェクトを作成する。
+        /// </summary>
         private GameObject CreateButton(string name, Transform parent, Vector2 pos, Vector2 size, Color color, string label, TMP_FontAsset font)
         {
             var btnObj = CreateUIObject(name, parent, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), pos, size);
@@ -193,46 +306,9 @@ namespace Runner
             return btnObj;
         }
 
-        private void Update()
-        {
-            // ショートカットキー（F1 / Backquote / Tab）でのパネル開閉
-            var keyboard = Keyboard.current;
-            if (keyboard != null)
-            {
-                if (keyboard.f1Key.wasPressedThisFrame || keyboard.backquoteKey.wasPressedThisFrame || keyboard.tabKey.wasPressedThisFrame)
-                {
-                    TogglePanel();
-                }
-            }
-
-            // モバイル用 3本指タップでのパネル開閉
-            var touchscreen = Touchscreen.current;
-            if (touchscreen != null && touchscreen.touches.Count >= 3)
-            {
-                if (touchscreen.touches[0].press.wasPressedThisFrame)
-                {
-                    TogglePanel();
-                }
-            }
-
-            // FPS 計測
-            frameCount++;
-            fpsTimer += Time.unscaledDeltaTime;
-            if (fpsTimer >= 0.5f)
-            {
-                currentFps = frameCount / fpsTimer;
-                frameCount = 0;
-                fpsTimer = 0f;
-            }
-
-            // 情報テキストの定期更新
-            if (Time.unscaledTime >= nextUpdateTime)
-            {
-                nextUpdateTime = Time.unscaledTime + updateInterval;
-                UpdateDebugInfo();
-            }
-        }
-
+        /// <summary>
+        /// プレイヤー情報・FPS・HUD ステータスを最新情報に更新して描画する。
+        /// </summary>
         private void UpdateDebugInfo()
         {
             if (statusText == null) return;
@@ -267,6 +343,9 @@ namespace Runner
                 ? $"<color=#00D4FF>{animator.CurrentState}</color>" 
                 : "None";
 
+            var magnetVisible = PlayerDebugRangeVisualizer.IsRangeVisible(player.transform);
+            var magnetInfo = $"<b>吸込範囲:</b> <color=#00D4FF>{player.MagnetRadius:F1}m</color> (表示: {(magnetVisible ? "ON" : "OFF")})";
+
             statusText.text = 
                 $"<color=#FFFF00><b>[GAME DEBUG HUD]</b></color>\n" +
                 $"FPS: <color=#00FF88>{currentFps:F1}</color> | Time: {Time.time:F1}s\n" +
@@ -276,17 +355,13 @@ namespace Runner
                 $"<b>HP:</b> {hpText}\n" +
                 $"<b>ポイ活:</b> {pointInfoText}\n" +
                 $"<b>怒り:</b> {rageInfoText}\n" +
-                $"<b>Anim State:</b> {animStateText}";
+                $"{magnetInfo}\n" +
+                $"<b>Anim:</b> {animStateText}";
         }
 
-        public void TogglePanel()
-        {
-            if (debugPanel != null)
-            {
-                debugPanel.SetActive(!debugPanel.activeSelf);
-            }
-        }
-
+        /// <summary>
+        /// 攻撃ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
         private void OnAttackClicked()
         {
             var player = PlayerController.Instance;
@@ -296,6 +371,9 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// ダメージボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
         private void OnDamageClicked()
         {
             var player = PlayerController.Instance;
@@ -305,6 +383,9 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// 回復ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
         private void OnHealClicked()
         {
             var player = PlayerController.Instance;
@@ -314,6 +395,9 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// ポイント加算ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
         private void OnAddPointClicked()
         {
             if (GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null)
@@ -322,6 +406,34 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// アイテム吸引範囲の GameView 表示トグルボタンクリック時の処理。
+        /// </summary>
+        private void OnToggleMagnetRangeClicked()
+        {
+            var player = PlayerController.Instance;
+            if (player == null) return;
+
+            bool nextState = PlayerDebugRangeVisualizer.ToggleRangeVisible(player.transform, player.MagnetRadius);
+
+            if (magnetRangeBtnText != null)
+            {
+                magnetRangeBtnText.text = nextState ? "🧲 範囲非表示" : "🧲 範囲表示";
+            }
+
+            if (magnetRangeBtnImage != null)
+            {
+                magnetRangeBtnImage.color = nextState 
+                    ? new Color(0.1f, 0.85f, 0.65f, 1f) 
+                    : new Color(0.1f, 0.65f, 0.85f, 1f);
+            }
+
+            DebugLogger.Log($"[GameDebugHUD] デバッグ操作: アイテム吸引範囲の表示を {(nextState ? "ON" : "OFF")} に切り替えました。");
+        }
+
+        /// <summary>
+        /// 非常口即時開放ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
         private void OnOpenExitClicked()
         {
             if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
@@ -331,6 +443,9 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// タイムセール通知発火ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
         private void OnTriggerSaleClicked()
         {
             if (GameHUDView.Instance != null)
@@ -340,6 +455,9 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// 怒りMAX覚醒発動ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
         private void OnTriggerAwakeningClicked()
         {
             if (GameHUDView.Instance != null && GameHUDView.Instance.RageGaugeHUD != null)
@@ -350,6 +468,9 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// プレイヤー周辺へのコイン生成ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
         private async void OnSpawnMoneyItemsClicked()
         {
             var player = PlayerController.Instance;
@@ -359,53 +480,12 @@ namespace Runner
                 return;
             }
 
-            var playerPos = player.transform.position;
-            int count = 5;
-
-            for (int i = 0; i < count; i++)
-            {
-                float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-                float dist = UnityEngine.Random.Range(2.5f, 4.5f);
-                var spawnPos = playerPos + new Vector3(Mathf.Cos(angle) * dist, Mathf.Sin(angle) * dist, 0f);
-
-                try
-                {
-                    if (addressableLoader != null)
-                    {
-                        var itemObj = await addressableLoader.LoadAsync(MoneyItemAddress, System.Threading.CancellationToken.None);
-                        if (itemObj != null)
-                        {
-                            itemObj.transform.position = spawnPos;
-                            continue;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"[GameDebugHUD] Addressables ('{MoneyItemAddress}') ロード失敗: {ex.Message}");
-                }
-
-                // フォールバック生成（Addressables未準備時）
-#if UNITY_EDITOR
-                var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Runner/Prefabs/MoneyItem.prefab");
-                if (prefab != null)
-                {
-                    Instantiate(prefab, spawnPos, Quaternion.identity);
-                    continue;
-                }
-#endif
-                var moneyObj = new GameObject("MoneyItem_Fallback");
-                moneyObj.transform.position = spawnPos;
-                var col = moneyObj.AddComponent<CircleCollider2D>();
-                col.isTrigger = true;
-                col.radius = 0.35f;
-                var moneyComp = moneyObj.AddComponent<MoneyItem>();
-                moneyComp.Setup(50);
-            }
-
-            DebugLogger.Log($"[GameDebugHUD] Addressables ('{MoneyItemAddress}') からプレイヤー周辺にコインアイテムを {count} 個生成しました。");
+            await ItemDebugSpawner.SpawnMoneyItemsAroundAsync(player.transform.position, 5);
         }
 
+        /// <summary>
+        /// ジャスト回避演出発動ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
         private void OnJustDodgeClicked()
         {
             if (GameHUDView.Instance != null)

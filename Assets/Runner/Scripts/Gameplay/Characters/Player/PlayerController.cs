@@ -118,7 +118,13 @@ namespace Runner
         public float MagnetRadius
         {
             get => magnetRadius;
-            set => magnetRadius = Mathf.Max(0f, value);
+            set
+            {
+                magnetRadius = Mathf.Max(0f, value);
+#if SANDBOX || UNITY_EDITOR
+                PlayerDebugRangeVisualizer.UpdateRadius(transform, magnetRadius);
+#endif
+            }
         }
 
         public int CurrentSteps => currentSteps;
@@ -245,18 +251,6 @@ namespace Runner
             }
         }
 
-        /// <summary>
-        /// インスペクター選択時にアイテム吸引範囲（MagnetRadius）をシーンビュー上にギズモ描画する。
-        /// </summary>
-        private void OnDrawGizmosSelected()
-        {
-            if (magnetRadius > 0f)
-            {
-                Gizmos.color = new Color(0f, 0.9f, 1f, 0.35f);
-                Gizmos.DrawWireSphere(transform.position, magnetRadius);
-            }
-        }
-
         // -------------------------------------------------------------
         // 7. override 関数
         // -------------------------------------------------------------
@@ -267,7 +261,7 @@ namespace Runner
         /// <returns>プレイヤー情報文字列</returns>
         public override string ToString()
         {
-            return $"PlayerController (Steps: {currentSteps}, Money: {currentMoney}, Speed: {moveSpeed})";
+            return $"PlayerController (Steps: {currentSteps}, Money: {currentMoney}, Speed: {moveSpeed}, Magnet: {magnetRadius}m)";
         }
 
         // -------------------------------------------------------------
@@ -466,6 +460,10 @@ namespace Runner
             {
                 characterStatus.SetMaxHp(data.maxHp);
             }
+
+#if SANDBOX || UNITY_EDITOR
+            PlayerDebugRangeVisualizer.UpdateRadius(transform, magnetRadius);
+#endif
 
             DebugLogger.Log($"[PlayerController] PlayerData 適用: Name={data.characterName}, MaxHP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m, StepDist={data.stepDistanceThreshold}m");
         }
