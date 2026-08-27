@@ -20,78 +20,44 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class PlayerController : MonoBehaviour, IMovable, IAttacker, IDamageable, IHealable, IMoneyCollector
     {
-        // -------------------------------------------------------------
-        // 1. const / static フィールド
-        // -------------------------------------------------------------
         public static PlayerController Instance { get; private set; }
 
         private const float DefaultMagnetCheckInterval = 0.05f;
 
-        private static readonly ContactFilter2D ItemContactFilter = new ContactFilter2D
-        {
-            useTriggers = true,
-            useLayerMask = false,
-            useDepth = false,
-            useNormalAngle = false
-        };
-
-        // -------------------------------------------------------------
-        // 2. [SerializeField] シリアライズフィールド (※PlayerDataのみを使用するため全廃)
-        // -------------------------------------------------------------
-
-        // -------------------------------------------------------------
-        // 3. private インスタンス変数
-        // -------------------------------------------------------------
+        private static readonly ContactFilter2D ItemContactFilter = CreateDefaultContactFilter();
         private Rigidbody2D rb;
         private Vector2 moveInput;
         private Vector2 facingDirection = Vector2.right;
 
-        // PlayerData から反映されるパラメータ（初期値は持たず、PlayerData の適用時に設定）
         private float moveSpeed;
         private int attackPower;
         private float attackInterval;
         private float attackCooldownTimer;
-
         private float magnetRadius;
         private float magnetCheckTimer;
-
-        // 歩数・移動距離・所持金ステート
         private int currentSteps;
         private float totalDistanceMoved;
         private float stepAccumulator;
         private float stepDistanceThreshold;
         private long pointsPerStep;
         private long currentMoney;
-
-        /// <summary>GC Alloc を発生させずに周囲のアイテムを取得するためのキャッシュバッファ</summary>
         private readonly Collider2D[] itemColliderBuffer = new Collider2D[32];
-
-        /// <summary>現在バインドされている入力コントローラー</summary>
         private InputController boundInputController;
-
-        /// <summary>キャラクターの見た目（向き・スプライト制御）インターフェース</summary>
         private ICharacterVisual characterVisual;
-
-        /// <summary>キャラクターのアニメーション制御インターフェース</summary>
         private ICharacterAnimator characterAnimator;
-
-        /// <summary>キャラクターのステータス（HP・被ダメージ・回復）管理インターフェース</summary>
         private ICharacterStatus characterStatus;
-
-        /// <summary>適用中のプレイヤーパラメータデータ</summary>
         private PlayerData currentPlayerData;
 
-        // -------------------------------------------------------------
-        // 4. public インスタンス変数
-        // -------------------------------------------------------------
-        // (public 変数は使用せずプロパティにカプセル化)
-
-        // -------------------------------------------------------------
-        // 5. プロパティ & イベント (Properties & Events)
-        // -------------------------------------------------------------
+        /// <summary>現在のプレイヤー設定データ</summary>
         public PlayerData CurrentData => currentPlayerData;
+
+        /// <summary>キャラクター外観インターフェース</summary>
         public ICharacterVisual CharacterVisual => characterVisual;
+
+        /// <summary>キャラクターアニメーションインターフェース</summary>
         public ICharacterAnimator CharacterAnimator => characterAnimator;
+
+        /// <summary>キャラクターステータスインターフェース</summary>
         public ICharacterStatus Status => characterStatus;
 
         public float MoveSpeed
@@ -142,11 +108,6 @@ namespace Runner
         public event Action<int> OnStepsChanged;
         public event Action<float> OnDistanceMoved;
         public event Action<long> OnMoneyCollected;
-
-        // -------------------------------------------------------------
-        // 6. Unity ライフサイクル関数
-        // -------------------------------------------------------------
-
         /// <summary>
         /// シングルトンの初期化、物理コンポーネントの設定、およびパラメータのロードを行う。
         /// </summary>
@@ -253,11 +214,6 @@ namespace Runner
                 UnsubscribeStatusEvents(characterStatus);
             }
         }
-
-        // -------------------------------------------------------------
-        // 7. override 関数
-        // -------------------------------------------------------------
-
         /// <summary>
         /// プレイヤーの現在の主要ステータスを表す文字列を返す。
         /// </summary>
@@ -266,11 +222,6 @@ namespace Runner
         {
             return $"PlayerController (Steps: {currentSteps}, Money: {currentMoney}, Speed: {moveSpeed}, Magnet: {magnetRadius}m)";
         }
-
-        // -------------------------------------------------------------
-        // 8. public 関数
-        // -------------------------------------------------------------
-
         #region IMovable Implementation
 
         /// <summary>
@@ -503,11 +454,6 @@ namespace Runner
         }
 
         #endregion
-
-        // -------------------------------------------------------------
-        // 9. private 関数 / 内部ヘルパー
-        // -------------------------------------------------------------
-
         /// <summary>
         /// 見た目・アニメーション・ステータスコンポーネントの自動検出・初期アタッチを行う。
         /// </summary>
@@ -646,6 +592,18 @@ namespace Runner
             characterAnimator?.PlayDie();
             OnDead?.Invoke();
             DebugLogger.Log("[PlayerController] プレイヤーが死亡しました。");
+        }
+
+        /// <summary>
+        /// トリガーコライダーを含む全レイヤーを対象とする ContactFilter2D を生成する。
+        /// </summary>
+        /// <returns>正規初期化済みの ContactFilter2D</returns>
+        private static ContactFilter2D CreateDefaultContactFilter()
+        {
+            var filter = new ContactFilter2D();
+            filter.NoFilter();
+            filter.useTriggers = true;
+            return filter;
         }
     }
 }

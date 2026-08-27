@@ -19,13 +19,6 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class MoneyItem : MonoBehaviour, IItem
     {
-        // -------------------------------------------------------------
-        // 1. const / static フィールド
-        // -------------------------------------------------------------
-
-        // -------------------------------------------------------------
-        // 2. [SerializeField] シリアライズフィールド
-        // -------------------------------------------------------------
         [Header("Money Settings")]
         [Tooltip("獲得できるお金・ポイントの額")]
         [SerializeField] private long moneyAmount = 50;
@@ -34,33 +27,16 @@ namespace Runner
         [SerializeField] private bool enableBobbing = true;
         [SerializeField] private float bobHeight = 0.15f;
         [SerializeField] private float bobSpeed = 3f;
-
-        // -------------------------------------------------------------
-        // 3. private インスタンス変数
-        // -------------------------------------------------------------
         private IAttractable attractable;
         private Vector3 spawnPosition;
         private float bobTimer;
         private bool isCollected;
-
-        // -------------------------------------------------------------
-        // 4. public インスタンス変数
-        // -------------------------------------------------------------
-
-        // -------------------------------------------------------------
-        // 5. プロパティ & イベント
-        // -------------------------------------------------------------
         public DropItemType ItemType => DropItemType.Money;
         public long MoneyAmount => moneyAmount;
         public IAttractable Attractable => attractable;
         public bool IsAttracted => attractable != null && attractable.IsAttracted;
 
         public event Action<MoneyItem, GameObject> OnItemCollected;
-
-        // -------------------------------------------------------------
-        // 6. Unity ライフサイクル関数
-        // -------------------------------------------------------------
-
         /// <summary>
         /// IAttractable コンポーネントの取得、イベント購読、および初期座標の記録を行う。
         /// </summary>
@@ -127,15 +103,6 @@ namespace Runner
                 attractable.OnAttractReached -= HandleAttractReached;
             }
         }
-
-        // -------------------------------------------------------------
-        // 7. override 関数
-        // -------------------------------------------------------------
-
-        // -------------------------------------------------------------
-        // 8. public 関数
-        // -------------------------------------------------------------
-
         /// <summary>
         /// プレイヤーによって回収された際の処理を実行し、GameObject を破棄する。
         /// </summary>
@@ -169,11 +136,6 @@ namespace Runner
         {
             moneyAmount = Math.Max(1, amount);
         }
-
-        // -------------------------------------------------------------
-        // 9. private 関数 / 内部ヘルパー
-        // -------------------------------------------------------------
-
         /// <summary>
         /// Attractable コンポーネントがターゲットへ到達した際のコールバックを処理する。
         /// </summary>

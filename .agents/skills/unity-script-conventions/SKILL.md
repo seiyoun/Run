@@ -1,6 +1,6 @@
 ---
 name: unity-script-conventions
-description: Unity C# スクリプトの設計・コーディング規約。アセンブリ定義（asmdef）に基づいた namespace の分離設計、クラス内のメンバー記述順序（const/static → シリアライズ → private変数 → public変数 → プロパティ → Unity関数 → オーバーライド関数 → public関数 → private関数）、および全関数へのドキュメントコメント（XMLコメント）必須化を定義・強制します。C# スクリプトの新規作成、リファクタリング、コードレビュー時に必ず使用してください。
+description: Unity C# スクリプトの設計・コーディング規約。アセンブリ定義（asmdef）に基づいた namespace の分離設計、クラス内のメンバー記述順序（const/static → シリアライズ → private変数 → public変数 → プロパティ → Unity関数 → オーバーライド関数 → public関数 → private関数）、全関数へのドキュメントコメント（XMLコメント）必須化、変数コメントのクリーン設計（private変数はコメント不要、[SerializeField]は[Tooltip]、publicプロパティはXMLコメント）、および不要な区切りコメントの禁止を定義・強制します。C# スクリプトの新規作成、リファクタリング、コードレビュー時に必ず使用してください。
 ---
 
 # Unity C# スクリプト記述規約 (Script Conventions)
@@ -39,15 +39,29 @@ description: Unity C# スクリプトの設計・コーディング規約。ア�
 3. private インスタンス変数
 4. public インスタンス変数
 5. プロパティ & イベント (Properties & Events)
-6. Unity ライフサイクル関数 (Awake, Start, Update 等)
-7. override 関数 (基底クラスやインターフェースのオーバーライド)
+6. Unity ライフサイクル関数 (Awake, Start, Update, OnDestroy 等)
+7. override 関数 (ToString や基底クラスの override)
 8. public 関数 (公開メソッド)
 9. private 関数 / 内部ヘルパー関数
 ```
 
+> [!IMPORTANT]
+> **セクション区切りコメントの禁止**:
+> `// -------------------------------------------------------------` や `// 1. const / static フィールド` などの目次・セクション区切りコメントは**記述しないでください**。コードは常に清潔（Clean）でノイズのない状態に保ちます。メンバーの配置順序自体によって構造を表現します。
+
 ---
 
-## 3. 関数（メソッド）へのコメント必須ルール
+## 3. 変数コメント規約（クリーン重視スタイル）
+
+| 変数の種類 | コメント方針 | 記述ルール |
+| :--- | :--- | :--- |
+| **private 変数** | **原則コメント不要（Clean）** | 変数名自体で意図・役割を自明にする。ノイズとなるコメントは付けない。 |
+| **`[SerializeField]`** | **`[Tooltip("...")]` を付与** | Inspector での可読性とコード上のドキュメントを兼ねる。 |
+| **public プロパティ / イベント** | **XMLコメント（`/// <summary>`）を付与** | 公開 API として IntelliSense で参照できるようにする。 |
+
+---
+
+## 4. 関数（メソッド）へのコメント必須ルール
 
 **すべての関数（Unity ライフサイクル関数、override 関数、public 関数、private 関数を含む）には、必ずその役割・目的を説明するコメント（XML ドキュメントコメント `<summary>`, `<param>`, `<returns>` 等）を記述してください。**
 
@@ -57,7 +71,7 @@ description: Unity C# スクリプトの設計・コーディング規約。ア�
 
 ---
 
-## 4. スクリプト構成テンプレート (標準フォーマット)
+## 5. スクリプト構成テンプレート (標準フォーマット)
 
 ```csharp
 /*
@@ -76,47 +90,33 @@ namespace Runner.Gameplay
     /// </summary>
     public sealed class SampleController : MonoBehaviour, ISampleInterface
     {
-        // -------------------------------------------------------------
-        // 1. const / static フィールド
-        // -------------------------------------------------------------
-        private const float DefaultSpeed = 5.0f;
         public static SampleController Instance { get; private set; }
+        private const float DefaultSpeed = 5.0f;
 
-        // -------------------------------------------------------------
-        // 2. [SerializeField] シリアライズフィールド
-        // -------------------------------------------------------------
         [Header("Settings")]
+        [Tooltip("移動速度")]
         [SerializeField] private float moveSpeed = DefaultSpeed;
+
+        [Tooltip("最大HP")]
         [SerializeField] private int maxHp = 100;
 
-        // -------------------------------------------------------------
-        // 3. private インスタンス変数
-        // -------------------------------------------------------------
         private Rigidbody2D rb;
         private Vector2 moveInput;
         private int currentSteps;
 
-        // -------------------------------------------------------------
-        // 4. public インスタンス変数 (※原則プロパティ推奨、必要な場合のみ)
-        // -------------------------------------------------------------
-        // (public 変数は極力使用せずプロパティを使用)
-
-        // -------------------------------------------------------------
-        // 5. プロパティ & イベント
-        // -------------------------------------------------------------
+        /// <summary>移動速度</summary>
         public float MoveSpeed
         {
             get => moveSpeed;
             set => moveSpeed = Mathf.Max(0.1f, value);
         }
 
+        /// <summary>現在の歩数</summary>
         public int CurrentSteps => currentSteps;
 
+        /// <summary>歩数変更時イベント</summary>
         public event Action<int> OnStepsChanged;
 
-        // -------------------------------------------------------------
-        // 6. Unity ライフサイクル関数
-        // -------------------------------------------------------------
         /// <summary>
         /// シングルトンの初期化およびコンポーネントの参照取得を行う。
         /// </summary>
@@ -161,9 +161,6 @@ namespace Runner.Gameplay
             }
         }
 
-        // -------------------------------------------------------------
-        // 7. override 関数
-        // -------------------------------------------------------------
         /// <summary>
         /// オブジェクトの文字列表現を返す。
         /// </summary>
@@ -172,9 +169,6 @@ namespace Runner.Gameplay
             return $"SampleController (Speed: {moveSpeed})";
         }
 
-        // -------------------------------------------------------------
-        // 8. public 関数
-        // -------------------------------------------------------------
         /// <summary>
         /// 指定された方向へ移動入力を設定する。
         /// </summary>
@@ -195,9 +189,6 @@ namespace Runner.Gameplay
             OnStepsChanged?.Invoke(currentSteps);
         }
 
-        // -------------------------------------------------------------
-        // 9. private 関数 / 内部ヘルパー
-        // -------------------------------------------------------------
         /// <summary>
         /// コントローラーの内部初期化を行う。
         /// </summary>
@@ -227,16 +218,13 @@ namespace Runner.Gameplay
 
 ---
 
-## 5. コーディング規約のチェックリスト
+## 6. コーディング規約のチェックリスト
 
 コードを作成・修正した際は、以下を必ず確認してください：
 
 - [ ] namespace は `.asmdef` およびディレクトリ階層に沿って正しく定義されているか
 - [ ] クラスメンバーは指定された 9 段階の順序通りに並んでいるか
-  - `const / static` が先頭にあるか
-  - `[SerializeField]` が `private` 変数より上にあるか
-  - `Properties & Events` がフィールド群の下、Unity 関数の上にあるか
-  - `Unity ライフサイクル関数` が `public / private` 関数より上にあるか
-  - `override 関数` が `public 関数` の直前に配置されているか
-  - `private 関数` がクラスの末尾にまとまっているか
+- [ ] **`// ------------------------------------` や `// 1. const / static` などのセクション区切りコメントが存在しないか（禁止）**
+- [ ] **`private` 変数に余計なコメントを付けず、名前で自明になっているか**
+- [ ] **`[SerializeField]` に `[Tooltip]`、`public` プロパティ/イベントに `/// <summary>` が記載されているか**
 - [ ] **すべての関数（Unityライフサイクル、override、public、private）に説明コメント（XMLドキュメントコメント）が記載されているか**

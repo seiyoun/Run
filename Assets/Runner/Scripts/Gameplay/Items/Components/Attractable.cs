@@ -19,17 +19,10 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class Attractable : MonoBehaviour, IAttractable
     {
-        // -------------------------------------------------------------
-        // 1. const / static フィールド
-        // -------------------------------------------------------------
         private const float DefaultInitialSpeed = 8f;
         private const float DefaultAcceleration = 25f;
         private const float DefaultMaxSpeed = 35f;
         private const float DefaultArriveDistance = 0.45f;
-
-        // -------------------------------------------------------------
-        // 2. [SerializeField] シリアライズフィールド
-        // -------------------------------------------------------------
         [Header("Attract Settings")]
         [Tooltip("吸い込み初速")]
         [SerializeField] private float initialAttractSpeed = DefaultInitialSpeed;
@@ -42,21 +35,9 @@ namespace Runner
 
         [Tooltip("ターゲットへ近接到達とみなす距離(m)")]
         [SerializeField] private float arriveDistance = DefaultArriveDistance;
-
-        // -------------------------------------------------------------
-        // 3. private インスタンス変数
-        // -------------------------------------------------------------
         private Transform targetTransform;
         private bool isAttracted;
         private float currentAttractSpeed;
-
-        // -------------------------------------------------------------
-        // 4. public インスタンス変数
-        // -------------------------------------------------------------
-
-        // -------------------------------------------------------------
-        // 5. プロパティ & イベント
-        // -------------------------------------------------------------
         public bool IsAttracted => isAttracted;
         public Transform Target => targetTransform;
         public float CurrentAttractSpeed => currentAttractSpeed;
@@ -64,11 +45,6 @@ namespace Runner
         public event Action<Transform> OnAttractStarted;
         public event Action<Transform> OnAttractReached;
         public event Action OnAttractStopped;
-
-        // -------------------------------------------------------------
-        // 6. Unity ライフサイクル関数
-        // -------------------------------------------------------------
-
         /// <summary>
         /// コライダーがトリガーに設定されていることを保証する。
         /// </summary>
@@ -106,15 +82,6 @@ namespace Runner
 
             transform.position = new Vector3(nextPos.x, nextPos.y, transform.position.z);
         }
-
-        // -------------------------------------------------------------
-        // 7. override 関数
-        // -------------------------------------------------------------
-
-        // -------------------------------------------------------------
-        // 8. public 関数
-        // -------------------------------------------------------------
-
         /// <summary>
         /// 指定ターゲットへの吸い寄せを開始する。
         /// </summary>
@@ -154,9 +121,5 @@ namespace Runner
             attractAcceleration = Mathf.Max(0.1f, acceleration);
             maxAttractSpeed = Mathf.Max(initialAttractSpeed, maxSpeed);
         }
-
-        // -------------------------------------------------------------
-        // 9. private 関数 / 内部ヘルパー
-        // -------------------------------------------------------------
     }
 }
