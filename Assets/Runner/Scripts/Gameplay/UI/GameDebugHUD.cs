@@ -7,6 +7,8 @@
 
 #if SANDBOX || UNITY_EDITOR
 using System;
+using System.Threading.Tasks;
+using Shiyuan.Foundation.Addressables;
 using Shiyuan.Foundation.Core;
 using TMPro;
 using UnityEngine;
@@ -23,6 +25,8 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class GameDebugHUD : MonoBehaviour
     {
+        private const string MoneyItemAddress = "MoneyItem";
+
         [Header("Settings")]
         [SerializeField] private bool showOnStart = false;
         [SerializeField] private float updateInterval = 0.1f;
@@ -39,6 +43,22 @@ namespace Runner
         private float fpsTimer;
         private int frameCount;
         private float currentFps;
+
+        private AddressablePrefabLoader addressableLoader;
+
+        private void Awake()
+        {
+            addressableLoader = new AddressablePrefabLoader();
+        }
+
+        private void OnDestroy()
+        {
+            if (addressableLoader != null)
+            {
+                addressableLoader.Dispose();
+                addressableLoader = null;
+            }
+        }
 
         /// <summary>
         /// コードから動的に DebugCanvas および全 UI をプロシージャル生成する。
@@ -84,12 +104,12 @@ namespace Runner
             toggleTMP.color = Color.white;
 
             // 2. メインパネル（右下トグルボタンの上）
-            debugPanel = CreateUIObject("DebugPanel", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-335, 430), new Vector2(650, 680));
+            debugPanel = CreateUIObject("DebugPanel", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-335, 440), new Vector2(650, 720));
             var panelImg = debugPanel.AddComponent<Image>();
             panelImg.color = new Color(0.05f, 0.05f, 0.08f, 0.92f);
 
             // 3. ステータステキスト
-            var statusObj = CreateUIObject("StatusText", debugPanel.transform, new Vector2(0, 0.32f), Vector2.one, Vector2.zero, new Vector2(-30, -20));
+            var statusObj = CreateUIObject("StatusText", debugPanel.transform, new Vector2(0, 0.35f), Vector2.one, Vector2.zero, new Vector2(-30, -20));
             statusText = statusObj.AddComponent<TextMeshProUGUI>();
             if (defaultFont != null) statusText.font = defaultFont;
             statusText.text = "[DEBUG HUD] Initializing...";
@@ -97,40 +117,45 @@ namespace Runner
             statusText.alignment = TextAlignmentOptions.TopLeft;
             statusText.color = Color.white;
 
-            // 4. アクションボタン群（2列・2段グリッド）
-            // 上段
-            var attackObj = CreateButton("AttackButton", debugPanel.transform, new Vector2(-230, 120), new Vector2(140, 60), new Color(0.85f, 0.25f, 0.25f, 1f), "Attack", defaultFont);
+            // 4. アクションボタン群（3段レイアウト）
+            // 1段目: プレイヤー基本操作 (Y: 160)
+            var attackObj = CreateButton("AttackButton", debugPanel.transform, new Vector2(-230, 160), new Vector2(140, 55), new Color(0.85f, 0.25f, 0.25f, 1f), "Attack", defaultFont);
             attackButton = attackObj.GetComponent<Button>();
             attackButton.onClick.AddListener(OnAttackClicked);
 
-            var damageObj = CreateButton("DamageButton", debugPanel.transform, new Vector2(-78, 120), new Vector2(140, 60), new Color(0.9f, 0.55f, 0.15f, 1f), "-10 HP", defaultFont);
+            var damageObj = CreateButton("DamageButton", debugPanel.transform, new Vector2(-78, 160), new Vector2(140, 55), new Color(0.9f, 0.55f, 0.15f, 1f), "-10 HP", defaultFont);
             damageButton = damageObj.GetComponent<Button>();
             damageButton.onClick.AddListener(OnDamageClicked);
 
-            var healObj = CreateButton("HealButton", debugPanel.transform, new Vector2(78, 120), new Vector2(140, 60), new Color(0.2f, 0.75f, 0.35f, 1f), "+20 HP", defaultFont);
+            var healObj = CreateButton("HealButton", debugPanel.transform, new Vector2(78, 160), new Vector2(140, 55), new Color(0.2f, 0.75f, 0.35f, 1f), "+20 HP", defaultFont);
             healButton = healObj.GetComponent<Button>();
             healButton.onClick.AddListener(OnHealClicked);
 
-            var pointObj = CreateButton("PointButton", debugPanel.transform, new Vector2(230, 120), new Vector2(140, 60), new Color(0.15f, 0.65f, 0.95f, 1f), "+500 pt", defaultFont);
+            var pointObj = CreateButton("PointButton", debugPanel.transform, new Vector2(230, 160), new Vector2(140, 55), new Color(0.15f, 0.65f, 0.95f, 1f), "+500 pt", defaultFont);
             var pointBtn = pointObj.GetComponent<Button>();
             pointBtn.onClick.AddListener(OnAddPointClicked);
 
-            // 下段（出口開放・タイムセール・怒りMAX・ジャスト回避）
-            var exitObj = CreateButton("ExitButton", debugPanel.transform, new Vector2(-230, 45), new Vector2(140, 60), new Color(0.1f, 0.8f, 0.4f, 1f), "🚪 出口開放", defaultFont);
-            var exitBtn = exitObj.GetComponent<Button>();
-            exitBtn.onClick.AddListener(OnOpenExitClicked);
+            // 2段目: アイテム生成 & イベント (Y: 95)
+            var spawnItemObj = CreateButton("SpawnItemButton", debugPanel.transform, new Vector2(-230, 95), new Vector2(140, 55), new Color(1f, 0.75f, 0.1f, 1f), "🪙 コインx5", defaultFont);
+            var spawnItemBtn = spawnItemObj.GetComponent<Button>();
+            spawnItemBtn.onClick.AddListener(OnSpawnMoneyItemsClicked);
 
-            var saleObj = CreateButton("SaleButton", debugPanel.transform, new Vector2(-78, 45), new Vector2(140, 60), new Color(0.95f, 0.7f, 0.1f, 1f), "⚡ セール", defaultFont);
+            var saleObj = CreateButton("SaleButton", debugPanel.transform, new Vector2(-78, 95), new Vector2(140, 55), new Color(0.95f, 0.7f, 0.1f, 1f), "⚡ セール", defaultFont);
             var saleBtn = saleObj.GetComponent<Button>();
             saleBtn.onClick.AddListener(OnTriggerSaleClicked);
 
-            var rageObj = CreateButton("RageButton", debugPanel.transform, new Vector2(78, 45), new Vector2(140, 60), new Color(1f, 0.25f, 0.15f, 1f), "🔥 覚醒", defaultFont);
+            var rageObj = CreateButton("RageButton", debugPanel.transform, new Vector2(78, 95), new Vector2(140, 55), new Color(1f, 0.25f, 0.15f, 1f), "🔥 覚醒", defaultFont);
             var rageBtn = rageObj.GetComponent<Button>();
             rageBtn.onClick.AddListener(OnTriggerAwakeningClicked);
 
-            var dodgeObj = CreateButton("DodgeButton", debugPanel.transform, new Vector2(230, 45), new Vector2(140, 60), new Color(0.7f, 0.3f, 0.9f, 1f), "✨ 回避", defaultFont);
+            var dodgeObj = CreateButton("DodgeButton", debugPanel.transform, new Vector2(230, 95), new Vector2(140, 60), new Color(0.7f, 0.3f, 0.9f, 1f), "✨ 回避", defaultFont);
             var dodgeBtn = dodgeObj.GetComponent<Button>();
             dodgeBtn.onClick.AddListener(OnJustDodgeClicked);
+
+            // 3段目: 非常口即時開放 (Y: 30)
+            var exitObj = CreateButton("ExitButton", debugPanel.transform, new Vector2(0, 30), new Vector2(280, 55), new Color(0.1f, 0.8f, 0.4f, 1f), "🚪 出口即時開放", defaultFont);
+            var exitBtn = exitObj.GetComponent<Button>();
+            exitBtn.onClick.AddListener(OnOpenExitClicked);
 
             debugPanel.SetActive(showOnStart);
         }
@@ -323,6 +348,62 @@ namespace Runner
                 GameHUDView.Instance.RageGaugeHUD.TriggerAwakening(10f);
                 DebugLogger.Log("[GameDebugHUD] デバッグ操作: 怒りMAX・覚醒モードを発動しました(10秒)。");
             }
+        }
+
+        private async void OnSpawnMoneyItemsClicked()
+        {
+            var player = PlayerController.Instance;
+            if (player == null)
+            {
+                DebugLogger.Log("[GameDebugHUD] プレイヤーが存在しないためアイテムを生成できません。");
+                return;
+            }
+
+            var playerPos = player.transform.position;
+            int count = 5;
+
+            for (int i = 0; i < count; i++)
+            {
+                float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+                float dist = UnityEngine.Random.Range(2.5f, 4.5f);
+                var spawnPos = playerPos + new Vector3(Mathf.Cos(angle) * dist, Mathf.Sin(angle) * dist, 0f);
+
+                try
+                {
+                    if (addressableLoader != null)
+                    {
+                        var itemObj = await addressableLoader.LoadAsync(MoneyItemAddress, System.Threading.CancellationToken.None);
+                        if (itemObj != null)
+                        {
+                            itemObj.transform.position = spawnPos;
+                            continue;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[GameDebugHUD] Addressables ('{MoneyItemAddress}') ロード失敗: {ex.Message}");
+                }
+
+                // フォールバック生成（Addressables未準備時）
+#if UNITY_EDITOR
+                var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Runner/Prefabs/MoneyItem.prefab");
+                if (prefab != null)
+                {
+                    Instantiate(prefab, spawnPos, Quaternion.identity);
+                    continue;
+                }
+#endif
+                var moneyObj = new GameObject("MoneyItem_Fallback");
+                moneyObj.transform.position = spawnPos;
+                var col = moneyObj.AddComponent<CircleCollider2D>();
+                col.isTrigger = true;
+                col.radius = 0.35f;
+                var moneyComp = moneyObj.AddComponent<MoneyItem>();
+                moneyComp.Setup(50);
+            }
+
+            DebugLogger.Log($"[GameDebugHUD] Addressables ('{MoneyItemAddress}') からプレイヤー周辺にコインアイテムを {count} 個生成しました。");
         }
 
         private void OnJustDodgeClicked()

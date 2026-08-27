@@ -13,7 +13,7 @@ namespace Runner
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CircleCollider2D))]
     [DisallowMultipleComponent]
-    public sealed class PlayerController : MonoBehaviour, IMovable, IAttacker, IDamageable, IHealable
+    public sealed class PlayerController : MonoBehaviour, IMovable, IAttacker, IDamageable, IHealable, IMoneyCollector
     {
         public static PlayerController Instance { get; private set; }
 
@@ -38,6 +38,15 @@ namespace Runner
         [SerializeField]
         private float attackInterval = 1.0f;
 
+        [Header("Item Magnet Settings")]
+        [Tooltip("周囲のアイテムを吸い込む範囲の半径(m)")]
+        [SerializeField]
+        private float magnetRadius = 3.5f;
+
+        [Tooltip("周囲のアイテムを検索する間隔(秒)")]
+        [SerializeField]
+        private float magnetCheckInterval = 0.05f;
+
         #endregion
 
         #region Private Fields
@@ -46,6 +55,10 @@ namespace Runner
         private Vector2 moveInput;
         private Vector2 facingDirection = Vector2.right;
         private float attackCooldownTimer;
+        private float magnetCheckTimer;
+
+        /// <summary>GC Alloc を発生させずに周囲のアイテムを取得するためのキャッシュバッファ</summary>
+        private readonly Collider2D[] itemColliderBuffer = new Collider2D[32];
 
         /// <summary>現在バインドされている入力コントローラー</summary>
         private InputController boundInputController;
@@ -113,6 +126,7 @@ namespace Runner
 
             UpdateVisuals();
             UpdateAnimation();
+            UpdateItemAttraction();
         }
 
         private void FixedUpdate()
@@ -267,6 +281,32 @@ namespace Runner
         public void Heal(int amount)
         {
             characterStatus?.Heal(amount);
+        }
+
+        #endregion
+
+        #region IMoneyCollector Implementation
+
+        public long CurrentMoney => GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null 
+            ? GameHUDView.Instance.PointStepHUD.CurrentPoint 
+            : 0;
+
+        public event Action<long> OnMoneyCollected;
+
+        /// <summary>
+        /// お金・ポイントを回収して加算する。
+        /// </summary>
+        /// <param name="amount">獲得金額/ポイント</param>
+        public void CollectMoney(long amount)
+        {
+            if (amount <= 0) return;
+
+            if (GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null)
+            {
+                GameHUDView.Instance.PointStepHUD.AddPoints(amount);
+            }
+
+            OnMoneyCollected?.Invoke(amount);
         }
 
         #endregion
@@ -426,6 +466,51 @@ namespace Runner
             characterAnimator?.PlayDie();
             OnDead?.Invoke();
             DebugLogger.Log("[PlayerController] プレイヤーが死亡しました。");
+        }
+
+        #endregion
+
+        #region Item Magnet Attraction
+
+        private static readonly ContactFilter2D ItemContactFilter = new ContactFilter2D
+        {
+            useTriggers = true
+        };
+
+        /// <summary>
+        /// プレイヤー周囲のアイテム（IAttractable）を検索し、自身に向かって吸い寄せを開始させる。
+        /// </summary>
+        private void UpdateItemAttraction()
+        {
+            if (magnetRadius <= 0f) return;
+
+            magnetCheckTimer -= Time.deltaTime;
+            if (magnetCheckTimer > 0f) return;
+            magnetCheckTimer = magnetCheckInterval;
+
+            // 最新の Unity 物理 API（ContactFilter2D によるゼロGC検出）
+            int hitCount = Physics2D.OverlapCircle(transform.position, magnetRadius, ItemContactFilter, itemColliderBuffer);
+            for (int i = 0; i < hitCount; i++)
+            {
+                var hit = itemColliderBuffer[i];
+                if (hit == null) continue;
+
+                var attractable = hit.GetComponent<IAttractable>();
+                if (attractable != null && !attractable.IsAttracted)
+                {
+                    // プレイヤー自身（transform）を渡して吸い込みを開始
+                    attractable.AttractTo(transform);
+                }
+            }
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (magnetRadius > 0f)
+            {
+                Gizmos.color = new Color(0f, 0.9f, 1f, 0.35f);
+                Gizmos.DrawWireSphere(transform.position, magnetRadius);
+            }
         }
 
         #endregion
