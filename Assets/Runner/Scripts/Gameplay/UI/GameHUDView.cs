@@ -97,12 +97,6 @@ namespace Runner
                 pointStepHUD.OnDistanceMoved(distance);
             }
 
-            // 怒りゲージの上昇（逃げることで徐々に蓄積）
-            if (rageGaugeHUD != null)
-            {
-                rageGaugeHUD.AddRage(distance * 1.5f);
-            }
-
             // 一定ポイント到達によるタイムセール通知のトリガー判定
             if (pointStepHUD != null && pointStepHUD.CurrentPoint >= nextSaleTriggerPoint)
             {
