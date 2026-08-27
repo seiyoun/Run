@@ -7,6 +7,7 @@
 
 #if SANDBOX || UNITY_EDITOR
 using System;
+using Shiyuan.Foundation.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -67,55 +68,69 @@ namespace Runner
             var defaultFont = TMP_Settings.defaultFontAsset;
 
             // 1. 開閉トグルボタン（右下）
-            var toggleObj = CreateUIObject("ToggleButton", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-75, 45), new Vector2(110, 45));
+            var toggleObj = CreateUIObject("ToggleButton", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-95, 55), new Vector2(160, 60));
             var toggleImg = toggleObj.AddComponent<Image>();
-            toggleImg.color = new Color(0.2f, 0.2f, 0.35f, 0.85f);
+            toggleImg.color = new Color(0.2f, 0.2f, 0.35f, 0.9f);
             toggleButton = toggleObj.AddComponent<Button>();
             toggleButton.onClick.AddListener(TogglePanel);
 
             var toggleTextObj = CreateUIObject("Text", toggleObj.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             var toggleTMP = toggleTextObj.AddComponent<TextMeshProUGUI>();
             if (defaultFont != null) toggleTMP.font = defaultFont;
-            toggleTMP.text = "Debug UI";
-            toggleTMP.fontSize = 16;
+            toggleTMP.text = "🔧 Debug UI";
+            toggleTMP.fontSize = 22;
             toggleTMP.fontStyle = FontStyles.Bold;
             toggleTMP.alignment = TextAlignmentOptions.Center;
             toggleTMP.color = Color.white;
 
             // 2. メインパネル（右下トグルボタンの上）
-            debugPanel = CreateUIObject("DebugPanel", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-240, 270), new Vector2(460, 380));
+            debugPanel = CreateUIObject("DebugPanel", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-335, 430), new Vector2(650, 680));
             var panelImg = debugPanel.AddComponent<Image>();
-            panelImg.color = new Color(0.05f, 0.05f, 0.08f, 0.85f);
+            panelImg.color = new Color(0.05f, 0.05f, 0.08f, 0.92f);
 
             // 3. ステータステキスト
-            var statusObj = CreateUIObject("StatusText", debugPanel.transform, new Vector2(0, 0.3f), Vector2.one, Vector2.zero, new Vector2(-30, -20));
+            var statusObj = CreateUIObject("StatusText", debugPanel.transform, new Vector2(0, 0.32f), Vector2.one, Vector2.zero, new Vector2(-30, -20));
             statusText = statusObj.AddComponent<TextMeshProUGUI>();
             if (defaultFont != null) statusText.font = defaultFont;
             statusText.text = "[DEBUG HUD] Initializing...";
-            statusText.fontSize = 19;
+            statusText.fontSize = 24;
             statusText.alignment = TextAlignmentOptions.TopLeft;
             statusText.color = Color.white;
 
-            // 4. アクションボタン群（Attack / -10 HP / +20 HP / +5 EXP）
-            // Attack ボタン
-            var attackObj = CreateButton("AttackButton", debugPanel.transform, new Vector2(-165, 45), new Vector2(100, 48), new Color(0.85f, 0.25f, 0.25f, 1f), "Attack", defaultFont);
+            // 4. アクションボタン群（2列・2段グリッド）
+            // 上段
+            var attackObj = CreateButton("AttackButton", debugPanel.transform, new Vector2(-230, 120), new Vector2(140, 60), new Color(0.85f, 0.25f, 0.25f, 1f), "Attack", defaultFont);
             attackButton = attackObj.GetComponent<Button>();
             attackButton.onClick.AddListener(OnAttackClicked);
 
-            // Damage ボタン (-10 HP)
-            var damageObj = CreateButton("DamageButton", debugPanel.transform, new Vector2(-55, 45), new Vector2(100, 48), new Color(0.9f, 0.55f, 0.15f, 1f), "-10 HP", defaultFont);
+            var damageObj = CreateButton("DamageButton", debugPanel.transform, new Vector2(-78, 120), new Vector2(140, 60), new Color(0.9f, 0.55f, 0.15f, 1f), "-10 HP", defaultFont);
             damageButton = damageObj.GetComponent<Button>();
             damageButton.onClick.AddListener(OnDamageClicked);
 
-            // Heal ボタン (+20 HP)
-            var healObj = CreateButton("HealButton", debugPanel.transform, new Vector2(55, 45), new Vector2(100, 48), new Color(0.2f, 0.75f, 0.35f, 1f), "+20 HP", defaultFont);
+            var healObj = CreateButton("HealButton", debugPanel.transform, new Vector2(78, 120), new Vector2(140, 60), new Color(0.2f, 0.75f, 0.35f, 1f), "+20 HP", defaultFont);
             healButton = healObj.GetComponent<Button>();
             healButton.onClick.AddListener(OnHealClicked);
 
-            // EXP ボタン (+5 EXP)
-            var expObj = CreateButton("ExpButton", debugPanel.transform, new Vector2(165, 45), new Vector2(100, 48), new Color(0.15f, 0.65f, 0.95f, 1f), "+5 EXP", defaultFont);
-            expButton = expObj.GetComponent<Button>();
-            expButton.onClick.AddListener(OnExpClicked);
+            var pointObj = CreateButton("PointButton", debugPanel.transform, new Vector2(230, 120), new Vector2(140, 60), new Color(0.15f, 0.65f, 0.95f, 1f), "+500 pt", defaultFont);
+            var pointBtn = pointObj.GetComponent<Button>();
+            pointBtn.onClick.AddListener(OnAddPointClicked);
+
+            // 下段（出口開放・タイムセール・怒りMAX・ジャスト回避）
+            var exitObj = CreateButton("ExitButton", debugPanel.transform, new Vector2(-230, 45), new Vector2(140, 60), new Color(0.1f, 0.8f, 0.4f, 1f), "🚪 出口開放", defaultFont);
+            var exitBtn = exitObj.GetComponent<Button>();
+            exitBtn.onClick.AddListener(OnOpenExitClicked);
+
+            var saleObj = CreateButton("SaleButton", debugPanel.transform, new Vector2(-78, 45), new Vector2(140, 60), new Color(0.95f, 0.7f, 0.1f, 1f), "⚡ セール", defaultFont);
+            var saleBtn = saleObj.GetComponent<Button>();
+            saleBtn.onClick.AddListener(OnTriggerSaleClicked);
+
+            var rageObj = CreateButton("RageButton", debugPanel.transform, new Vector2(78, 45), new Vector2(140, 60), new Color(1f, 0.25f, 0.15f, 1f), "🔥 覚醒", defaultFont);
+            var rageBtn = rageObj.GetComponent<Button>();
+            rageBtn.onClick.AddListener(OnTriggerAwakeningClicked);
+
+            var dodgeObj = CreateButton("DodgeButton", debugPanel.transform, new Vector2(230, 45), new Vector2(140, 60), new Color(0.7f, 0.3f, 0.9f, 1f), "✨ 回避", defaultFont);
+            var dodgeBtn = dodgeObj.GetComponent<Button>();
+            dodgeBtn.onClick.AddListener(OnJustDodgeClicked);
 
             debugPanel.SetActive(showOnStart);
         }
@@ -145,7 +160,7 @@ namespace Runner
             var tmp = textObj.AddComponent<TextMeshProUGUI>();
             if (font != null) tmp.font = font;
             tmp.text = label;
-            tmp.fontSize = 18;
+            tmp.fontSize = 22;
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = Color.white;
@@ -275,6 +290,51 @@ namespace Runner
             if (player != null && player.Experience != null)
             {
                 player.Experience.AddExp(5);
+            }
+        }
+
+        private void OnAddPointClicked()
+        {
+            if (GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null)
+            {
+                GameHUDView.Instance.PointStepHUD.AddPoints(500);
+            }
+        }
+
+        private void OnOpenExitClicked()
+        {
+            if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
+            {
+                GameHUDView.Instance.EscapeTimerHUD.UnlockExit();
+                DebugLogger.Log("[GameDebugHUD] デバッグ操作: 非常口を即時開放しました。");
+            }
+        }
+
+        private void OnTriggerSaleClicked()
+        {
+            if (GameHUDView.Instance != null)
+            {
+                GameHUDView.Instance.TriggerSaleNotification();
+                DebugLogger.Log("[GameDebugHUD] デバッグ操作: タイムセール通知を発火しました。");
+            }
+        }
+
+        private void OnTriggerAwakeningClicked()
+        {
+            if (GameHUDView.Instance != null && GameHUDView.Instance.RageGaugeHUD != null)
+            {
+                GameHUDView.Instance.RageGaugeHUD.SetRage(100f, 100f, true);
+                GameHUDView.Instance.RageGaugeHUD.TriggerAwakening(10f);
+                DebugLogger.Log("[GameDebugHUD] デバッグ操作: 怒りMAX・覚醒モードを発動しました(10秒)。");
+            }
+        }
+
+        private void OnJustDodgeClicked()
+        {
+            if (GameHUDView.Instance != null)
+            {
+                GameHUDView.Instance.OnJustDodge();
+                DebugLogger.Log("[GameDebugHUD] デバッグ操作: ジャスト回避演出をトリガーしました。");
             }
         }
     }
