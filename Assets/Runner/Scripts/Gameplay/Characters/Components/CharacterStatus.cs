@@ -15,7 +15,7 @@ namespace Runner
     /// 同一 GameObject 内の ICharacterVisual / ICharacterAnimator と自動連携して被弾演出を再生します。
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CharacterStatus : MonoBehaviour, ICharacterStatus
+    public sealed class CharacterStatus : MonoBehaviour, ICharacterStatus, IDamageable, IHealable
     {
         [Header("HP Settings")]
         [Tooltip("最大HP")]

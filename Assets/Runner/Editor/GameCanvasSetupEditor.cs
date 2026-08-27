@@ -18,6 +18,7 @@ namespace Runner.Editor
     {
         private const string GameScenePath = "Assets/Runner/Scenes/Game.unity";
         private const string FontAssetPath = "Assets/Runner/Fonts/NotoSansJP_SDF.asset";
+        private const string SpritePath = "Assets/Runner/Sprites/WhiteSquare.png";
 
         [MenuItem("Tools/Runner/Setup GameCanvas HUD in Scene")]
         public static void SetupGameCanvasHUD()
@@ -26,6 +27,20 @@ namespace Runner.Editor
             if (currentScene.path != GameScenePath)
             {
                 EditorSceneManager.OpenScene(GameScenePath);
+            }
+
+            // 0. スプライトのインポート設定確認
+            var importer = AssetImporter.GetAtPath(SpritePath) as TextureImporter;
+            if (importer != null && importer.textureType != TextureImporterType.Sprite)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.SaveAndReimport();
+            }
+
+            var whiteSprite = AssetDatabase.LoadAssetAtPath<Sprite>(SpritePath);
+            if (whiteSprite == null)
+            {
+                whiteSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
             }
 
             var defaultFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);
@@ -178,24 +193,30 @@ namespace Runner.Editor
             tSo.FindProperty("exitAlertText").objectReferenceValue = alertTmp;
             tSo.ApplyModifiedProperties();
 
-            // --- C. RageGaugeHUD (画面下部) ---
+            // --- C. RageGaugeHUD (画面下部 HPバー同様の左から伸びるプログレスバー) ---
             var rageObj = CreateUIObject("RageGaugeHUD", canvasRoot, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 75), new Vector2(680, 65));
             var rageBg = rageObj.AddComponent<Image>();
+            rageBg.sprite = whiteSprite;
             rageBg.color = new Color(0.1f, 0.08f, 0.08f, 0.85f);
             var rageComp = rageObj.AddComponent<RageGaugeHUD>();
 
+            // Fill (左から右へ水平に伸びる)
             var rageFillObj = CreateUIObject("Fill", rageObj.transform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(-8, -8));
             var rageFillImg = rageFillObj.AddComponent<Image>();
+            rageFillImg.sprite = whiteSprite;
             rageFillImg.color = new Color(1f, 0.45f, 0.1f, 1f);
             rageFillImg.type = Image.Type.Filled;
             rageFillImg.fillMethod = Image.FillMethod.Horizontal;
+            rageFillImg.fillOrigin = (int)Image.OriginHorizontal.Left;
             rageFillImg.fillAmount = 0f;
 
+            // 覚醒エフェクトグループ
             var rageEffectObj = CreateUIObject("EffectGroup", rageObj.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             var rageEffectGroup = rageEffectObj.AddComponent<CanvasGroup>();
             var rageEffectImg = rageEffectObj.AddComponent<Image>();
             rageEffectImg.color = new Color(1f, 1f, 0.5f, 0.4f);
 
+            // テキスト
             var rageTextObj = CreateUIObject("RageText", rageObj.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             var rageTmp = rageTextObj.AddComponent<TextMeshProUGUI>();
             if (defaultFont != null) rageTmp.font = defaultFont;

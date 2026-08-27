@@ -24,6 +24,12 @@ namespace Runner
         [SerializeField] private TextMeshProUGUI statusLabelText;
         [SerializeField] private CanvasGroup awakeningEffectGroup;
 
+        [Header("Growth Settings")]
+        [Tooltip("時間経過によって自動で怒りを増やすか")]
+        [SerializeField] private bool increaseOverTime = true;
+        [Tooltip("1秒あたりの自動増加量（例: 2.5f で約40秒でMAX）")]
+        [SerializeField] private float ragePerSecond = 2.5f;
+
         [Header("Colors")]
         [SerializeField] private Color normalColor = new Color(1f, 0.45f, 0.1f, 1f); // 炎オレンジ
         [SerializeField] private Color fullColor = new Color(1f, 0.15f, 0.15f, 1f);   // 激怒レッド
@@ -86,6 +92,12 @@ namespace Runner
             }
             else
             {
+                // 時間経過による自動怒り蓄積
+                if (increaseOverTime && targetFillAmount < 1f)
+                {
+                    AddRage(ragePerSecond * Time.deltaTime);
+                }
+
                 // ゲージMAX時の点滅
                 if (targetFillAmount >= 1f && awakeningEffectGroup != null)
                 {
@@ -97,7 +109,7 @@ namespace Runner
                 }
             }
 
-            // ゲージの滑らかな Lerp アニメーション
+            // ゲージの滑らかな Lerp アニメーション（左から右に伸びる）
             if (fillImage != null)
             {
                 currentFillAmount = Mathf.Lerp(currentFillAmount, targetFillAmount, Time.unscaledDeltaTime * smoothSpeed);
