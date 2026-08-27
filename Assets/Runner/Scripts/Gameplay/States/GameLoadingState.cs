@@ -59,12 +59,11 @@ namespace Runner
             if (hud != null)
             {
                 DebugLogger.Log("[GameLoadingState] シーン上に設定済みの GameHUDView を検出・認識しました。");
-                return;
             }
-
-            // シーン上に存在しない場合のフォールバック生成
-            GameHUDView.Create();
-            DebugLogger.Log("[GameLoadingState] GameHUDView を ScreenSpace Canvas 上に生成・初期化しました。");
+            else
+            {
+                Debug.LogWarning("[GameLoadingState] シーン上に GameHUDView が見つかりません。GameCanvas に GameHUDView を設定してください。");
+            }
         }
 
 #if SANDBOX || UNITY_EDITOR
