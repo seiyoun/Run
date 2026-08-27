@@ -38,7 +38,7 @@ namespace Runner
         // -------------------------------------------------------------
         // 3. private インスタンス変数
         // -------------------------------------------------------------
-        private Attractable attractable;
+        private IAttractable attractable;
         private Vector3 spawnPosition;
         private float bobTimer;
         private bool isCollected;
@@ -52,7 +52,7 @@ namespace Runner
         // -------------------------------------------------------------
         public DropItemType ItemType => DropItemType.Money;
         public long MoneyAmount => moneyAmount;
-        public Attractable Attractable => attractable;
+        public IAttractable Attractable => attractable;
         public bool IsAttracted => attractable != null && attractable.IsAttracted;
 
         public event Action<MoneyItem, GameObject> OnItemCollected;
@@ -62,11 +62,11 @@ namespace Runner
         // -------------------------------------------------------------
 
         /// <summary>
-        /// Attractable コンポーネントの取得、イベント購読、および初期座標の記録を行う。
+        /// IAttractable コンポーネントの取得、イベント購読、および初期座標の記録を行う。
         /// </summary>
         private void Awake()
         {
-            attractable = GetComponent<Attractable>();
+            attractable = GetComponent<IAttractable>();
             spawnPosition = transform.position;
             bobTimer = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
 

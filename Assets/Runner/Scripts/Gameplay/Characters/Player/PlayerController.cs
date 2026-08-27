@@ -562,7 +562,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// プレイヤー周囲のアイテム（Attractable）を検知し、自身（transform）への吸引を開始させる。
+        /// プレイヤー周囲のアイテム（IAttractable）を検知し、自身（transform）への吸引を開始させる。
         /// </summary>
         private void UpdateItemAttraction()
         {
@@ -578,7 +578,7 @@ namespace Runner
                 var hit = itemColliderBuffer[i];
                 if (hit == null) continue;
 
-                var attractable = hit.GetComponent<Attractable>();
+                var attractable = hit.GetComponent<IAttractable>();
                 if (attractable != null && !attractable.IsAttracted)
                 {
                     attractable.AttractTo(transform);

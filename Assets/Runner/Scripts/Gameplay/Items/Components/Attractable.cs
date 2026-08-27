@@ -2,7 +2,7 @@
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
  * スクリプト説明: プレイヤーなどのターゲットに向かって加速度的に吸引・移動する独立した MonoBehaviour コンポーネント。
- *                アイテムにアタッチすることで、マグネット吸引機能を付与します。
+ *                IAttractable を実装し、アイテムにアタッチすることでマグネット吸引機能を付与します。
  */
 
 using System;
@@ -13,11 +13,11 @@ namespace Runner
 {
     /// <summary>
     /// アイテム等にアタッチして使用する吸引（マグネット移動）制御コンポーネント。
-    /// ターゲットが指定されると、2D 平面上でターゲットに向かって加速度的に追従移動します。
+    /// IAttractable を実装し、ターゲットが指定されると 2D 平面上でターゲットに向かって加速度的に追従移動します。
     /// </summary>
     [RequireComponent(typeof(Collider2D))]
     [DisallowMultipleComponent]
-    public sealed class Attractable : MonoBehaviour
+    public sealed class Attractable : MonoBehaviour, IAttractable
     {
         // -------------------------------------------------------------
         // 1. const / static フィールド
