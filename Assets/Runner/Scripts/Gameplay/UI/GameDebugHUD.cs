@@ -23,7 +23,7 @@ namespace Runner
     public sealed class GameDebugHUD : MonoBehaviour
     {
         [Header("Settings")]
-        [SerializeField] private bool showOnStart = true;
+        [SerializeField] private bool showOnStart = false;
         [SerializeField] private float updateInterval = 0.1f;
 
         private GameObject debugPanel;
@@ -66,8 +66,8 @@ namespace Runner
         {
             var defaultFont = TMP_Settings.defaultFontAsset;
 
-            // 1. 開閉トグルボタン（右上）
-            var toggleObj = CreateUIObject("ToggleButton", root, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-80, -45), new Vector2(120, 50));
+            // 1. 開閉トグルボタン（右下）
+            var toggleObj = CreateUIObject("ToggleButton", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-75, 45), new Vector2(110, 45));
             var toggleImg = toggleObj.AddComponent<Image>();
             toggleImg.color = new Color(0.2f, 0.2f, 0.35f, 0.85f);
             toggleButton = toggleObj.AddComponent<Button>();
@@ -77,13 +77,13 @@ namespace Runner
             var toggleTMP = toggleTextObj.AddComponent<TextMeshProUGUI>();
             if (defaultFont != null) toggleTMP.font = defaultFont;
             toggleTMP.text = "Debug UI";
-            toggleTMP.fontSize = 18;
+            toggleTMP.fontSize = 16;
             toggleTMP.fontStyle = FontStyles.Bold;
             toggleTMP.alignment = TextAlignmentOptions.Center;
             toggleTMP.color = Color.white;
 
-            // 2. メインパネル（左上）
-            debugPanel = CreateUIObject("DebugPanel", root, new Vector2(0, 1), new Vector2(0, 1), new Vector2(250, -220), new Vector2(460, 380));
+            // 2. メインパネル（右下トグルボタンの上）
+            debugPanel = CreateUIObject("DebugPanel", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-240, 270), new Vector2(460, 380));
             var panelImg = debugPanel.AddComponent<Image>();
             panelImg.color = new Color(0.05f, 0.05f, 0.08f, 0.85f);
 

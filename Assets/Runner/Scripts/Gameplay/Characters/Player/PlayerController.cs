@@ -131,6 +131,12 @@ namespace Runner
             var delta = moveInput * (moveSpeed * Time.fixedDeltaTime);
             rb.MovePosition(rb.position + delta);
             rb.linearVelocity = moveInput * moveSpeed;
+
+            // 移動によるポイ活・歩数・怒りゲージの蓄積
+            if (delta.sqrMagnitude > 0f && GameHUDView.Instance != null)
+            {
+                GameHUDView.Instance.OnPlayerMoved(delta.magnitude);
+            }
         }
 
         private void OnDestroy()

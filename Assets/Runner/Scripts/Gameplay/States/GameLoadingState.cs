@@ -38,8 +38,11 @@ namespace Runner
             // 2. プレイヤーのロード・生成
             await LoadPlayerAsync(cancellationToken);
 
+            // 3. ゲーム画面HUD（ポイ活・怒りゲージ・脱出タイマー・スマホ通販）のセットアップ
+            SetupGameHUD();
+
 #if SANDBOX || UNITY_EDITOR
-            // 3. SANDBOX 定義時（または Unity エディタ実行時）のみ DebugCanvas を動的ロード・生成
+            // 4. SANDBOX 定義時（または Unity エディタ実行時）のみ DebugCanvas を動的ロード・生成
             SpawnDebugHUD();
 #endif
 
@@ -48,6 +51,20 @@ namespace Runner
             {
                 await context.StateMachine.ChangeStateAsync(GamePlayState.Playing, cancellationToken);
             }
+        }
+
+        private void SetupGameHUD()
+        {
+            var hud = GameHUDView.Instance ?? Object.FindFirstObjectByType<GameHUDView>();
+            if (hud != null)
+            {
+                DebugLogger.Log("[GameLoadingState] シーン上に設定済みの GameHUDView を検出・認識しました。");
+                return;
+            }
+
+            // シーン上に存在しない場合のフォールバック生成
+            GameHUDView.Create();
+            DebugLogger.Log("[GameLoadingState] GameHUDView を ScreenSpace Canvas 上に生成・初期化しました。");
         }
 
 #if SANDBOX || UNITY_EDITOR
