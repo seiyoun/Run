@@ -29,7 +29,10 @@ namespace Runner
 
         private static readonly ContactFilter2D ItemContactFilter = new ContactFilter2D
         {
-            useTriggers = true
+            useTriggers = true,
+            useLayerMask = false,
+            useDepth = false,
+            useNormalAngle = false
         };
 
         // -------------------------------------------------------------
@@ -559,7 +562,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// プレイヤー周囲のアイテム（IAttractable）を検知し、自身（transform）への吸引を開始させる。
+        /// プレイヤー周囲のアイテム（Attractable）を検知し、自身（transform）への吸引を開始させる。
         /// </summary>
         private void UpdateItemAttraction()
         {
@@ -569,14 +572,13 @@ namespace Runner
             if (magnetCheckTimer > 0f) return;
             magnetCheckTimer = DefaultMagnetCheckInterval;
 
-            // 最新の Unity 物理 API（ContactFilter2D によるゼロGC検出）
             int hitCount = Physics2D.OverlapCircle(transform.position, magnetRadius, ItemContactFilter, itemColliderBuffer);
             for (int i = 0; i < hitCount; i++)
             {
                 var hit = itemColliderBuffer[i];
                 if (hit == null) continue;
 
-                var attractable = hit.GetComponent<IAttractable>();
+                var attractable = hit.GetComponent<Attractable>();
                 if (attractable != null && !attractable.IsAttracted)
                 {
                     attractable.AttractTo(transform);

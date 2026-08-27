@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8346463012426062088}
   - component: {fileID: 9096765904875141789}
   - component: {fileID: 1966744207796388567}
+  - component: {fileID: 5678409500740828058}
   - component: {fileID: 4778409500740828058}
   m_Layer: 0
   m_Name: MoneyItem
@@ -130,6 +131,22 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.35
+--- !u!114 &5678409500740828058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1157572041451883092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 101d00f0f10e9402f8c59cbb16150b10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Runner.Gameplay::Runner.Attractable
+  initialAttractSpeed: 6
+  attractAcceleration: 18
+  maxAttractSpeed: 25
+  arriveDistance: 0.35
 --- !u!114 &4778409500740828058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -143,9 +160,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Runner.Gameplay::Runner.MoneyItem
   moneyAmount: 50
-  initialAttractSpeed: 6
-  attractAcceleration: 18
-  maxAttractSpeed: 25
   enableBobbing: 1
   bobHeight: 0.12
   bobSpeed: 3.5

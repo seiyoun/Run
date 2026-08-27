@@ -98,16 +98,12 @@ namespace Runner
                         {
                             moneyItem.Setup(value);
                         }
-                        continue;
                     }
                 }
                 catch (Exception ex)
                 {
-                    DebugLogger.Log($"[ItemDebugSpawner] Addressables ('{MoneyItemAddress}') ロード失敗、フォールバックを試みます: {ex.Message}");
+                    DebugLogger.Error($"[ItemDebugSpawner] Addressables ('{MoneyItemAddress}') ロード失敗: {ex.Message}");
                 }
-
-                // フォールバック生成（Addressables未ビルド環境用）
-                SpawnFallbackItem(spawnPos, value);
             }
 
             DebugLogger.Log($"[ItemDebugSpawner] コインアイテムを {count} 個生成しました。Center: {center}");
@@ -116,35 +112,6 @@ namespace Runner
         // -------------------------------------------------------------
         // 9. private 関数 / 内部ヘルパー
         // -------------------------------------------------------------
-
-        /// <summary>
-        /// Addressables 未設定・未ビルド時用のフォールバック生成を行う。
-        /// </summary>
-        /// <param name="spawnPos">生成位置</param>
-        /// <param name="value">コインの金額</param>
-        private static void SpawnFallbackItem(Vector3 spawnPos, int value)
-        {
-#if UNITY_EDITOR
-            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Runner/Prefabs/MoneyItem.prefab");
-            if (prefab != null)
-            {
-                var instance = UnityEngine.Object.Instantiate(prefab, spawnPos, Quaternion.identity);
-                var moneyComp = instance.GetComponent<MoneyItem>();
-                if (moneyComp != null)
-                {
-                    moneyComp.Setup(value);
-                }
-                return;
-            }
-#endif
-            var moneyObj = new GameObject("MoneyItem_Fallback");
-            moneyObj.transform.position = spawnPos;
-            var col = moneyObj.AddComponent<CircleCollider2D>();
-            col.isTrigger = true;
-            col.radius = 0.35f;
-            var comp = moneyObj.AddComponent<MoneyItem>();
-            comp.Setup(value);
-        }
     }
 }
 #endif

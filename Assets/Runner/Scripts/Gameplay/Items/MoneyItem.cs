@@ -2,7 +2,7 @@
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
  * スクリプト説明: フィールド上にドロップするお金（コイン/ポイント）アイテム。
- *                プレイヤーに近づくと加速度的に吸い込まれ、接触時に所持金を増加させます。
+ *                Attractable コンポーネントと協調動作し、接触時に所持金を増加させます。
  */
 
 using System;
@@ -13,121 +13,138 @@ namespace Runner
 {
     /// <summary>
     /// お金・ポイントアイテムコンポーネント。
-    /// IItem（回収処理）および IAttractable（プレイヤー吸引処理）を実装します。
+    /// Attractable コンポーネント（MonoBehaviour）と協調動作し、非吸引時の浮遊演出および回収時の所持金加算処理を担当します。
     /// </summary>
     [RequireComponent(typeof(Collider2D))]
-    public sealed class MoneyItem : MonoBehaviour, IItem, IAttractable
+    [DisallowMultipleComponent]
+    public sealed class MoneyItem : MonoBehaviour, IItem
     {
+        // -------------------------------------------------------------
+        // 1. const / static フィールド
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 2. [SerializeField] シリアライズフィールド
+        // -------------------------------------------------------------
         [Header("Money Settings")]
         [Tooltip("獲得できるお金・ポイントの額")]
         [SerializeField] private long moneyAmount = 50;
-
-        [Header("Attract (Magnet) Settings")]
-        [Tooltip("吸い込み初速")]
-        [SerializeField] private float initialAttractSpeed = 6f;
-        [Tooltip("吸い込み加速度")]
-        [SerializeField] private float attractAcceleration = 18f;
-        [Tooltip("最大吸い込み速度")]
-        [SerializeField] private float maxAttractSpeed = 25f;
 
         [Header("Visual Bobbing Animation")]
         [SerializeField] private bool enableBobbing = true;
         [SerializeField] private float bobHeight = 0.15f;
         [SerializeField] private float bobSpeed = 3f;
 
-        private Transform targetTransform;
-        private bool isAttracted = false;
-        private float currentAttractSpeed = 0f;
+        // -------------------------------------------------------------
+        // 3. private インスタンス変数
+        // -------------------------------------------------------------
+        private Attractable attractable;
         private Vector3 spawnPosition;
-        private float bobTimer = 0f;
-        private bool isCollected = false;
+        private float bobTimer;
+        private bool isCollected;
 
+        // -------------------------------------------------------------
+        // 4. public インスタンス変数
+        // -------------------------------------------------------------
+
+        // -------------------------------------------------------------
+        // 5. プロパティ & イベント
+        // -------------------------------------------------------------
         public DropItemType ItemType => DropItemType.Money;
         public long MoneyAmount => moneyAmount;
-        public bool IsAttracted => isAttracted;
-        public Transform Target => targetTransform;
+        public Attractable Attractable => attractable;
+        public bool IsAttracted => attractable != null && attractable.IsAttracted;
 
         public event Action<MoneyItem, GameObject> OnItemCollected;
 
+        // -------------------------------------------------------------
+        // 6. Unity ライフサイクル関数
+        // -------------------------------------------------------------
+
+        /// <summary>
+        /// Attractable コンポーネントの取得、イベント購読、および初期座標の記録を行う。
+        /// </summary>
         private void Awake()
         {
+            attractable = GetComponent<Attractable>();
             spawnPosition = transform.position;
             bobTimer = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
 
-            // コライダーが Trigger になっていることを保証
             var col = GetComponent<Collider2D>();
             if (col != null)
             {
                 col.isTrigger = true;
             }
+
+            if (attractable != null)
+            {
+                attractable.OnAttractReached += HandleAttractReached;
+            }
         }
 
+        /// <summary>
+        /// 非吸引時のみふんわり浮遊アニメーションを実行する。
+        /// </summary>
         private void Update()
         {
             if (isCollected) return;
 
-            // 1. 吸引状態の移動処理 (AttractTo が呼ばれた時のみ実行)
-            if (isAttracted && targetTransform != null)
+            // 吸引中であれば浮遊処理は一切行わず Attractable に任せる
+            if (attractable != null && attractable.IsAttracted)
             {
-                currentAttractSpeed = Mathf.Min(currentAttractSpeed + (attractAcceleration * Time.deltaTime), maxAttractSpeed);
-                var dir = (targetTransform.position - transform.position).normalized;
-                transform.position += dir * (currentAttractSpeed * Time.deltaTime);
-
-                // ターゲットに極めて近接した場合は即時回収
-                if (Vector2.Distance(transform.position, targetTransform.position) < 0.35f)
-                {
-                    Collect(targetTransform.gameObject);
-                }
+                return;
             }
-            else
+
+            if (enableBobbing)
             {
-                // 2. 非吸引時: ふんわり浮遊アニメーション
-                if (enableBobbing)
-                {
-                    bobTimer += Time.deltaTime * bobSpeed;
-                    float offsetY = Mathf.Sin(bobTimer) * bobHeight;
-                    transform.position = spawnPosition + new Vector3(0f, offsetY, 0f);
-                }
+                bobTimer += Time.deltaTime * bobSpeed;
+                float offsetY = Mathf.Sin(bobTimer) * bobHeight;
+                transform.position = spawnPosition + new Vector3(0f, offsetY, 0f);
             }
         }
 
-        #region IAttractable Implementation
-
         /// <summary>
-        /// ターゲットへの吸い寄せを開始する。
+        /// プレイヤー等のコレクターとの接触時に自動回収を実行する。
         /// </summary>
-        public void AttractTo(Transform target, float initialSpeed = 0f)
+        /// <param name="other">接触したコライダー</param>
+        private void OnTriggerEnter2D(Collider2D other)
         {
-            if (target == null || isCollected) return;
+            if (isCollected) return;
 
-            targetTransform = target;
-            isAttracted = true;
-            currentAttractSpeed = initialSpeed > 0f ? initialSpeed : initialAttractSpeed;
+            if (other.CompareTag("Player") || other.GetComponent<PlayerController>() != null || other.GetComponent<IMoneyCollector>() != null)
+            {
+                Collect(other.gameObject);
+            }
         }
 
         /// <summary>
-        /// 吸引を中止する。
+        /// オブジェクト破棄時にイベント購読を解除する。
         /// </summary>
-        public void StopAttract()
+        private void OnDestroy()
         {
-            isAttracted = false;
-            targetTransform = null;
-            spawnPosition = transform.position;
+            if (attractable != null)
+            {
+                attractable.OnAttractReached -= HandleAttractReached;
+            }
         }
 
-        #endregion
+        // -------------------------------------------------------------
+        // 7. override 関数
+        // -------------------------------------------------------------
 
-        #region IItem Implementation
+        // -------------------------------------------------------------
+        // 8. public 関数
+        // -------------------------------------------------------------
 
         /// <summary>
-        /// プレイヤーによって回収された際の処理。
+        /// プレイヤーによって回収された際の処理を実行し、GameObject を破棄する。
         /// </summary>
+        /// <param name="collector">回収したプレイヤー等の GameObject</param>
         public void Collect(GameObject collector)
         {
             if (isCollected) return;
             isCollected = true;
 
-            // お金の加算
             var moneyCollector = collector.GetComponent<IMoneyCollector>();
             if (moneyCollector != null)
             {
@@ -141,31 +158,32 @@ namespace Runner
             DebugLogger.Log($"[MoneyItem] コイン獲得！ +¥{moneyAmount} pt");
 
             OnItemCollected?.Invoke(this, collector);
-
-            // 回収演出・破棄
             Destroy(gameObject);
         }
 
-        #endregion
-
-        private void OnTriggerEnter2D(Collider2D other)
-        {
-            if (isCollected) return;
-
-            // プレイヤーとの接触判定
-            if (other.CompareTag("Player") || other.GetComponent<PlayerController>() != null || other.GetComponent<IMoneyCollector>() != null)
-            {
-                Collect(other.gameObject);
-            }
-        }
-
         /// <summary>
-        /// アイテム金額・初期パラメータを設定する。
+        /// アイテム金額を設定する。
         /// </summary>
+        /// <param name="amount">獲得金額</param>
         public void Setup(long amount)
         {
             moneyAmount = Math.Max(1, amount);
         }
+
+        // -------------------------------------------------------------
+        // 9. private 関数 / 内部ヘルパー
+        // -------------------------------------------------------------
+
+        /// <summary>
+        /// Attractable コンポーネントがターゲットへ到達した際のコールバックを処理する。
+        /// </summary>
+        /// <param name="target">到達先ターゲット</param>
+        private void HandleAttractReached(Transform target)
+        {
+            if (target != null)
+            {
+                Collect(target.gameObject);
+            }
+        }
     }
 }
-

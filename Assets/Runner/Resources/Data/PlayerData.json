@@ -1,0 +1,11 @@
+{
+  "characterName": "Hero",
+  "maxHp": 100,
+  "moveSpeed": 6.0,
+  "attackPower": 10,
+  "attackInterval": 1.0,
+  "magnetRadius": 3.5,
+  "stepDistanceThreshold": 0.65,
+  "pointsPerStep": 2
+}
+
