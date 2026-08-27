@@ -59,9 +59,6 @@ namespace Runner
         /// <summary>キャラクターのステータス（HP・被ダメージ・回復）管理インターフェース</summary>
         private ICharacterStatus characterStatus;
 
-        /// <summary>プレイヤーの経験値・レベル管理コンポーネント</summary>
-        private PlayerExperience playerExperience;
-
         /// <summary>適用中のプレイヤーパラメータデータ</summary>
         private PlayerData currentPlayerData;
 
@@ -73,7 +70,6 @@ namespace Runner
         public ICharacterVisual CharacterVisual => characterVisual;
         public ICharacterAnimator CharacterAnimator => characterAnimator;
         public ICharacterStatus Status => characterStatus;
-        public PlayerExperience Experience => playerExperience;
 
         #endregion
 
@@ -374,12 +370,6 @@ namespace Runner
                 status = gameObject.AddComponent<CharacterStatus>();
             }
             SetStatus(status);
-
-            playerExperience = GetComponent<PlayerExperience>();
-            if (playerExperience == null)
-            {
-                playerExperience = gameObject.AddComponent<PlayerExperience>();
-            }
         }
 
         private void UpdateVisuals()

@@ -33,7 +33,7 @@ namespace Runner
         private Button attackButton;
         private Button damageButton;
         private Button healButton;
-        private Button expButton;
+        private Button pointButton;
 
         private float nextUpdateTime;
         private float fpsTimer;
@@ -224,14 +224,18 @@ namespace Runner
             var speed = player.MoveSpeed;
             var status = player.Status;
             var animator = player.CharacterAnimator;
-            var exp = player.Experience;
 
             var hpText = status != null 
                 ? $"<color=#00FF88>{status.CurrentHp}</color> / {status.MaxHp} (Dead: {status.IsDead})" 
                 : "N/A";
 
-            var expInfoText = exp != null 
-                ? $"Lv.<color=#FFFF00>{exp.CurrentLevel}</color> (<color=#00D4FF>{exp.CurrentExp}</color> / {exp.RequiredExp})" 
+            var hud = GameHUDView.Instance;
+            var pointInfoText = hud != null && hud.PointStepHUD != null 
+                ? $"¥<color=#FFD700>{hud.PointStepHUD.CurrentPoint:N0}</color> pt | <color=#00D4FF>{hud.PointStepHUD.CurrentSteps}</color> 歩" 
+                : "N/A";
+
+            var rageInfoText = hud != null && hud.RageGaugeHUD != null 
+                ? $"<color=#FF5522>{hud.RageGaugeHUD.CurrentRage:F0}</color>% (Awake: {hud.RageGaugeHUD.IsAwakened})" 
                 : "N/A";
 
             var animStateText = animator != null 
@@ -245,7 +249,8 @@ namespace Runner
                 $"<b>Position:</b> ({pos.x:F2}, {pos.y:F2})\n" +
                 $"<b>Input:</b> ({input.x:F2}, {input.y:F2}) | Speed: {speed:F1}\n" +
                 $"<b>HP:</b> {hpText}\n" +
-                $"<b>EXP:</b> {expInfoText}\n" +
+                $"<b>ポイ活:</b> {pointInfoText}\n" +
+                $"<b>怒り:</b> {rageInfoText}\n" +
                 $"<b>Anim State:</b> {animStateText}";
         }
 
@@ -281,15 +286,6 @@ namespace Runner
             if (player != null && player.Status != null)
             {
                 player.Status.Heal(20);
-            }
-        }
-
-        private void OnExpClicked()
-        {
-            var player = PlayerController.Instance;
-            if (player != null && player.Experience != null)
-            {
-                player.Experience.AddExp(5);
             }
         }
 
