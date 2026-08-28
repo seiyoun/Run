@@ -6,5 +6,8 @@
   "attackInterval": 1.0,
   "magnetRadius": 3.5,
   "stepDistanceThreshold": 0.65,
-  "pointsPerStep": 2
+  "pointsPerStep": 2,
+  "maxRage": 100.0,
+  "rageGainRate": 10.0,
+  "rageDecayRate": 5.0
 }

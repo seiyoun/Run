@@ -41,6 +41,10 @@ namespace Runner
         private float stepDistanceThreshold;
         private long pointsPerStep;
         private long currentMoney;
+        private float currentRage;
+        private float maxRage;
+        private float rageGainRate;
+        private float rageDecayRate;
         private readonly Collider2D[] itemColliderBuffer = new Collider2D[32];
         private InputController boundInputController;
         private ICharacterVisual characterVisual;
@@ -100,7 +104,21 @@ namespace Runner
         public float TotalDistanceMoved => totalDistanceMoved;
         public long CurrentMoney => currentMoney;
 
-        // イベント
+        /// <summary>現在の怒りゲージ値</summary>
+        public float CurrentRage => currentRage;
+
+        /// <summary>最大怒りゲージ値</summary>
+        public float MaxRage => maxRage;
+
+        /// <summary>怒りゲージの蓄積割合 (0.0 〜 1.0)</summary>
+        public float RageRatio => maxRage > 0f ? Mathf.Clamp01(currentRage / maxRage) : 0f;
+
+        /// <summary>怒りゲージの溜まる速度（1秒あたり）</summary>
+        public float RageGainRate => rageGainRate;
+
+        /// <summary>怒りゲージの減る速度（1秒あたり）</summary>
+        public float RageDecayRate => rageDecayRate;
+
         public event Action OnAttack;
         public event Action<int> OnTakeDamage;
         public event Action OnDead;
@@ -108,6 +126,7 @@ namespace Runner
         public event Action<int> OnStepsChanged;
         public event Action<float> OnDistanceMoved;
         public event Action<long> OnMoneyCollected;
+        public event Action<float, float> OnRageChanged;
         /// <summary>
         /// シングルトンの初期化、物理コンポーネントの設定、およびパラメータのロードを行う。
         /// </summary>
@@ -409,6 +428,11 @@ namespace Runner
             magnetRadius = data.magnetRadius;
             stepDistanceThreshold = data.stepDistanceThreshold;
             pointsPerStep = data.pointsPerStep;
+            maxRage = data.maxRage;
+            rageGainRate = data.rageGainRate;
+            rageDecayRate = data.rageDecayRate;
+            currentRage = 0f;
+            OnRageChanged?.Invoke(currentRage, maxRage);
 
             if (characterStatus != null)
             {
@@ -419,7 +443,41 @@ namespace Runner
             PlayerDebugRangeVisualizer.UpdateRadius(transform, magnetRadius);
 #endif
 
-            DebugLogger.Log($"[PlayerController] PlayerData 適用: Name={data.characterName}, MaxHP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m, StepDist={data.stepDistanceThreshold}m");
+            DebugLogger.Log($"[PlayerController] PlayerData 適用: Name={data.characterName}, MaxHP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m, Rage(Max={data.maxRage}, Gain={data.rageGainRate}/s, Decay={data.rageDecayRate}/s)");
+        }
+
+        /// <summary>
+        /// 怒りゲージを指定量加算し、変更イベントを発火する。
+        /// </summary>
+        /// <param name="amount">加算する怒り量</param>
+        public void AddRage(float amount)
+        {
+            if (amount <= 0f || maxRage <= 0f) return;
+
+            currentRage = Mathf.Clamp(currentRage + amount, 0f, maxRage);
+            OnRageChanged?.Invoke(currentRage, maxRage);
+        }
+
+        /// <summary>
+        /// 怒りゲージを指定量消費し、変更イベントを発火する。
+        /// </summary>
+        /// <param name="amount">消費する怒り量</param>
+        public void ConsumeRage(float amount)
+        {
+            if (amount <= 0f || maxRage <= 0f) return;
+
+            currentRage = Mathf.Clamp(currentRage - amount, 0f, maxRage);
+            OnRageChanged?.Invoke(currentRage, maxRage);
+        }
+
+        /// <summary>
+        /// 怒りゲージの現在値を直接設定する。
+        /// </summary>
+        /// <param name="value">設定する怒り値</param>
+        public void SetRage(float value)
+        {
+            currentRage = Mathf.Clamp(value, 0f, maxRage);
+            OnRageChanged?.Invoke(currentRage, maxRage);
         }
 
         /// <summary>

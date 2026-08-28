@@ -1,7 +1,7 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: プレイヤー専用のパラメータ（HP、移動速度など）を保持・JSONシリアライズするデータクラス。
+ * スクリプト説明: プレイヤー専用のパラメータ（HP、移動速度、怒りゲージなど）を保持・JSONシリアライズするデータクラス。
  */
 
 using System;
@@ -38,6 +38,15 @@ namespace Runner
 
         [Tooltip("1歩あたりに獲得するポイント額")]
         public long pointsPerStep = 2;
+
+        [Tooltip("最大怒りゲージ値")]
+        public float maxRage = 100f;
+
+        [Tooltip("怒りゲージの溜まる速度（1秒あたり）")]
+        public float rageGainRate = 10f;
+
+        [Tooltip("怒りゲージの減る速度（1秒あたり）")]
+        public float rageDecayRate = 5f;
 
         /// <summary>
         /// JSON 文字列から PlayerData を生成する。
