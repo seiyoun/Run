@@ -21,8 +21,13 @@ namespace Runner
     {
         private StateMachine<GamePlayState> stateMachine;
         private PlayerController playerInstance;
+
+        /// <summary>ゲームプレイ進行ステートマシン</summary>
         public StateMachine<GamePlayState> StateMachine => stateMachine;
+
+        /// <summary>現在シーン上に生成されているプレイヤーコントローラー</summary>
         public PlayerController Player => playerInstance;
+
         /// <summary>
         /// Game シーン初期化前の通信およびアセット読み込み待機処理。
         /// </summary>
@@ -42,13 +47,8 @@ namespace Runner
         {
             DebugLogger.Log("[GameScene] GameSceneLifecycle 初期化開始。ステートマシンをセットアップします。");
 
-            stateMachine = new StateMachine<GamePlayState>();
-
-            // 各ステートの登録
-            stateMachine.AddState(new GameLoadingState(this));
-            stateMachine.AddState(new GamePlayingState(this));
-            stateMachine.AddState(new GamePausedState(this));
-            stateMachine.AddState(new GameOverState(this));
+            // GamePlayStateFactory を用いてステートマシンを構築
+            stateMachine = GamePlayStateFactory.CreateStateMachine(this);
 
             // Loading ステートへ遷移してプレイヤー生成・ゲームプレイ準備を開始
             await stateMachine.ChangeStateAsync(GamePlayState.Loading, cancellationToken);
