@@ -27,18 +27,34 @@ namespace Runner
         [SerializeField] private EscapeTimerHUD escapeTimerHUD;
         [SerializeField] private SaleNotificationBanner saleNotificationBanner;
         [SerializeField] private SmartphoneShopModalView shopModalView;
+        [SerializeField] private VirtualJoystickView virtualJoystickView;
 
         [Header("Auto Sale Trigger Settings")]
         [Tooltip("何ポイント貯まるごとにタイムセール通知を発生させるか")]
         [SerializeField] private long saleTriggerPointInterval = 300;
         private long nextSaleTriggerPoint = 300;
 
+        /// <summary>ポイ活・歩数表示HUD</summary>
         public PointStepHUD PointStepHUD => pointStepHUD;
+
+        /// <summary>怒りゲージHUD</summary>
         public RageGaugeHUD RageGaugeHUD => rageGaugeHUD;
+
+        /// <summary>脱出タイマーHUD</summary>
         public EscapeTimerHUD EscapeTimerHUD => escapeTimerHUD;
+
+        /// <summary>タイムセール通知バナー</summary>
         public SaleNotificationBanner SaleBanner => saleNotificationBanner;
+
+        /// <summary>スマホ通販ショップモーダル</summary>
         public SmartphoneShopModalView ShopModal => shopModalView;
 
+        /// <summary>バーチャルジョイスティックUI</summary>
+        public VirtualJoystickView VirtualJoystick => virtualJoystickView;
+
+        /// <summary>
+        /// インスタンスの初期化およびバインドを行う。
+        /// </summary>
         private void Awake()
         {
             if (Instance == null)
@@ -51,12 +67,15 @@ namespace Runner
                 return;
             }
 
+            EnsureVirtualJoystick();
             SetupBindings();
         }
 
+        /// <summary>
+        /// 初回フレームでの初期バインドを行う。
+        /// </summary>
         private void Start()
         {
-            // 初期バインド
             if (shopModalView != null && pointStepHUD != null)
             {
                 shopModalView.BindPointHUD(pointStepHUD);
@@ -135,6 +154,9 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// セール通知バナーのクリックイベントを処理する。
+        /// </summary>
         private void HandleSaleBannerClicked()
         {
             if (shopModalView != null)
@@ -143,6 +165,10 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// ショップアイテム購入時の効果適用を処理する。
+        /// </summary>
+        /// <param name="item">購入されたアイテムデータ</param>
         private void HandleItemPurchased(ShopItemData item)
         {
             Debug.Log($"[GameHUDView] アイテム効果適用: {item.itemName} ({item.itemType})");
@@ -167,6 +193,17 @@ namespace Runner
                 case ShopItemType.BarrierShield:
                     // 各種アイテム効果
                     break;
+            }
+        }
+
+        /// <summary>
+        /// バーチャルジョイスティックUIの参照が未設定の場合に子階層から取得する。
+        /// </summary>
+        private void EnsureVirtualJoystick()
+        {
+            if (virtualJoystickView == null)
+            {
+                virtualJoystickView = GetComponentInChildren<VirtualJoystickView>(true);
             }
         }
     }

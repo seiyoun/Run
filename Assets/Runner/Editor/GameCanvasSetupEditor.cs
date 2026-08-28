@@ -19,6 +19,8 @@ namespace Runner.Editor
         private const string GameScenePath = "Assets/Runner/Scenes/Game.unity";
         private const string FontAssetPath = "Assets/Runner/Fonts/NotoSansJP_SDF.asset";
         private const string SpritePath = "Assets/Runner/Sprites/WhiteSquare.png";
+        private const string KnobSpritePath = "Assets/Runner/Sprites/JoystickKnob.png";
+        private const string RingBgSpritePath = "Assets/Runner/Sprites/JoystickRingBg.png";
 
         [MenuItem("Tools/Runner/Setup GameCanvas HUD in Scene")]
         public static void SetupGameCanvasHUD()
@@ -30,17 +32,26 @@ namespace Runner.Editor
             }
 
             // 0. スプライトのインポート設定確認
-            var importer = AssetImporter.GetAtPath(SpritePath) as TextureImporter;
-            if (importer != null && importer.textureType != TextureImporterType.Sprite)
-            {
-                importer.textureType = TextureImporterType.Sprite;
-                importer.SaveAndReimport();
-            }
+            EnsureSpriteImporter(SpritePath);
+            EnsureSpriteImporter(KnobSpritePath);
+            EnsureSpriteImporter(RingBgSpritePath);
 
             var whiteSprite = AssetDatabase.LoadAssetAtPath<Sprite>(SpritePath);
             if (whiteSprite == null)
             {
                 whiteSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            }
+
+            var knobSprite = AssetDatabase.LoadAssetAtPath<Sprite>(KnobSpritePath);
+            if (knobSprite == null)
+            {
+                knobSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+            }
+
+            var ringBgSprite = AssetDatabase.LoadAssetAtPath<Sprite>(RingBgSpritePath);
+            if (ringBgSprite == null)
+            {
+                ringBgSprite = knobSprite;
             }
 
             var defaultFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);
@@ -387,19 +398,80 @@ namespace Runner.Editor
             mSo.FindProperty("closeButton").objectReferenceValue = closeBtn;
             mSo.ApplyModifiedProperties();
 
-            // --- F. GameHUDView の SerializedField をバインド ---
+            // --- F. VirtualJoystick (フローティングタッチスティック) ---
+            var existingJoystick = canvasRoot.Find("VirtualJoystick");
+            if (existingJoystick != null)
+            {
+                Object.DestroyImmediate(existingJoystick.gameObject);
+            }
+
+            var joystickRootObj = CreateUIObject("VirtualJoystick", canvasRoot, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var touchZoneImg = joystickRootObj.AddComponent<Image>();
+            touchZoneImg.color = Color.clear;
+            touchZoneImg.raycastTarget = true;
+            var joystickView = joystickRootObj.AddComponent<VirtualJoystickView>();
+
+            var containerObj = CreateUIObject("JoystickContainer", joystickRootObj.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(150, 150));
+            var containerGroup = containerObj.AddComponent<CanvasGroup>();
+            containerGroup.alpha = 0f;
+
+            var bgObj = CreateUIObject("JoystickBackground", containerObj.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var bgImg = bgObj.AddComponent<Image>();
+            bgImg.sprite = ringBgSprite;
+            bgImg.color = new Color(1f, 1f, 1f, 0.85f);
+            bgImg.raycastTarget = false;
+
+            var handleObj = CreateUIObject("JoystickHandle", containerObj.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(65, 65));
+            var handleImg = handleObj.AddComponent<Image>();
+            handleImg.sprite = knobSprite;
+            handleImg.color = new Color(1f, 1f, 1f, 0.95f);
+            handleImg.raycastTarget = false;
+
+            joystickView.SetupReferences((RectTransform)containerObj.transform, bgImg, handleImg, touchZoneImg);
+
+            var jSo = new SerializedObject(joystickView);
+            jSo.FindProperty("joystickMode").enumValueIndex = (int)JoystickMode.Floating;
+            jSo.FindProperty("movementRange").floatValue = 50f;
+            jSo.FindProperty("containerRect").objectReferenceValue = (RectTransform)containerObj.transform;
+            jSo.FindProperty("backgroundImage").objectReferenceValue = bgImg;
+            jSo.FindProperty("handleImage").objectReferenceValue = handleImg;
+            jSo.FindProperty("touchZoneImage").objectReferenceValue = touchZoneImg;
+            jSo.ApplyModifiedProperties();
+
+            // VirtualJoystick は TouchZone を持つため、他のボタンUI（ショップ・バナー等）の邪魔にならないよう一番手前（描画最背面）に配置
+            joystickRootObj.transform.SetAsFirstSibling();
+
+            // --- G. GameHUDView の SerializedField をバインド ---
             hudSo.FindProperty("pointStepHUD").objectReferenceValue = pointStepComp;
             hudSo.FindProperty("rageGaugeHUD").objectReferenceValue = rageComp;
             hudSo.FindProperty("escapeTimerHUD").objectReferenceValue = timerComp;
             hudSo.FindProperty("saleNotificationBanner").objectReferenceValue = bannerComp;
             hudSo.FindProperty("shopModalView").objectReferenceValue = shopModal;
+            hudSo.FindProperty("virtualJoystickView").objectReferenceValue = joystickView;
             hudSo.ApplyModifiedProperties();
 
+            EditorUtility.SetDirty(joystickView);
+            EditorUtility.SetDirty(joystickRootObj);
             EditorUtility.SetDirty(targetCanvas.gameObject);
             EditorSceneManager.MarkSceneDirty(targetCanvas.gameObject.scene);
             EditorSceneManager.SaveScene(targetCanvas.gameObject.scene);
 
-            Debug.Log("[GameCanvasSetupEditor] GameCanvas への HUD オブジェクト配置・設定・保存が完了しました！");
+            Debug.Log("[GameCanvasSetupEditor] GameCanvas への HUD & VirtualJoystick オブジェクト配置・設定・保存が完了しました！");
+        }
+
+        private static void EnsureSpriteImporter(string assetPath)
+        {
+            if (!System.IO.File.Exists(assetPath)) return;
+
+            var importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer != null && (importer.textureType != TextureImporterType.Sprite || !importer.alphaIsTransparency))
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spritePixelsPerUnit = 100f;
+                importer.mipmapEnabled = false;
+                importer.alphaIsTransparency = true;
+                importer.SaveAndReimport();
+            }
         }
 
         private static GameObject CreateUIObject(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPos, Vector2 sizeDelta)

@@ -45,28 +45,43 @@ namespace Runner
 
         protected override bool ShouldDontDestroyOnLoad => false;
 
+        /// <summary>
+        /// シングルトンの初期化および Input Actions のセットアップを行う。
+        /// </summary>
         protected override void Awake()
         {
             base.Awake();
             SetupInputActions();
         }
 
+        /// <summary>
+        /// コンポーネント有効化時に入力アクションを有効化する。
+        /// </summary>
         private void OnEnable()
         {
             EnableActions();
         }
 
+        /// <summary>
+        /// コンポーネント無効化時に入力アクションを無効化する。
+        /// </summary>
         private void OnDisable()
         {
             DisableActions();
         }
 
+        /// <summary>
+        /// インスタンス破棄時に入力アクションのリソース解放を行う。
+        /// </summary>
         protected override void OnDestroy()
         {
             base.OnDestroy();
             DisposeActions();
         }
 
+        /// <summary>
+        /// Input Actions アセットの読み込みまたはフォールバック用アクションの構成を行う。
+        /// </summary>
         private void SetupInputActions()
         {
             if (inputActionsAsset != null)
@@ -98,6 +113,9 @@ namespace Runner
             EnableActions();
         }
 
+        /// <summary>
+        /// 登録されている入力アクションを有効化する。
+        /// </summary>
         private void EnableActions()
         {
             inputActionsAsset?.Enable();
@@ -105,12 +123,18 @@ namespace Runner
             moveAction?.Enable();
         }
 
+        /// <summary>
+        /// 登録されている入力アクションを無効化する。
+        /// </summary>
         private void DisableActions()
         {
             moveAction?.Disable();
             inputActionsAsset?.Disable();
         }
 
+        /// <summary>
+        /// 入力アクションのリソースを破棄する。
+        /// </summary>
         private void DisposeActions()
         {
             if (moveAction != null)
@@ -120,11 +144,14 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// 毎フレームの各入力ソースからの移動入力を監視・集約してイベントを発行する。
+        /// </summary>
         private void Update()
         {
             var rawInput = Vector2.zero;
 
-            // 1. Input Actions からの読み取り
+            // 1. Input Actions（および On-Screen Stick 経由）からの読み取り
             if (moveAction != null && moveAction.enabled)
             {
                 rawInput = moveAction.ReadValue<Vector2>();
@@ -157,39 +184,46 @@ namespace Runner
                 }
             }
 
-            // 4. モバイルタッチ / マウスドラッグ操作の合成
-            if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed)
+            // 4. モバイルタッチ / マウスドラッグ操作（Actionsからの入力が無い場合のフォールバック）
+            if (rawInput.sqrMagnitude < 0.01f)
             {
-                var touchPos = Touchscreen.current.primaryTouch.position.ReadValue();
-                if (!isTouching)
+                if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed)
                 {
-                    isTouching = true;
-                    touchStartPos = touchPos;
+                    var touchPos = Touchscreen.current.primaryTouch.position.ReadValue();
+                    if (!isTouching)
+                    {
+                        isTouching = true;
+                        touchStartPos = touchPos;
+                    }
+                    else
+                    {
+                        var delta = (touchPos - touchStartPos) / (Screen.dpi > 0 ? Screen.dpi * 0.5f : touchSensitivity);
+                        if (delta.sqrMagnitude > 0.04f)
+                        {
+                            rawInput = delta;
+                        }
+                    }
+                }
+                else if (Mouse.current != null && Mouse.current.leftButton.isPressed)
+                {
+                    var mousePos = Mouse.current.position.ReadValue();
+                    if (!isTouching)
+                    {
+                        isTouching = true;
+                        touchStartPos = mousePos;
+                    }
+                    else
+                    {
+                        var delta = (mousePos - touchStartPos) / touchSensitivity;
+                        if (delta.sqrMagnitude > 0.04f)
+                        {
+                            rawInput = delta;
+                        }
+                    }
                 }
                 else
                 {
-                    var delta = (touchPos - touchStartPos) / (Screen.dpi > 0 ? Screen.dpi * 0.5f : touchSensitivity);
-                    if (delta.sqrMagnitude > 0.04f)
-                    {
-                        rawInput += delta;
-                    }
-                }
-            }
-            else if (Mouse.current != null && Mouse.current.leftButton.isPressed)
-            {
-                var mousePos = Mouse.current.position.ReadValue();
-                if (!isTouching)
-                {
-                    isTouching = true;
-                    touchStartPos = mousePos;
-                }
-                else
-                {
-                    var delta = (mousePos - touchStartPos) / touchSensitivity;
-                    if (delta.sqrMagnitude > 0.04f)
-                    {
-                        rawInput += delta;
-                    }
+                    isTouching = false;
                 }
             }
             else
