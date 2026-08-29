@@ -14,20 +14,38 @@ namespace Runner
     [RequireComponent(typeof(SpriteRenderer))]
     public sealed class ArenaBackground : MonoBehaviour
     {
+        [Header("Arena Settings")]
+        [Tooltip("アリーナのサイズ")]
         [SerializeField]
         private Vector2 arenaSize = new(100f, 100f);
 
+        [Tooltip("グリッドの色A")]
         [SerializeField]
         private Color gridColorA = new(0.12f, 0.14f, 0.18f, 1f);
 
+        [Tooltip("グリッドの色B")]
         [SerializeField]
         private Color gridColorB = new(0.15f, 0.17f, 0.22f, 1f);
 
+        [Header("Spawn Points")]
+        [Tooltip("プレイヤーの初期生成位置Transform")]
+        [SerializeField]
+        private Transform playerSpawnPoint;
+
+        /// <summary>プレイヤーの初期生成位置Transform</summary>
+        public Transform PlayerSpawnPoint => playerSpawnPoint;
+
+        /// <summary>
+        /// コンポーネントの初期化時に背景グリッドをセットアップする。
+        /// </summary>
         private void Awake()
         {
             SetupBackground();
         }
 
+        /// <summary>
+        /// 背景テクスチャおよび SpriteRenderer の初期化と設定を行う。
+        /// </summary>
         private void SetupBackground()
         {
             var sr = GetComponent<SpriteRenderer>();

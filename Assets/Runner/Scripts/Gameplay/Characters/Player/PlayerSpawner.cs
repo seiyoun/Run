@@ -47,13 +47,15 @@ namespace Runner
             }
         }
         /// <summary>
-        /// Addressables からプレイヤーアセットをロードし、シーン上に生成する。
+        /// Addressables からプレイヤーアセットをロードし、指定された位置（または設定されたスポーン位置）に生成する。
         /// </summary>
+        /// <param name="customSpawnPoint">スポーン位置として使用する Transform（null の場合は本オブジェクトの spawnPoint または transform を使用）</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>生成された PlayerController インスタンス</returns>
-        public async Task<PlayerController> SpawnPlayerAsync(CancellationToken cancellationToken = default)
+        public async Task<PlayerController> SpawnPlayerAsync(Transform customSpawnPoint = null, CancellationToken cancellationToken = default)
         {
-            var spawnPos = spawnPoint != null ? spawnPoint.position : transform.position;
+            var targetPoint = customSpawnPoint != null ? customSpawnPoint : spawnPoint;
+            var spawnPos = targetPoint != null ? targetPoint.position : transform.position;
             GameObject playerObj = null;
 
             try
