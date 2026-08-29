@@ -19,27 +19,50 @@ namespace Runner
     public sealed class SaleNotificationBanner : MonoBehaviour
     {
         [Header("UI References")]
+        [Tooltip("バナー全体のRectTransform")]
         [SerializeField] private RectTransform bannerRoot;
+
+        [Tooltip("バナー全体のタップ判定ボタン")]
         [SerializeField] private Button bannerButton;
+
+        [Tooltip("セールタイトルテキスト")]
         [SerializeField] private TextMeshProUGUI titleText;
+
+        [Tooltip("セールメッセージテキスト")]
         [SerializeField] private TextMeshProUGUI messageText;
+
+        [Tooltip("セール終了カウントダウンテキスト")]
         [SerializeField] private TextMeshProUGUI timerText;
 
         [Header("Animation Settings")]
+        [Tooltip("スライドアニメーションの補間速度")]
         [SerializeField] private float slideSpeed = 8f;
-        [SerializeField] private float displayDuration = 15f;
+
+        [Tooltip("バナーの表示持続秒数（0以下の場合はタップされるまで無制限に常時表示）")]
+        [SerializeField] private float displayDuration = 0f;
+
+        [Tooltip("非表示時のアンカー座標")]
         [SerializeField] private Vector2 hiddenPosition = new Vector2(0, 180);
+
+        [Tooltip("表示時のアンカー座標")]
         [SerializeField] private Vector2 visiblePosition = new Vector2(0, -70);
 
-        private bool isShowing = false;
-        private float remainingDisplayTime = 0f;
+        private bool isShowing;
+        private float remainingDisplayTime;
         private Vector2 targetPosition;
 
+        /// <summary>バナーが表示中かどうか</summary>
         public bool IsShowing => isShowing;
 
+        /// <summary>バナーがタップされた際のコールバック</summary>
         public event Action OnBannerClicked;
+
+        /// <summary>バナー表示時間が満了した際のコールバック</summary>
         public event Action OnBannerExpired;
 
+        /// <summary>
+        /// コンポーネントの初期化を行う。
+        /// </summary>
         private void Awake()
         {
             if (bannerRoot == null) bannerRoot = (RectTransform)transform;
@@ -52,15 +75,16 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// 毎フレームのアニメーション補間とタイマー更新を行う。
+        /// </summary>
         private void Update()
         {
-            // 位置のスムーズ補間
             if (bannerRoot != null)
             {
                 bannerRoot.anchoredPosition = Vector2.Lerp(bannerRoot.anchoredPosition, targetPosition, Time.unscaledDeltaTime * slideSpeed);
             }
 
-            // 表示カウントダウン
             if (isShowing && remainingDisplayTime > 0f)
             {
                 remainingDisplayTime -= Time.unscaledDeltaTime;
@@ -78,20 +102,24 @@ namespace Runner
         }
 
         /// <summary>
-        /// タイムセール通知バナーを表示する。
+        /// アイテム入荷通知バナーを表示する。
         /// </summary>
-        /// <param name="duration">表示秒数</param>
+        /// <param name="duration">表示秒数（負数の場合はインスペクタ設定値、0以下の場合はタップされるまで無制限表示）</param>
         /// <param name="title">タイトル</param>
         /// <param name="message">メッセージ本文</param>
-        public void ShowBanner(float duration = 15f, string title = "【ゲリラタイムセール開催中！】", string message = "限定アイテム入荷！今すぐタップしてチェック ▶")
+        public void ShowBanner(float duration = -1f, string title = "【新着アイテム入荷！】", string message = "おすすめアイテムが入荷しました！タップしてチェック ▶")
         {
+            float actualDuration = duration >= 0f ? duration : displayDuration;
             isShowing = true;
-            remainingDisplayTime = duration;
+            remainingDisplayTime = actualDuration;
             targetPosition = visiblePosition;
 
             if (titleText != null) titleText.text = title;
             if (messageText != null) messageText.text = message;
-            if (timerText != null) timerText.text = $"終了まで {Mathf.CeilToInt(duration)}秒";
+            if (timerText != null)
+            {
+                timerText.text = actualDuration > 0f ? $"終了まで {Mathf.CeilToInt(actualDuration)}秒" : "タップして確認 ▶";
+            }
 
             gameObject.SetActive(true);
         }
@@ -106,12 +134,14 @@ namespace Runner
             targetPosition = hiddenPosition;
         }
 
-        private void HandleClick()
-        {
-            HideBanner();
-            OnBannerClicked?.Invoke();
-        }
-
+        /// <summary>
+        /// プロシージャルUI生成時に参照を一括設定する。
+        /// </summary>
+        /// <param name="root">バナールートRectTransform</param>
+        /// <param name="button">バナーボタン</param>
+        /// <param name="title">タイトルテキスト</param>
+        /// <param name="message">メッセージテキスト</param>
+        /// <param name="timer">タイマーテキスト</param>
         public void SetupReferences(RectTransform root, Button button, TextMeshProUGUI title, TextMeshProUGUI message, TextMeshProUGUI timer)
         {
             bannerRoot = root;
@@ -125,6 +155,15 @@ namespace Runner
                 bannerButton.onClick.RemoveAllListeners();
                 bannerButton.onClick.AddListener(HandleClick);
             }
+        }
+
+        /// <summary>
+        /// バナータップ時の内部処理を実行する。
+        /// </summary>
+        private void HandleClick()
+        {
+            HideBanner();
+            OnBannerClicked?.Invoke();
         }
     }
 }

@@ -22,15 +22,26 @@ namespace Runner
         public static GameHUDView Instance { get; private set; }
 
         [Header("Sub HUD Components")]
+        [Tooltip("ポイ活・歩数HUDコンポーネント")]
         [SerializeField] private PointStepHUD pointStepHUD;
+
+        [Tooltip("怒りゲージHUDコンポーネント")]
         [SerializeField] private RageGaugeHUD rageGaugeHUD;
+
+        [Tooltip("脱出タイマーHUDコンポーネント")]
         [SerializeField] private EscapeTimerHUD escapeTimerHUD;
+
+        [Tooltip("タイムセール通知バナーコンポーネント")]
         [SerializeField] private SaleNotificationBanner saleNotificationBanner;
+
+        [Tooltip("スマホ通販ショップモーダルコンポーネント")]
         [SerializeField] private SmartphoneShopModalView shopModalView;
+
+        [Tooltip("バーチャルジョイスティックUIコンポーネント")]
         [SerializeField] private VirtualJoystickView virtualJoystickView;
 
-        [Header("Auto Sale Trigger Settings")]
-        [Tooltip("何ポイント貯まるごとにタイムセール通知を発生させるか")]
+        [Header("Item Arrival Trigger Settings")]
+        [Tooltip("何ポイント貯まるごとにアイテム入荷通知を発生させるか")]
         [SerializeField] private long saleTriggerPointInterval = 300;
         private long nextSaleTriggerPoint = 300;
 
@@ -43,7 +54,7 @@ namespace Runner
         /// <summary>脱出タイマーHUD</summary>
         public EscapeTimerHUD EscapeTimerHUD => escapeTimerHUD;
 
-        /// <summary>タイムセール通知バナー</summary>
+        /// <summary>アイテム入荷通知バナー</summary>
         public SaleNotificationBanner SaleBanner => saleNotificationBanner;
 
         /// <summary>スマホ通販ショップモーダル</summary>
@@ -106,6 +117,7 @@ namespace Runner
         /// <summary>
         /// 移動による歩数加算およびポイント獲得を処理する。
         /// </summary>
+        /// <param name="distance">移動距離</param>
         public void OnPlayerMoved(float distance)
         {
             if (distance <= 0f) return;
@@ -117,24 +129,29 @@ namespace Runner
                 pointStepHUD.SetPoints(player.CurrentMoney);
             }
 
-            // 一定ポイント到達によるタイムセール通知のトリガー判定
+            // 一定ポイント到達によるアイテム入荷通知のトリガー判定
             if (pointStepHUD != null && pointStepHUD.CurrentPoint >= nextSaleTriggerPoint)
             {
-                TriggerSaleNotification();
+                TriggerItemArrivalNotification();
                 nextSaleTriggerPoint += saleTriggerPointInterval;
             }
         }
 
         /// <summary>
-        /// タイムセール通知を発火する。
+        /// アイテム入荷通知を発火する。
         /// </summary>
-        public void TriggerSaleNotification()
+        public void TriggerItemArrivalNotification()
         {
             if (saleNotificationBanner != null && !saleNotificationBanner.IsShowing)
             {
                 saleNotificationBanner.ShowBanner();
             }
         }
+
+        /// <summary>
+        /// アイテム入荷通知を発火する（後方互換エイリアス）。
+        /// </summary>
+        public void TriggerSaleNotification() => TriggerItemArrivalNotification();
 
         /// <summary>
         /// ジャスト回避成功時の処理

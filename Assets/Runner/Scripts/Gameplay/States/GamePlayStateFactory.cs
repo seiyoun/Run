@@ -23,7 +23,6 @@ namespace Runner
             var stateMachine = new StateMachine<GamePlayState>();
             stateMachine.AddState(new GameLoadingState(context));
             stateMachine.AddState(new GamePlayingState(context));
-            stateMachine.AddState(new GamePausedState(context));
             stateMachine.AddState(new GameOverState(context));
             return stateMachine;
         }

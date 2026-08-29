@@ -156,24 +156,41 @@ namespace Runner
         }
 
         /// <summary>
-        /// 毎フレームの攻撃クールダウン更新、見た目・アニメーション同期、およびアイテム吸引検知を行う。
+        /// ステートマシン（GamePlayingState）から毎フレーム呼び出されるメイン更新処理。
+        /// deltaTime が 0 の場合はポーズ状態となり、移動やタイマー更新を停止します。
         /// </summary>
-        private void Update()
+        /// <param name="deltaTime">フレーム経過時間（ポーズ時は0）</param>
+        public void OnUpdate(float deltaTime)
         {
+            if (deltaTime <= 0f)
+            {
+                if (rb != null)
+                {
+                    rb.linearVelocity = Vector2.zero;
+                }
+
+                if (characterAnimator != null)
+                {
+                    characterAnimator.PlayIdle();
+                }
+                return;
+            }
+
             if (attackCooldownTimer > 0f)
             {
-                attackCooldownTimer -= Time.deltaTime;
+                attackCooldownTimer -= deltaTime;
             }
 
             if (characterStatus != null && characterStatus.IsDead)
             {
                 moveInput = Vector2.zero;
+                if (rb != null) rb.linearVelocity = Vector2.zero;
                 return;
             }
 
-            UpdateVisuals();
+            UpdateVisuals(deltaTime);
             UpdateAnimation();
-            UpdateItemAttraction();
+            UpdateItemAttraction(deltaTime);
         }
 
         /// <summary>
@@ -540,12 +557,13 @@ namespace Runner
         /// <summary>
         /// 見た目の向きおよびスプライトの移動エフェクトを更新する。
         /// </summary>
-        private void UpdateVisuals()
+        /// <param name="deltaTime">フレーム経過時間</param>
+        private void UpdateVisuals(float deltaTime)
         {
             if (characterVisual == null) return;
 
             characterVisual.SetFacingDirection(facingDirection);
-            characterVisual.UpdateMovementVisuals(moveInput, moveSpeed, Time.deltaTime);
+            characterVisual.UpdateMovementVisuals(moveInput, moveSpeed, deltaTime);
         }
 
         /// <summary>
@@ -568,11 +586,12 @@ namespace Runner
         /// <summary>
         /// プレイヤー周囲のアイテム（IAttractable）を検知し、自身（transform）への吸引を開始させる。
         /// </summary>
-        private void UpdateItemAttraction()
+        /// <param name="deltaTime">フレーム経過時間</param>
+        private void UpdateItemAttraction(float deltaTime)
         {
             if (magnetRadius <= 0f) return;
 
-            magnetCheckTimer -= Time.deltaTime;
+            magnetCheckTimer -= deltaTime;
             if (magnetCheckTimer > 0f) return;
             magnetCheckTimer = DefaultMagnetCheckInterval;
 
