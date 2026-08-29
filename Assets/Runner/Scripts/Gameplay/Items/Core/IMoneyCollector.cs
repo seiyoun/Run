@@ -22,6 +22,11 @@ namespace Runner
         /// <summary>お金・ポイントを加算（収集）する</summary>
         /// <param name="amount">加算額</param>
         void CollectMoney(long amount);
+
+        /// <summary>お金・ポイントを消費する</summary>
+        /// <param name="amount">消費額</param>
+        /// <returns>消費に成功したかどうか</returns>
+        bool TryConsumeMoney(long amount);
     }
 }
 

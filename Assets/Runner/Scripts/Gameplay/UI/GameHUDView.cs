@@ -158,9 +158,15 @@ namespace Runner
         /// </summary>
         public void OnJustDodge()
         {
+            var player = PlayerController.Instance;
+            if (player != null)
+            {
+                player.CollectMoney(100);
+            }
+
             if (pointStepHUD != null)
             {
-                // ボーナスポイント獲得
+                // ボーナスポイント獲得演出
                 pointStepHUD.TriggerJustDodge(100);
             }
 

@@ -161,7 +161,10 @@ namespace Runner
         /// <param name="bonusPoints">獲得したボーナスポイント</param>
         public void TriggerJustDodge(int bonusPoints)
         {
-            AddPoints(bonusPoints);
+            if (PlayerController.Instance == null)
+            {
+                AddPoints(bonusPoints);
+            }
 
             if (justDodgePopupText != null)
             {

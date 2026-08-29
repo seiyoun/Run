@@ -403,7 +403,12 @@ namespace Runner
         /// </summary>
         private void OnAddPointClicked()
         {
-            if (GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null)
+            var player = PlayerController.Instance;
+            if (player != null)
+            {
+                player.CollectMoney(500);
+            }
+            else if (GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null)
             {
                 GameHUDView.Instance.PointStepHUD.AddPoints(500);
             }

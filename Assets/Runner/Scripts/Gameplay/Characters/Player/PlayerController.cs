@@ -375,6 +375,23 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// お金・ポイントを消費し、HUDへ反映する。
+        /// </summary>
+        /// <param name="amount">消費額</param>
+        /// <returns>消費に成功したかどうか</returns>
+        public bool TryConsumeMoney(long amount)
+        {
+            if (amount <= 0 || currentMoney < amount) return false;
+
+            currentMoney -= amount;
+            if (GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null)
+            {
+                GameHUDView.Instance.PointStepHUD.SetPoints(currentMoney);
+            }
+            return true;
+        }
+
         #endregion
 
         #region Input Binding

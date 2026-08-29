@@ -111,7 +111,16 @@ namespace Runner
                 return;
             }
 
-            if (pointStepHUD != null && !pointStepHUD.TryConsumePoints(item.price))
+            var player = PlayerController.Instance;
+            if (player != null)
+            {
+                if (!player.TryConsumeMoney(item.price))
+                {
+                    Debug.LogWarning($"[SmartphoneShopViewModel] ポイント消費に失敗しました: {item.price} pt");
+                    return;
+                }
+            }
+            else if (pointStepHUD != null && !pointStepHUD.TryConsumePoints(item.price))
             {
                 Debug.LogWarning($"[SmartphoneShopViewModel] ポイント消費に失敗しました: {item.price} pt");
                 return;
