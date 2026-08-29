@@ -105,8 +105,6 @@ namespace Runner
         /// <param name="instant">補間せず即時反映するかどうか</param>
         public void SetRage(float current, float max, bool instant = false)
         {
-            if (isAwakened) return;
-
             float clampedMax = Mathf.Max(1f, max);
             float clampedCurrent = Mathf.Clamp(current, 0f, clampedMax);
             targetFillAmount = clampedCurrent / clampedMax;
@@ -130,28 +128,7 @@ namespace Runner
             isAwakened = awakened;
             awakeningRemainingTime = Mathf.Max(0f, remainingTime);
 
-            if (isAwakened)
-            {
-                targetFillAmount = 1f;
-                if (fillImage != null)
-                {
-                    fillImage.color = awakeningColor;
-                }
-
-                if (statusLabelText != null)
-                {
-                    statusLabelText.text = "<color=#FF4400>【 ぶっ飛ばし無敵モード 】</color>";
-                }
-
-                if (rageText != null)
-                {
-                    rageText.text = $"<color=#FFE040><b>覚醒発動中!</b></color> {awakeningRemainingTime:F1}s";
-                }
-            }
-            else
-            {
-                UpdateDisplay();
-            }
+            UpdateDisplay();
         }
 
         /// <summary>

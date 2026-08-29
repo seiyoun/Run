@@ -1,7 +1,7 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: プレイヤーの怒りゲージ蓄積・減衰・覚醒（無敵）モードの持続タイマーを制御するコンポーネント。
+ * スクリプト説明: プレイヤーの怒りゲージ蓄積および最大到達時の覚醒（無敵）モード減衰タイマーを制御するコンポーネント。
  */
 
 using System;
@@ -12,13 +12,14 @@ namespace Runner
 {
     /// <summary>
     /// プレイヤーの怒りゲージおよび覚醒モードを管理するコンポーネント。
+    /// 移動によってのみ怒りが溜まり、ゲージが最大値に達した時のみ覚醒モードとなりゲージが0へ減少します。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PlayerRage : MonoBehaviour
     {
         private const float DefaultMaxRage = 100f;
         private const float DefaultGainRate = 10f;
-        private const float DefaultDecayRate = 5f;
+        private const float DefaultAwakeningDuration = 10f;
 
         [Header("Rage Settings")]
         [Tooltip("最大怒りゲージ値")]
@@ -27,12 +28,11 @@ namespace Runner
         [Tooltip("怒りゲージの溜まる速度（1秒あたり）")]
         [SerializeField] private float rageGainRate = DefaultGainRate;
 
-        [Tooltip("怒りゲージの減る速度（1秒あたり）")]
-        [SerializeField] private float rageDecayRate = DefaultDecayRate;
+        [Tooltip("怒りMAX時の覚醒持続時間 (秒)")]
+        [SerializeField] private float awakeningDuration = DefaultAwakeningDuration;
 
         private float currentRage;
         private bool isAwakened;
-        private float awakeningDuration;
         private float awakeningRemainingTime;
 
         /// <summary>現在の怒りゲージ値</summary>
@@ -55,11 +55,11 @@ namespace Runner
             set => rageGainRate = Mathf.Max(0f, value);
         }
 
-        /// <summary>怒りゲージの減る速度（1秒あたり）</summary>
-        public float RageDecayRate
+        /// <summary>怒りMAX時の覚醒持続時間(秒)</summary>
+        public float AwakeningDuration
         {
-            get => rageDecayRate;
-            set => rageDecayRate = Mathf.Max(0f, value);
+            get => awakeningDuration;
+            set => awakeningDuration = Mathf.Max(0.5f, value);
         }
 
         /// <summary>現在覚醒（無敵）状態かどうか</summary>
@@ -75,7 +75,7 @@ namespace Runner
         public event Action<bool, float> OnAwakeningChanged;
 
         /// <summary>
-        /// 怒りゲージの自動蓄積・減衰および覚醒持続タイマーを毎フレーム更新する。
+        /// 移動による怒り蓄積および最大到達後の覚醒カウントダウン（ゲージ減少）を更新する。
         /// </summary>
         /// <param name="deltaTime">フレーム経過時間</param>
         /// <param name="isMoving">現在移動中かどうか</param>
@@ -92,44 +92,37 @@ namespace Runner
                 }
                 else
                 {
+                    // 覚醒時間経過に応じてゲージが最大から0へ減少
+                    currentRage = Mathf.Clamp((awakeningRemainingTime / awakeningDuration) * maxRage, 0f, maxRage);
+                    OnRageChanged?.Invoke(currentRage, maxRage);
                     OnAwakeningChanged?.Invoke(true, awakeningRemainingTime);
                 }
             }
             else
             {
+                // 移動時のみ怒り蓄積（静止時の減速・減衰は行わない）
                 if (isMoving && rageGainRate > 0f)
                 {
                     AddRage(rageGainRate * deltaTime);
-                }
-                else if (!isMoving && rageDecayRate > 0f && currentRage > 0f)
-                {
-                    ConsumeRage(rageDecayRate * deltaTime);
                 }
             }
         }
 
         /// <summary>
-        /// 怒りゲージを加算する。
+        /// 怒りゲージを加算し、最大値に達した場合は覚醒モードを発動する。
         /// </summary>
         /// <param name="amount">加算量</param>
         public void AddRage(float amount)
         {
-            if (amount <= 0f || maxRage <= 0f) return;
+            if (amount <= 0f || maxRage <= 0f || isAwakened) return;
 
             currentRage = Mathf.Clamp(currentRage + amount, 0f, maxRage);
             OnRageChanged?.Invoke(currentRage, maxRage);
-        }
 
-        /// <summary>
-        /// 怒りゲージを消費・減算する。
-        /// </summary>
-        /// <param name="amount">消費量</param>
-        public void ConsumeRage(float amount)
-        {
-            if (amount <= 0f || maxRage <= 0f) return;
-
-            currentRage = Mathf.Clamp(currentRage - amount, 0f, maxRage);
-            OnRageChanged?.Invoke(currentRage, maxRage);
+            if (currentRage >= maxRage)
+            {
+                TriggerAwakening(awakeningDuration);
+            }
         }
 
         /// <summary>
@@ -138,26 +131,37 @@ namespace Runner
         /// <param name="value">設定値</param>
         public void SetRage(float value)
         {
+            if (isAwakened) return;
+
             currentRage = Mathf.Clamp(value, 0f, maxRage);
             OnRageChanged?.Invoke(currentRage, maxRage);
+
+            if (currentRage >= maxRage)
+            {
+                TriggerAwakening(awakeningDuration);
+            }
         }
 
         /// <summary>
-        /// 覚醒（無敵・ぶっ飛ばしモード）を発動する。
+        /// 覚醒（無敵・ぶっ飛ばしモード）を発動し、ゲージ減少タイマーを開始する。
         /// </summary>
         /// <param name="duration">覚醒持続時間(秒)</param>
         public void TriggerAwakening(float duration = 10f)
         {
+            if (isAwakened) return;
+
             isAwakened = true;
             awakeningDuration = Mathf.Max(0.5f, duration);
             awakeningRemainingTime = awakeningDuration;
-            SetRage(maxRage);
+            currentRage = maxRage;
+
+            OnRageChanged?.Invoke(currentRage, maxRage);
             OnAwakeningChanged?.Invoke(true, awakeningRemainingTime);
-            DebugLogger.Log($"[PlayerRage] 覚醒モード発動！ 持続時間={awakeningDuration}s");
+            DebugLogger.Log($"[PlayerRage] 怒りMAX到達！ 覚醒モード発動（持続時間={awakeningDuration}s）");
         }
 
         /// <summary>
-        /// 覚醒状態を終了し、怒りゲージをリセットする。
+        /// 覚醒状態を終了し、怒りゲージを完全にリセットする。
         /// </summary>
         public void EndAwakening()
         {
@@ -165,10 +169,11 @@ namespace Runner
 
             isAwakened = false;
             awakeningRemainingTime = 0f;
-            SetRage(0f);
+            currentRage = 0f;
+
+            OnRageChanged?.Invoke(0f, maxRage);
             OnAwakeningChanged?.Invoke(false, 0f);
-            DebugLogger.Log("[PlayerRage] 覚醒モード終了。");
+            DebugLogger.Log("[PlayerRage] 覚醒モード終了。怒りゲージがリセットされました。");
         }
     }
 }
-

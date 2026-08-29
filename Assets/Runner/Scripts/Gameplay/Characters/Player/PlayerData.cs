@@ -45,8 +45,8 @@ namespace Runner
         [Tooltip("怒りゲージの溜まる速度（1秒あたり）")]
         public float rageGainRate = 10f;
 
-        [Tooltip("怒りゲージの減る速度（1秒あたり）")]
-        public float rageDecayRate = 5f;
+        [Tooltip("怒りMAX時の覚醒持続時間（秒）")]
+        public float awakeningDuration = 10f;
 
         /// <summary>
         /// JSON 文字列から PlayerData を生成する。

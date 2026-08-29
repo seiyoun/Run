@@ -9,5 +9,5 @@
   "pointsPerStep": 2,
   "maxRage": 100.0,
   "rageGainRate": 10.0,
-  "rageDecayRate": 5.0
+  "awakeningDuration": 10.0
 }

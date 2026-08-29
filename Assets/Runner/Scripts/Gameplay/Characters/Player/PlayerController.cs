@@ -128,9 +128,6 @@ namespace Runner
         /// <summary>怒りゲージの溜まる速度（1秒あたり）</summary>
         public float RageGainRate => rageComponent != null ? rageComponent.RageGainRate : 0f;
 
-        /// <summary>怒りゲージの減る速度（1秒あたり）</summary>
-        public float RageDecayRate => rageComponent != null ? rageComponent.RageDecayRate : 0f;
-
         /// <summary>現在覚醒（無敵）状態かどうか</summary>
         public bool IsAwakened => rageComponent != null && rageComponent.IsAwakened;
 
@@ -344,14 +341,6 @@ namespace Runner
             rageComponent?.AddRage(amount);
         }
 
-        /// <summary>
-        /// 怒りゲージを消費する。
-        /// </summary>
-        /// <param name="amount">消費量</param>
-        public void ConsumeRage(float amount)
-        {
-            rageComponent?.ConsumeRage(amount);
-        }
 
         /// <summary>
         /// 怒りゲージ値を設定する。
@@ -448,7 +437,7 @@ namespace Runner
             {
                 rageComponent.MaxRage = data.maxRage;
                 rageComponent.RageGainRate = data.rageGainRate;
-                rageComponent.RageDecayRate = data.rageDecayRate;
+                rageComponent.AwakeningDuration = data.awakeningDuration;
                 rageComponent.SetRage(0f);
             }
             if (magnetComponent != null) magnetComponent.MagnetRadius = data.magnetRadius;
