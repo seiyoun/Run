@@ -17,9 +17,13 @@ namespace Runner
     public sealed class PlayerWallet : MonoBehaviour, IMoneyCollector
     {
         private long currentMoney;
+        private long totalEarnedMoney;
 
         /// <summary>現在の所持金額/ポイント</summary>
         public long CurrentMoney => currentMoney;
+
+        /// <summary>ゲーム開始からの累積獲得金額/ポイント</summary>
+        public long TotalEarnedMoney => totalEarnedMoney;
 
         /// <summary>お金を獲得した際に発火するイベント (獲得金額)</summary>
         public event Action<long> OnMoneyCollected;
@@ -36,6 +40,7 @@ namespace Runner
             if (amount <= 0) return;
 
             currentMoney += amount;
+            totalEarnedMoney += amount;
             OnMoneyCollected?.Invoke(amount);
             OnMoneyChanged?.Invoke(currentMoney);
         }

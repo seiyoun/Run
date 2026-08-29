@@ -116,6 +116,9 @@ namespace Runner
         /// <summary>現在の所持ポイント/お金</summary>
         public long CurrentMoney => walletComponent != null ? walletComponent.CurrentMoney : 0;
 
+        /// <summary>ゲーム開始からの累積獲得ポイント/お金</summary>
+        public long TotalEarnedMoney => walletComponent != null ? walletComponent.TotalEarnedMoney : 0;
+
         /// <summary>現在の怒りゲージ値</summary>
         public float CurrentRage => rageComponent != null ? rageComponent.CurrentRage : 0f;
 

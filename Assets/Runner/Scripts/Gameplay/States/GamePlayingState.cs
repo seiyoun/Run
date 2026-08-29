@@ -79,6 +79,12 @@ namespace Runner
                     GameHUDView.Instance.EscapeTimerHUD.SetRemainingTime(remainingEscapeTime);
                     GameHUDView.Instance.EscapeTimerHUD.SetExitUnlocked(false);
                 }
+
+                long initialEarned = player != null ? player.TotalEarnedMoney : 0;
+                long initialCycleEarned = initialEarned % SaleTriggerPointInterval;
+                long initialRemaining = SaleTriggerPointInterval - initialCycleEarned;
+                float initialProgress = (float)initialCycleEarned / SaleTriggerPointInterval;
+                GameHUDView.Instance.UpdateRestockProgress(initialRemaining, initialProgress, true);
             }
 
             return Task.CompletedTask;
@@ -110,13 +116,26 @@ namespace Runner
             {
                 player.OnUpdate(deltaTime);
 
-                // 一定ポイント到達によるアイテム入荷・タイムセール通知の判定
-                if (player.CurrentMoney >= nextSaleTriggerPoint)
+                long totalEarned = player.TotalEarnedMoney;
+                long cycleEarned = totalEarned % SaleTriggerPointInterval;
+                long remainingPoints = SaleTriggerPointInterval - cycleEarned;
+                float progress = (float)cycleEarned / SaleTriggerPointInterval;
+
+                // 累積ポイント到達によるアイテム入荷・タイムセール通知の判定
+                if (totalEarned >= nextSaleTriggerPoint)
                 {
-                    nextSaleTriggerPoint += SaleTriggerPointInterval;
+                    nextSaleTriggerPoint = ((totalEarned / SaleTriggerPointInterval) + 1) * SaleTriggerPointInterval;
                     if (GameHUDView.Instance != null)
                     {
                         GameHUDView.Instance.TriggerItemArrivalNotification();
+                        GameHUDView.Instance.UpdateRestockProgress(remainingPoints, progress);
+                    }
+                }
+                else
+                {
+                    if (GameHUDView.Instance != null)
+                    {
+                        GameHUDView.Instance.UpdateRestockProgress(remainingPoints, progress);
                     }
                 }
             }

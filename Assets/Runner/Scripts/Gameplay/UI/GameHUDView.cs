@@ -136,6 +136,20 @@ namespace Runner
         public void TriggerSaleNotification() => TriggerItemArrivalNotification();
 
         /// <summary>
+        /// アイテム入荷までの進捗情報（残りポイント・進捗率）を描画HUDへ通知・更新する。
+        /// </summary>
+        /// <param name="remainingPoints">入荷までの残り必要ポイント</param>
+        /// <param name="progress">進捗率 (0.0 〜 1.0)</param>
+        /// <param name="instant">アニメーションせず即時反映するかどうか</param>
+        public void UpdateRestockProgress(long remainingPoints, float progress, bool instant = false)
+        {
+            if (pointStepHUD != null)
+            {
+                pointStepHUD.SetRestockProgress(remainingPoints, progress, instant);
+            }
+        }
+
+        /// <summary>
         /// ジャスト回避成功時の演出およびプレイヤーへのボーナス付与を行う。
         /// </summary>
         public void OnJustDodge()

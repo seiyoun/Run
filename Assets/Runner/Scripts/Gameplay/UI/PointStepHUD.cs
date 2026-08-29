@@ -31,6 +31,16 @@ namespace Runner
         [Tooltip("ジャスト回避ポップアップの CanvasGroup")]
         [SerializeField] private CanvasGroup justDodgeCanvasGroup;
 
+        [Header("Item Arrival Progress")]
+        [Tooltip("アイテム入荷までの進捗テキスト")]
+        [SerializeField] private TextMeshProUGUI restockText;
+
+        [Tooltip("アイテム入荷進捗バーImage（Filledタイプ）")]
+        [SerializeField] private Image restockProgressBar;
+
+        [Tooltip("アイテム入荷進捗バーSlider")]
+        [SerializeField] private Slider restockSlider;
+
         [Header("Animation Settings")]
         [Tooltip("ポイントカウントアップの補間速度")]
         [SerializeField] private float countUpSpeed = 10f;
@@ -38,17 +48,26 @@ namespace Runner
         [Tooltip("ジャスト回避ポップアップの表示持続時間(秒)")]
         [SerializeField] private float dodgePopupDuration = 1.2f;
 
+        [Tooltip("進捗ゲージの補間速度")]
+        [SerializeField] private float progressLerpSpeed = 5f;
+
         private long currentDisplayPoint;
         private long targetPoint;
         private int currentSteps;
         private float dodgePopupTimer;
         private Vector2 popupInitialPos;
+        private float currentDisplayProgress;
+        private float targetProgress;
+        private long currentRemainingRestockPoints;
 
         /// <summary>現在設定されている目標所持ポイント</summary>
         public long CurrentPoint => targetPoint;
 
         /// <summary>現在設定されている表示歩数</summary>
         public int CurrentSteps => currentSteps;
+
+        /// <summary>現在の入荷進捗率 (0.0 〜 1.0)</summary>
+        public float TargetProgress => targetProgress;
 
         /// <summary>
         /// 初期表示状態の設定および初期座標の記録を行う。
@@ -63,10 +82,12 @@ namespace Runner
 
             UpdatePointDisplay(0);
             UpdateStepDisplay(0);
+            UpdateRestockText(0);
+            UpdateProgressDisplay(0f);
         }
 
         /// <summary>
-        /// ポイントの滑らかなカウントアップおよび回避ポップアップのアニメーションを更新する。
+        /// ポイントの滑らかなカウントアップ、入荷ゲージ補間、および回避ポップアップのアニメーションを更新する。
         /// </summary>
         private void Update()
         {
@@ -74,6 +95,12 @@ namespace Runner
             {
                 currentDisplayPoint = (long)Mathf.MoveTowards(currentDisplayPoint, targetPoint, Mathf.Max(1f, Mathf.Abs(targetPoint - currentDisplayPoint) * Time.unscaledDeltaTime * countUpSpeed));
                 UpdatePointDisplay(currentDisplayPoint);
+            }
+
+            if (!Mathf.Approximately(currentDisplayProgress, targetProgress))
+            {
+                currentDisplayProgress = Mathf.MoveTowards(currentDisplayProgress, targetProgress, Time.unscaledDeltaTime * progressLerpSpeed);
+                UpdateProgressDisplay(currentDisplayProgress);
             }
 
             if (dodgePopupTimer > 0f)
@@ -124,6 +151,26 @@ namespace Runner
         }
 
         /// <summary>
+        /// アイテム入荷までの進捗情報（残りポイント・進捗率）を設定する。
+        /// </summary>
+        /// <param name="remainingPoints">入荷までの残り必要ポイント</param>
+        /// <param name="progress">進捗率 (0.0 〜 1.0)</param>
+        /// <param name="instant">アニメーションせず即時反映するかどうか</param>
+        public void SetRestockProgress(long remainingPoints, float progress, bool instant = false)
+        {
+            currentRemainingRestockPoints = Math.Max(0, remainingPoints);
+            targetProgress = Mathf.Clamp01(progress);
+
+            UpdateRestockText(currentRemainingRestockPoints);
+
+            if (instant)
+            {
+                currentDisplayProgress = targetProgress;
+                UpdateProgressDisplay(currentDisplayProgress);
+            }
+        }
+
+        /// <summary>
         /// ジャスト回避成功時のポップアップ演出を表示する。
         /// </summary>
         /// <param name="bonusPoints">獲得したボーナスポイント額</param>
@@ -156,12 +203,26 @@ namespace Runner
         /// <param name="step">歩数テキスト</param>
         /// <param name="dodgeText">回避ポップアップテキスト</param>
         /// <param name="dodgeGroup">回避ポップアップCanvasGroup</param>
-        public void SetupReferences(TextMeshProUGUI point, TextMeshProUGUI step, TextMeshProUGUI dodgeText, CanvasGroup dodgeGroup)
+        /// <param name="restock">入荷進捗テキスト</param>
+        /// <param name="progressBar">入荷進捗バーImage</param>
+        /// <param name="slider">入荷進捗バーSlider</param>
+        public void SetupReferences(
+            TextMeshProUGUI point,
+            TextMeshProUGUI step,
+            TextMeshProUGUI dodgeText,
+            CanvasGroup dodgeGroup,
+            TextMeshProUGUI restock = null,
+            Image progressBar = null,
+            Slider slider = null)
         {
             pointText = point;
             stepText = step;
             justDodgePopupText = dodgeText;
             justDodgeCanvasGroup = dodgeGroup;
+            restockText = restock;
+            restockProgressBar = progressBar;
+            restockSlider = slider;
+
             if (dodgeText != null) popupInitialPos = dodgeText.rectTransform.anchoredPosition;
         }
 
@@ -186,6 +247,35 @@ namespace Runner
             if (stepText != null)
             {
                 stepText.text = $"{steps:N0} <size=75%>歩</size>";
+            }
+        }
+
+        /// <summary>
+        /// アイテム入荷進捗テキストの表示文字列をフォーマット・更新する。
+        /// </summary>
+        /// <param name="remainingPoints">入荷までの残りポイント</param>
+        private void UpdateRestockText(long remainingPoints)
+        {
+            if (restockText != null)
+            {
+                restockText.text = $"入荷まで: あと <color=#FFDF00>{remainingPoints:N0}</color> pt";
+            }
+        }
+
+        /// <summary>
+        /// アイテム入荷進捗ゲージ（Image/Slider）の描画を更新する。
+        /// </summary>
+        /// <param name="progress">進捗率 (0.0 〜 1.0)</param>
+        private void UpdateProgressDisplay(float progress)
+        {
+            if (restockProgressBar != null)
+            {
+                restockProgressBar.fillAmount = progress;
+            }
+
+            if (restockSlider != null)
+            {
+                restockSlider.value = progress;
             }
         }
     }
