@@ -29,7 +29,9 @@ namespace Runner
         public IReadOnlyList<ShopItemData> OfferedItems => currentOfferedItems;
 
         /// <summary>ユーザーの現在所持ポイント</summary>
-        public long CurrentPoints => pointStepHUD != null ? pointStepHUD.CurrentPoint : 0;
+        public long CurrentPoints => PlayerController.Instance != null
+            ? PlayerController.Instance.CurrentMoney
+            : (pointStepHUD != null ? pointStepHUD.CurrentPoint : 0);
 
         /// <summary>開閉状態が変化した際のイベント (isOpen)</summary>
         public event Action<bool> OnOpenStateChanged;
@@ -120,10 +122,9 @@ namespace Runner
                     return;
                 }
             }
-            else if (pointStepHUD != null && !pointStepHUD.TryConsumePoints(item.price))
+            else if (pointStepHUD != null)
             {
-                Debug.LogWarning($"[SmartphoneShopViewModel] ポイント消費に失敗しました: {item.price} pt");
-                return;
+                pointStepHUD.SetPoints(pointStepHUD.CurrentPoint - item.price);
             }
 
             Debug.Log($"[SmartphoneShopViewModel] 商品購入成功: {item.itemName} (¥{item.price}pt)");

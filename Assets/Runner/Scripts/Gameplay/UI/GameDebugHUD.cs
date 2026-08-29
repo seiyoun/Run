@@ -335,14 +335,8 @@ namespace Runner
                 ? $"{status.CurrentHp} / {status.MaxHp} (Dead: {status.IsDead})" 
                 : "N/A";
 
-            var hud = GameHUDView.Instance;
-            var pointInfoText = hud != null && hud.PointStepHUD != null 
-                ? $"¥{hud.PointStepHUD.CurrentPoint:N0} pt  |  {hud.PointStepHUD.CurrentSteps} 歩" 
-                : "N/A";
-
-            var rageInfoText = hud != null && hud.RageGaugeHUD != null 
-                ? $"{hud.RageGaugeHUD.CurrentRage:F0}%  (Awakened: {hud.RageGaugeHUD.IsAwakened})" 
-                : "N/A";
+            var pointInfoText = $"¥{player.CurrentMoney:N0} pt  |  {player.CurrentSteps} 歩";
+            var rageInfoText = $"{(player.RageRatio * 100f):F0}%  (Awakened: {player.IsAwakened})";
 
             var animStateText = animator != null 
                 ? $"{animator.CurrentState}" 
@@ -408,10 +402,6 @@ namespace Runner
             {
                 player.CollectMoney(500);
             }
-            else if (GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null)
-            {
-                GameHUDView.Instance.PointStepHUD.AddPoints(500);
-            }
         }
 
         /// <summary>
@@ -444,7 +434,7 @@ namespace Runner
         {
             if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
             {
-                GameHUDView.Instance.EscapeTimerHUD.UnlockExit();
+                GameHUDView.Instance.EscapeTimerHUD.SetExitUnlocked(true);
                 DebugLogger.Log("[GameDebugHUD] デバッグ操作: 非常口を即時開放しました。");
             }
         }
@@ -466,10 +456,10 @@ namespace Runner
         /// </summary>
         private void OnTriggerAwakeningClicked()
         {
-            if (GameHUDView.Instance != null && GameHUDView.Instance.RageGaugeHUD != null)
+            var player = PlayerController.Instance;
+            if (player != null)
             {
-                GameHUDView.Instance.RageGaugeHUD.SetRage(100f, 100f, true);
-                GameHUDView.Instance.RageGaugeHUD.TriggerAwakening(10f);
+                player.TriggerAwakening(10f);
                 DebugLogger.Log("[GameDebugHUD] デバッグ操作: 怒りMAX・覚醒モードを発動しました(10秒)。");
             }
         }

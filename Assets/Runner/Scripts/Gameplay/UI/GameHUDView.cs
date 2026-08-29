@@ -14,7 +14,7 @@ namespace Runner
 {
     /// <summary>
     /// ゲーム画面の全HUD（情報表示・通知・ショップモーダル）を統括するメインビュークラス。
-    /// プロシージャルUI生成にも対応し、エディタ・実行時のどちらでも完全自動構築が可能です。
+    /// ゲームパラメータは保持せず、各サブHUDへの描画指示およびUIイベント中継を担当します。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class GameHUDView : MonoBehaviour
@@ -39,11 +39,6 @@ namespace Runner
 
         [Tooltip("バーチャルジョイスティックUIコンポーネント")]
         [SerializeField] private VirtualJoystickView virtualJoystickView;
-
-        [Header("Item Arrival Trigger Settings")]
-        [Tooltip("何ポイント貯まるごとにアイテム入荷通知を発生させるか")]
-        [SerializeField] private long saleTriggerPointInterval = 300;
-        private long nextSaleTriggerPoint = 300;
 
         /// <summary>ポイ活・歩数表示HUD</summary>
         public PointStepHUD PointStepHUD => pointStepHUD;
@@ -91,31 +86,25 @@ namespace Runner
             {
                 shopModalView.BindPointHUD(pointStepHUD);
             }
+
+            BindPlayerEvents();
         }
 
+        /// <summary>
+        /// 破棄時にシングルトン参照をクリアし、イベントバインドを解除する。
+        /// </summary>
         private void OnDestroy()
         {
             if (Instance == this)
             {
                 Instance = null;
             }
-        }
 
-        private void SetupBindings()
-        {
-            if (saleNotificationBanner != null)
-            {
-                saleNotificationBanner.OnBannerClicked += HandleSaleBannerClicked;
-            }
-
-            if (shopModalView != null)
-            {
-                shopModalView.OnItemPurchased += HandleItemPurchased;
-            }
+            UnbindPlayerEvents();
         }
 
         /// <summary>
-        /// 移動による歩数加算およびポイント獲得を処理する。
+        /// 移動による歩数および所持ポイント表示を更新する。
         /// </summary>
         /// <param name="distance">移動距離</param>
         public void OnPlayerMoved(float distance)
@@ -127,13 +116,6 @@ namespace Runner
             {
                 pointStepHUD.SetSteps(player.CurrentSteps);
                 pointStepHUD.SetPoints(player.CurrentMoney);
-            }
-
-            // 一定ポイント到達によるアイテム入荷通知のトリガー判定
-            if (pointStepHUD != null && pointStepHUD.CurrentPoint >= nextSaleTriggerPoint)
-            {
-                TriggerItemArrivalNotification();
-                nextSaleTriggerPoint += saleTriggerPointInterval;
             }
         }
 
@@ -154,7 +136,7 @@ namespace Runner
         public void TriggerSaleNotification() => TriggerItemArrivalNotification();
 
         /// <summary>
-        /// ジャスト回避成功時の処理
+        /// ジャスト回避成功時の演出およびプレイヤーへのボーナス付与を行う。
         /// </summary>
         public void OnJustDodge()
         {
@@ -162,18 +144,119 @@ namespace Runner
             if (player != null)
             {
                 player.CollectMoney(100);
+                player.AddRage(25f);
             }
 
             if (pointStepHUD != null)
             {
-                // ボーナスポイント獲得演出
-                pointStepHUD.TriggerJustDodge(100);
+                pointStepHUD.ShowJustDodgePopup(100);
+            }
+        }
+
+        /// <summary>
+        /// PlayerController の状態変更イベントを購読する。
+        /// </summary>
+        public void BindPlayerEvents()
+        {
+            var player = PlayerController.Instance;
+            if (player == null) return;
+
+            player.OnStepsChanged += HandleStepsChanged;
+            player.OnMoneyCollected += HandleMoneyCollected;
+            player.OnRageChanged += HandleRageChanged;
+            player.OnAwakeningChanged += HandleAwakeningChanged;
+
+            if (pointStepHUD != null)
+            {
+                pointStepHUD.SetSteps(player.CurrentSteps);
+                pointStepHUD.SetPoints(player.CurrentMoney, true);
             }
 
             if (rageGaugeHUD != null)
             {
-                // 怒りゲージ大幅上昇
-                rageGaugeHUD.AddRage(25f);
+                rageGaugeHUD.SetRage(player.CurrentRage, player.MaxRage, true);
+                rageGaugeHUD.SetAwakened(player.IsAwakened, player.AwakeningRemainingTime);
+            }
+        }
+
+        /// <summary>
+        /// PlayerController の状態変更イベントの購読を解除する。
+        /// </summary>
+        public void UnbindPlayerEvents()
+        {
+            var player = PlayerController.Instance;
+            if (player == null) return;
+
+            player.OnStepsChanged -= HandleStepsChanged;
+            player.OnMoneyCollected -= HandleMoneyCollected;
+            player.OnRageChanged -= HandleRageChanged;
+            player.OnAwakeningChanged -= HandleAwakeningChanged;
+        }
+
+        /// <summary>
+        /// バナーやショップのクリックイベントをバインドする。
+        /// </summary>
+        private void SetupBindings()
+        {
+            if (saleNotificationBanner != null)
+            {
+                saleNotificationBanner.OnBannerClicked += HandleSaleBannerClicked;
+            }
+
+            if (shopModalView != null)
+            {
+                shopModalView.OnItemPurchased += HandleItemPurchased;
+            }
+        }
+
+        /// <summary>
+        /// 歩数変更時のHUD表示を更新する。
+        /// </summary>
+        /// <param name="steps">現在の歩数</param>
+        private void HandleStepsChanged(int steps)
+        {
+            if (pointStepHUD != null)
+            {
+                pointStepHUD.SetSteps(steps);
+            }
+        }
+
+        /// <summary>
+        /// 所持金変更時のHUD表示を更新する。
+        /// </summary>
+        /// <param name="amount">加算額</param>
+        private void HandleMoneyCollected(long amount)
+        {
+            var player = PlayerController.Instance;
+            if (player != null && pointStepHUD != null)
+            {
+                pointStepHUD.SetPoints(player.CurrentMoney);
+            }
+        }
+
+        /// <summary>
+        /// 怒りゲージ変更時のHUD表示を更新する。
+        /// </summary>
+        /// <param name="current">現在の怒り値</param>
+        /// <param name="max">最大怒り値</param>
+        private void HandleRageChanged(float current, float max)
+        {
+            if (rageGaugeHUD != null)
+            {
+                rageGaugeHUD.SetRage(current, max);
+            }
+        }
+
+        /// <summary>
+        /// 覚醒状態変更時のHUD表示を更新する。
+        /// </summary>
+        /// <param name="isAwakened">覚醒中かどうか</param>
+        /// <param name="remainingTime">残り持続時間(秒)</param>
+        private void HandleAwakeningChanged(bool isAwakened, float remainingTime)
+        {
+            if (rageGaugeHUD != null)
+            {
+                rageGaugeHUD.SetAwakened(isAwakened, remainingTime);
             }
         }
 
@@ -189,34 +272,12 @@ namespace Runner
         }
 
         /// <summary>
-        /// ショップアイテム購入時の効果適用を処理する。
+        /// ショップアイテム購入時に ShopItemEffectApplier を介して効果を適用する。
         /// </summary>
         /// <param name="item">購入されたアイテムデータ</param>
         private void HandleItemPurchased(ShopItemData item)
         {
-            Debug.Log($"[GameHUDView] アイテム効果適用: {item.itemName} ({item.itemType})");
-
-            var player = PlayerController.Instance;
-            if (player == null) return;
-
-            switch (item.itemType)
-            {
-                case ShopItemType.EnergyDrink:
-                    player.Heal(100);
-                    if (rageGaugeHUD != null) rageGaugeHUD.AddRage(30f);
-                    break;
-
-                case ShopItemType.SpeedSneakers:
-                    player.MoveSpeed *= 1.25f;
-                    break;
-
-                case ShopItemType.Drone:
-                case ShopItemType.Bodyguard:
-                case ShopItemType.PointMagnet:
-                case ShopItemType.BarrierShield:
-                    // 各種アイテム効果
-                    break;
-            }
+            ShopItemEffectApplier.ApplyEffect(item, PlayerController.Instance);
         }
 
         /// <summary>
@@ -231,4 +292,3 @@ namespace Runner
         }
     }
 }
-

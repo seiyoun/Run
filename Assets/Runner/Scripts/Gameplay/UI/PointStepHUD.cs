@@ -1,7 +1,7 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: ポイ活（所持ポイント/お金）および逃走歩数を表示し、ジャスト回避演出を制御するUIコンポーネント。
+ * スクリプト説明: ポイ活（所持ポイント/お金）および逃走歩数の表示、ジャスト回避ポップアップ演出を行う純粋なHUDビューコンポーネント。
  */
 
 using System;
@@ -12,39 +12,47 @@ using UnityEngine.UI;
 namespace Runner
 {
     /// <summary>
-    /// 画面右上に配置されるポイ活・歩数表示HUD。
-    /// ジャスト回避時のボーナスポイント獲得演出も行います。
+    /// 画面右上に配置されるポイ活・歩数表示HUD（View）。
+    /// ゲームパラメータや加算計算は持たず、渡された数値の描画およびアニメーション演出に専念します。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PointStepHUD : MonoBehaviour
     {
         [Header("UI References")]
+        [Tooltip("所持ポイント表示テキスト")]
         [SerializeField] private TextMeshProUGUI pointText;
+
+        [Tooltip("歩数表示テキスト")]
         [SerializeField] private TextMeshProUGUI stepText;
+
+        [Tooltip("ジャスト回避ボーナスポップアップテキスト")]
         [SerializeField] private TextMeshProUGUI justDodgePopupText;
+
+        [Tooltip("ジャスト回避ポップアップの CanvasGroup")]
         [SerializeField] private CanvasGroup justDodgeCanvasGroup;
 
-        [Header("Step & Point Settings")]
-        [Tooltip("1歩と判定する移動距離(m)")]
-        [SerializeField] private float distancePerStep = 0.65f;
-        [Tooltip("1歩ごとに獲得するポイント")]
-        [SerializeField] private int pointsPerStep = 2;
-
         [Header("Animation Settings")]
+        [Tooltip("ポイントカウントアップの補間速度")]
         [SerializeField] private float countUpSpeed = 10f;
+
+        [Tooltip("ジャスト回避ポップアップの表示持続時間(秒)")]
         [SerializeField] private float dodgePopupDuration = 1.2f;
 
-        private long currentDisplayPoint = 0;
-        private long targetPoint = 0;
-        private int currentSteps = 0;
-        private float accumulatedDistance = 0f;
-
-        private float dodgePopupTimer = 0f;
+        private long currentDisplayPoint;
+        private long targetPoint;
+        private int currentSteps;
+        private float dodgePopupTimer;
         private Vector2 popupInitialPos;
 
+        /// <summary>現在設定されている目標所持ポイント</summary>
         public long CurrentPoint => targetPoint;
+
+        /// <summary>現在設定されている表示歩数</summary>
         public int CurrentSteps => currentSteps;
 
+        /// <summary>
+        /// 初期表示状態の設定および初期座標の記録を行う。
+        /// </summary>
         private void Awake()
         {
             if (justDodgeCanvasGroup != null)
@@ -57,16 +65,17 @@ namespace Runner
             UpdateStepDisplay(0);
         }
 
+        /// <summary>
+        /// ポイントの滑らかなカウントアップおよび回避ポップアップのアニメーションを更新する。
+        /// </summary>
         private void Update()
         {
-            // ポイントの滑らかなカウントアップアニメーション
             if (currentDisplayPoint != targetPoint)
             {
                 currentDisplayPoint = (long)Mathf.MoveTowards(currentDisplayPoint, targetPoint, Mathf.Max(1f, Mathf.Abs(targetPoint - currentDisplayPoint) * Time.unscaledDeltaTime * countUpSpeed));
                 UpdatePointDisplay(currentDisplayPoint);
             }
 
-            // ジャスト回避ポップアップのフェードアウト＆浮遊アニメーション
             if (dodgePopupTimer > 0f)
             {
                 dodgePopupTimer -= Time.unscaledDeltaTime;
@@ -90,8 +99,10 @@ namespace Runner
         }
 
         /// <summary>
-        /// 所持ポイントを設定する。
+        /// 表示する所持ポイントを設定する。
         /// </summary>
+        /// <param name="points">設定するポイント数</param>
+        /// <param name="instant">アニメーションせず即時反映するかどうか</param>
         public void SetPoints(long points, bool instant = false)
         {
             targetPoint = Math.Max(0, points);
@@ -103,69 +114,21 @@ namespace Runner
         }
 
         /// <summary>
-        /// ポイントを加算する。
+        /// 表示する歩数を設定する。
         /// </summary>
-        public void AddPoints(long amount)
-        {
-            if (amount <= 0) return;
-            SetPoints(targetPoint + amount);
-        }
-
-        /// <summary>
-        /// ポイントを消費する（購入時など）。
-        /// </summary>
-        public bool TryConsumePoints(long amount)
-        {
-            if (amount <= 0 || targetPoint < amount) return false;
-            SetPoints(targetPoint - amount);
-            return true;
-        }
-
-        /// <summary>
-        /// 移動距離を加算し、一定距離（1歩）ごとに歩数・ポイントを加算する。
-        /// </summary>
-        /// <param name="deltaDistance">前フレームからの移動距離</param>
-        public void OnDistanceMoved(float deltaDistance)
-        {
-            if (deltaDistance <= 0f) return;
-
-            accumulatedDistance += deltaDistance;
-            if (distancePerStep > 0f && accumulatedDistance >= distancePerStep)
-            {
-                int steps = Mathf.FloorToInt(accumulatedDistance / distancePerStep);
-                accumulatedDistance %= distancePerStep;
-
-                AddSteps(steps);
-                AddPoints((long)steps * pointsPerStep);
-            }
-        }
-
-        /// <summary>
-        /// 歩数を設定・加算する。
-        /// </summary>
+        /// <param name="steps">設定する歩数</param>
         public void SetSteps(int steps)
         {
             currentSteps = Math.Max(0, steps);
             UpdateStepDisplay(currentSteps);
         }
 
-        public void AddSteps(int steps)
-        {
-            if (steps <= 0) return;
-            SetSteps(currentSteps + steps);
-        }
-
         /// <summary>
-        /// ジャスト回避成功時の演出をトリガーする。
+        /// ジャスト回避成功時のポップアップ演出を表示する。
         /// </summary>
-        /// <param name="bonusPoints">獲得したボーナスポイント</param>
-        public void TriggerJustDodge(int bonusPoints)
+        /// <param name="bonusPoints">獲得したボーナスポイント額</param>
+        public void ShowJustDodgePopup(int bonusPoints)
         {
-            if (PlayerController.Instance == null)
-            {
-                AddPoints(bonusPoints);
-            }
-
             if (justDodgePopupText != null)
             {
                 justDodgePopupText.text = $"<color=#FFDF00>JUST DODGE!</color>\n<size=80%>+¥{bonusPoints:N0} pt</size>";
@@ -180,25 +143,19 @@ namespace Runner
             dodgePopupTimer = dodgePopupDuration;
         }
 
-        private void UpdatePointDisplay(long points)
-        {
-            if (pointText != null)
-            {
-                pointText.text = $"<color=#FFD700>¥</color> {points:N0} <size=70%><color=#A0E0FF>pt</color></size>";
-            }
-        }
-
-        private void UpdateStepDisplay(int steps)
-        {
-            if (stepText != null)
-            {
-                stepText.text = $"{steps:N0} <size=75%>歩</size>";
-            }
-        }
+        /// <summary>
+        /// ジャスト回避成功時の演出を発火する（後方互換エイリアス）。
+        /// </summary>
+        /// <param name="bonusPoints">獲得したボーナスポイント額</param>
+        public void TriggerJustDodge(int bonusPoints) => ShowJustDodgePopup(bonusPoints);
 
         /// <summary>
-        /// UI要素のバインド用セッター
+        /// コード生成時等のUI参照バインドを行う。
         /// </summary>
+        /// <param name="point">ポイントテキスト</param>
+        /// <param name="step">歩数テキスト</param>
+        /// <param name="dodgeText">回避ポップアップテキスト</param>
+        /// <param name="dodgeGroup">回避ポップアップCanvasGroup</param>
         public void SetupReferences(TextMeshProUGUI point, TextMeshProUGUI step, TextMeshProUGUI dodgeText, CanvasGroup dodgeGroup)
         {
             pointText = point;
@@ -207,6 +164,29 @@ namespace Runner
             justDodgeCanvasGroup = dodgeGroup;
             if (dodgeText != null) popupInitialPos = dodgeText.rectTransform.anchoredPosition;
         }
+
+        /// <summary>
+        /// ポイントテキストの表示文字列をフォーマット・更新する。
+        /// </summary>
+        /// <param name="points">表示するポイント値</param>
+        private void UpdatePointDisplay(long points)
+        {
+            if (pointText != null)
+            {
+                pointText.text = $"<color=#FFD700>¥</color> {points:N0} <size=70%><color=#A0E0FF>pt</color></size>";
+            }
+        }
+
+        /// <summary>
+        /// 歩数テキストの表示文字列をフォーマット・更新する。
+        /// </summary>
+        /// <param name="steps">表示する歩数値</param>
+        private void UpdateStepDisplay(int steps)
+        {
+            if (stepText != null)
+            {
+                stepText.text = $"{steps:N0} <size=75%>歩</size>";
+            }
+        }
     }
 }
-

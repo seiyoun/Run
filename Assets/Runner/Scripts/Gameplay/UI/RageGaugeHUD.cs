@@ -1,7 +1,7 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: プレイヤーの怒りゲージ蓄積および覚醒（無敵化・ぶっ飛ばしモード）状態のUI描画コンポーネント。
+ * スクリプト説明: プレイヤーの怒りゲージ蓄積および覚醒（無敵化）状態を描画する純粋なHUDビューコンポーネント。
  */
 
 using System;
@@ -12,47 +12,50 @@ using UnityEngine.UI;
 namespace Runner
 {
     /// <summary>
-    /// 画面下部に配置される怒りゲージHUD。
-    /// 逃走やジャスト回避で蓄積され、MAX時に覚醒演出および持続時間バーに切り替わります。
+    /// 画面下部に配置される怒りゲージHUD（View）。
+    /// ゲームパラメータやタイマー減算ロジックは持たず、プレイヤーから通知された怒り値・覚醒状態の描画とアニメーション演出に専念します。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class RageGaugeHUD : MonoBehaviour
     {
         [Header("UI References")]
+        [Tooltip("ゲージバーの Fill Image")]
         [SerializeField] private Image fillImage;
+
+        [Tooltip("怒り値/覚醒状態表示テキスト")]
         [SerializeField] private TextMeshProUGUI rageText;
+
+        [Tooltip("ステータス案内ラベルテキスト")]
         [SerializeField] private TextMeshProUGUI statusLabelText;
+
+        [Tooltip("覚醒エフェクト用 CanvasGroup")]
         [SerializeField] private CanvasGroup awakeningEffectGroup;
 
-        [Header("Growth Settings")]
-        [Tooltip("時間経過によって自動で怒りを増やすか")]
-        [SerializeField] private bool increaseOverTime = true;
-        [Tooltip("1秒あたりの自動増加量（例: 2.5f で約40秒でMAX）")]
-        [SerializeField] private float ragePerSecond = 2.5f;
-
         [Header("Colors")]
-        [SerializeField] private Color normalColor = new Color(1f, 0.45f, 0.1f, 1f); // 炎オレンジ
-        [SerializeField] private Color fullColor = new Color(1f, 0.15f, 0.15f, 1f);   // 激怒レッド
-        [SerializeField] private Color awakeningColor = new Color(1f, 0.85f, 0.1f, 1f); // 覚醒ゴールド
+        [Tooltip("通常時のゲージカラー")]
+        [SerializeField] private Color normalColor = new Color(1f, 0.45f, 0.1f, 1f);
+
+        [Tooltip("ゲージMAX時のカラー")]
+        [SerializeField] private Color fullColor = new Color(1f, 0.15f, 0.15f, 1f);
+
+        [Tooltip("覚醒モード時のカラー")]
+        [SerializeField] private Color awakeningColor = new Color(1f, 0.85f, 0.1f, 1f);
 
         [Header("Animation Settings")]
+        [Tooltip("ゲージ伸縮の補間速度")]
         [SerializeField] private float smoothSpeed = 10f;
 
-        private float currentRage = 0f;
-        private float maxRage = 100f;
-        private float targetFillAmount = 0f;
-        private float currentFillAmount = 0f;
+        private float targetFillAmount;
+        private float currentFillAmount;
+        private bool isAwakened;
+        private float awakeningRemainingTime;
 
-        private bool isAwakened = false;
-        private float awakeningDuration = 0f;
-        private float awakeningRemainingTime = 0f;
-
+        /// <summary>覚醒状態が表示中かどうか</summary>
         public bool IsAwakened => isAwakened;
-        public float CurrentRage => currentRage;
-        public float MaxRage => maxRage;
 
-        public event Action OnAwakeningTriggered;
-
+        /// <summary>
+        /// 初期表示状態の設定を行う。
+        /// </summary>
         private void Awake()
         {
             if (awakeningEffectGroup != null)
@@ -63,42 +66,20 @@ namespace Runner
             SetRage(0f, 100f, true);
         }
 
+        /// <summary>
+        /// ゲージバーの滑らかな Lerp 補間および覚醒時の点滅演出を更新する。
+        /// </summary>
         private void Update()
         {
             if (isAwakened)
             {
-                // 覚醒中の残り時間カウントダウン
-                if (awakeningRemainingTime > 0f)
+                if (awakeningEffectGroup != null)
                 {
-                    awakeningRemainingTime -= Time.unscaledDeltaTime;
-                    targetFillAmount = Mathf.Clamp01(awakeningRemainingTime / awakeningDuration);
-
-                    if (rageText != null)
-                    {
-                        rageText.text = $"<color=#FFE040><b>覚醒発動中!</b></color> {awakeningRemainingTime:F1}s";
-                    }
-
-                    // 覚醒中の点滅演出
-                    if (awakeningEffectGroup != null)
-                    {
-                        awakeningEffectGroup.alpha = 0.6f + Mathf.PingPong(Time.unscaledTime * 4f, 0.4f);
-                    }
-
-                    if (awakeningRemainingTime <= 0f)
-                    {
-                        EndAwakening();
-                    }
+                    awakeningEffectGroup.alpha = 0.6f + Mathf.PingPong(Time.unscaledTime * 4f, 0.4f);
                 }
             }
             else
             {
-                // 時間経過による自動怒り蓄積
-                if (increaseOverTime && targetFillAmount < 1f)
-                {
-                    AddRage(ragePerSecond * Time.deltaTime);
-                }
-
-                // ゲージMAX時の点滅
                 if (targetFillAmount >= 1f && awakeningEffectGroup != null)
                 {
                     awakeningEffectGroup.alpha = Mathf.PingPong(Time.unscaledTime * 3f, 0.7f);
@@ -109,7 +90,6 @@ namespace Runner
                 }
             }
 
-            // ゲージの滑らかな Lerp アニメーション（左から右に伸びる）
             if (fillImage != null)
             {
                 currentFillAmount = Mathf.Lerp(currentFillAmount, targetFillAmount, Time.unscaledDeltaTime * smoothSpeed);
@@ -118,15 +98,18 @@ namespace Runner
         }
 
         /// <summary>
-        /// 怒り値を設定する。
+        /// 怒りゲージの表示値を設定する。
         /// </summary>
+        /// <param name="current">現在の怒り値</param>
+        /// <param name="max">最大怒り値</param>
+        /// <param name="instant">補間せず即時反映するかどうか</param>
         public void SetRage(float current, float max, bool instant = false)
         {
             if (isAwakened) return;
 
-            currentRage = Mathf.Clamp(current, 0f, max);
-            maxRage = Mathf.Max(1f, max);
-            targetFillAmount = currentRage / maxRage;
+            float clampedMax = Mathf.Max(1f, max);
+            float clampedCurrent = Mathf.Clamp(current, 0f, clampedMax);
+            targetFillAmount = clampedCurrent / clampedMax;
 
             if (instant)
             {
@@ -138,63 +121,57 @@ namespace Runner
         }
 
         /// <summary>
-        /// 怒り値を加算する。
+        /// 覚醒モードの表示状態および残り時間を設定する。
         /// </summary>
-        public void AddRage(float amount)
+        /// <param name="awakened">覚醒中かどうか</param>
+        /// <param name="remainingTime">覚醒残り時間(秒)</param>
+        public void SetAwakened(bool awakened, float remainingTime = 0f)
         {
-            if (isAwakened || amount <= 0f) return;
-            SetRage(currentRage + amount, maxRage);
+            isAwakened = awakened;
+            awakeningRemainingTime = Mathf.Max(0f, remainingTime);
 
-            if (currentRage >= maxRage)
+            if (isAwakened)
             {
-                OnRageFull();
+                targetFillAmount = 1f;
+                if (fillImage != null)
+                {
+                    fillImage.color = awakeningColor;
+                }
+
+                if (statusLabelText != null)
+                {
+                    statusLabelText.text = "<color=#FF4400>【 ぶっ飛ばし無敵モード 】</color>";
+                }
+
+                if (rageText != null)
+                {
+                    rageText.text = $"<color=#FFE040><b>覚醒発動中!</b></color> {awakeningRemainingTime:F1}s";
+                }
+            }
+            else
+            {
+                UpdateDisplay();
             }
         }
 
         /// <summary>
-        /// 覚醒（ぶっ飛ばしモード）を発動する。
+        /// コード生成時等のUI参照バインドを行う。
         /// </summary>
-        /// <param name="duration">覚醒持続時間(秒)</param>
-        public void TriggerAwakening(float duration)
+        /// <param name="fill">ゲージ Fill Image</param>
+        /// <param name="rage">怒りテキスト</param>
+        /// <param name="statusLabel">ステータスラベル</param>
+        /// <param name="effectGroup">エフェクトCanvasGroup</param>
+        public void SetupReferences(Image fill, TextMeshProUGUI rage, TextMeshProUGUI statusLabel, CanvasGroup effectGroup)
         {
-            isAwakened = true;
-            awakeningDuration = Mathf.Max(0.5f, duration);
-            awakeningRemainingTime = awakeningDuration;
-            targetFillAmount = 1f;
-            currentFillAmount = 1f;
-
-            if (fillImage != null)
-            {
-                fillImage.color = awakeningColor;
-                fillImage.fillAmount = 1f;
-            }
-
-            if (statusLabelText != null)
-            {
-                statusLabelText.text = "<color=#FF4400>【 ぶっ飛ばし無敵モード 】</color>";
-            }
-
-            OnAwakeningTriggered?.Invoke();
+            fillImage = fill;
+            rageText = rage;
+            statusLabelText = statusLabel;
+            awakeningEffectGroup = effectGroup;
         }
 
         /// <summary>
-        /// 覚醒状態を終了する。
+        /// ゲージの色およびテキスト表示を現在の割合に基づいて更新する。
         /// </summary>
-        public void EndAwakening()
-        {
-            isAwakened = false;
-            awakeningRemainingTime = 0f;
-            SetRage(0f, maxRage, true);
-        }
-
-        private void OnRageFull()
-        {
-            if (statusLabelText != null)
-            {
-                statusLabelText.text = "<color=#FF0040>【 怒りMAX! 覚醒可能 】</color>";
-            }
-        }
-
         private void UpdateDisplay()
         {
             if (fillImage != null)
@@ -210,22 +187,10 @@ namespace Runner
 
             if (statusLabelText != null && !isAwakened)
             {
-                statusLabelText.text = targetFillAmount >= 1f 
-                    ? "<color=#FF0040>【 怒りMAX! 覚醒 READY 】</color>" 
+                statusLabelText.text = targetFillAmount >= 1f
+                    ? "<color=#FF0040>【 怒りMAX! 覚醒 READY 】</color>"
                     : "逃げて怒りを溜めろ！";
             }
         }
-
-        /// <summary>
-        /// UI参照の初期設定
-        /// </summary>
-        public void SetupReferences(Image fill, TextMeshProUGUI rage, TextMeshProUGUI statusLabel, CanvasGroup effectGroup)
-        {
-            fillImage = fill;
-            rageText = rage;
-            statusLabelText = statusLabel;
-            awakeningEffectGroup = effectGroup;
-        }
     }
 }
-

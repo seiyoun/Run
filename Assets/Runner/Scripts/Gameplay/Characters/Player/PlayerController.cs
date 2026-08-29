@@ -45,6 +45,9 @@ namespace Runner
         private float maxRage;
         private float rageGainRate;
         private float rageDecayRate;
+        private bool isAwakened;
+        private float awakeningDuration;
+        private float awakeningRemainingTime;
         private readonly Collider2D[] itemColliderBuffer = new Collider2D[32];
         private InputController boundInputController;
         private ICharacterVisual characterVisual;
@@ -119,6 +122,12 @@ namespace Runner
         /// <summary>怒りゲージの減る速度（1秒あたり）</summary>
         public float RageDecayRate => rageDecayRate;
 
+        /// <summary>現在覚醒（無敵）状態かどうか</summary>
+        public bool IsAwakened => isAwakened;
+
+        /// <summary>覚醒残り持続時間(秒)</summary>
+        public float AwakeningRemainingTime => awakeningRemainingTime;
+
         public event Action OnAttack;
         public event Action<int> OnTakeDamage;
         public event Action OnDead;
@@ -127,6 +136,7 @@ namespace Runner
         public event Action<float> OnDistanceMoved;
         public event Action<long> OnMoneyCollected;
         public event Action<float, float> OnRageChanged;
+        public event Action<bool, float> OnAwakeningChanged;
         /// <summary>
         /// シングルトンの初期化、物理コンポーネントの設定、およびパラメータのロードを行う。
         /// </summary>
@@ -186,6 +196,30 @@ namespace Runner
                 moveInput = Vector2.zero;
                 if (rb != null) rb.linearVelocity = Vector2.zero;
                 return;
+            }
+
+            if (isAwakened)
+            {
+                awakeningRemainingTime -= deltaTime;
+                if (awakeningRemainingTime <= 0f)
+                {
+                    EndAwakening();
+                }
+                else
+                {
+                    OnAwakeningChanged?.Invoke(true, awakeningRemainingTime);
+                }
+            }
+            else
+            {
+                if (moveInput.sqrMagnitude > 0.01f && rageGainRate > 0f)
+                {
+                    AddRage(rageGainRate * deltaTime);
+                }
+                else if (rageDecayRate > 0f && currentRage > 0f)
+                {
+                    ConsumeRage(rageDecayRate * deltaTime);
+                }
             }
 
             UpdateVisuals(deltaTime);
@@ -515,6 +549,34 @@ namespace Runner
         }
 
         /// <summary>
+        /// 覚醒（無敵・ぶっ飛ばしモード）を発動する。
+        /// </summary>
+        /// <param name="duration">覚醒持続時間(秒)</param>
+        public void TriggerAwakening(float duration = 10f)
+        {
+            isAwakened = true;
+            awakeningDuration = Mathf.Max(0.5f, duration);
+            awakeningRemainingTime = awakeningDuration;
+            SetRage(maxRage);
+            OnAwakeningChanged?.Invoke(true, awakeningRemainingTime);
+            DebugLogger.Log($"[PlayerController] 覚醒モード発動！ 持続時間={awakeningDuration}s");
+        }
+
+        /// <summary>
+        /// 覚醒状態を終了し、怒りゲージをリセットする。
+        /// </summary>
+        public void EndAwakening()
+        {
+            if (!isAwakened) return;
+
+            isAwakened = false;
+            awakeningRemainingTime = 0f;
+            SetRage(0f);
+            OnAwakeningChanged?.Invoke(false, 0f);
+            DebugLogger.Log("[PlayerController] 覚醒モード終了。");
+        }
+
+        /// <summary>
         /// 見た目制御インターフェースを設定する。
         /// </summary>
         /// <param name="newVisual">新しい ICharacterVisual</param>
@@ -694,8 +756,7 @@ namespace Runner
         /// <returns>正規初期化済みの ContactFilter2D</returns>
         private static ContactFilter2D CreateDefaultContactFilter()
         {
-            var filter = new ContactFilter2D();
-            filter.NoFilter();
+            var filter = ContactFilter2D.noFilter;
             filter.useTriggers = true;
             return filter;
         }

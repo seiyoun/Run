@@ -117,9 +117,9 @@ namespace Runner
             {
                 moneyCollector.CollectMoney(moneyAmount);
             }
-            else if (GameHUDView.Instance != null && GameHUDView.Instance.PointStepHUD != null)
+            else if (PlayerController.Instance != null)
             {
-                GameHUDView.Instance.PointStepHUD.AddPoints(moneyAmount);
+                PlayerController.Instance.CollectMoney(moneyAmount);
             }
 
             DebugLogger.Log($"[MoneyItem] コイン獲得！ +¥{moneyAmount} pt");
