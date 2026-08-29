@@ -111,7 +111,7 @@ namespace Runner
 
             if (exitAlertText != null)
             {
-                exitAlertText.text = "🚨 <color=#FFFF00>非常口が開いた！ 改札へ向かえ！</color> 🚨";
+                exitAlertText.text = "【ALERT】 <color=#FFFF00>非常口が開いた！ 改札へ向かえ！</color>";
             }
 
             if (exitArrowIndicator != null)
@@ -146,7 +146,7 @@ namespace Runner
             {
                 // 残り30秒未満は赤く点滅
                 string colorTag = seconds < 30f ? "<color=#FF4444>" : "<color=#FFFFFF>";
-                timerText.text = $"⏳ {colorTag}{minutes:D2}:{sec:D2}</color>";
+                timerText.text = $"{colorTag}{minutes:D2}:{sec:D2}</color>";
             }
         }
 
@@ -162,7 +162,7 @@ namespace Runner
             // 距離テキストの更新
             if (exitDistanceText != null)
             {
-                exitDistanceText.text = $"🚪 非常口まで: <color=#00FF88>{distance:F1}m</color>";
+                exitDistanceText.text = $"非常口まで: <color=#00FF88>{distance:F1}m</color>";
             }
 
             // 矢印の回転（2D平面）

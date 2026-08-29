@@ -87,12 +87,12 @@ namespace Runner
         private void InitializeItemPool()
         {
             availableItemPool.Clear();
-            availableItemPool.Add(new ShopItemData("drone", "追従自律ドローン", "周囲のぶつかり屋を自動索敵して撃退する", "🛸", 300, ShopItemType.Drone));
-            availableItemPool.Add(new ShopItemData("bodyguard", "専属ボディガード", "プレイヤーにピッタリ密着して敵をタックルで吹き飛ばす", "🕶️", 500, ShopItemType.Bodyguard));
-            availableItemPool.Add(new ShopItemData("energy_drink", "メガエナジードリンク", "体力を即座に全快にし、一定時間怒りゲージ上昇UP", "🥫", 200, ShopItemType.EnergyDrink));
-            availableItemPool.Add(new ShopItemData("sneakers", "エアジェットスニーカー", "移動速度が恒久的に25%アップし、回避しやすくなる", "👟", 350, ShopItemType.SpeedSneakers));
-            availableItemPool.Add(new ShopItemData("magnet", "超電導ポイ活マグネット", "周囲に落ちているポイントやアイテムを一瞬で引き寄せる", "🧲", 250, ShopItemType.PointMagnet));
-            availableItemPool.Add(new ShopItemData("shield", "ワンタイムガード保険", "ぶつかり屋との衝突ダメージを1度だけ完全に無効化する", "🛡️", 400, ShopItemType.BarrierShield));
+            availableItemPool.Add(new ShopItemData("drone", "追従自律ドローン", "周囲のぶつかり屋を自動索敵して撃退する", "[DRONE]", 300, ShopItemType.Drone));
+            availableItemPool.Add(new ShopItemData("bodyguard", "専属ボディガード", "プレイヤーにピッタリ密着して敵をタックルで吹き飛ばす", "[GUARD]", 500, ShopItemType.Bodyguard));
+            availableItemPool.Add(new ShopItemData("energy_drink", "メガエナジードリンク", "体力を即座に全快にし、一定時間怒りゲージ上昇UP", "[DRINK]", 200, ShopItemType.EnergyDrink));
+            availableItemPool.Add(new ShopItemData("sneakers", "エアジェットスニーカー", "移動速度が恒久的に25%アップし、回避しやすくなる", "[SPEED]", 350, ShopItemType.SpeedSneakers));
+            availableItemPool.Add(new ShopItemData("magnet", "超電導ポイ活マグネット", "周囲に落ちているポイントやアイテムを一瞬で引き寄せる", "[MAGNET]", 250, ShopItemType.PointMagnet));
+            availableItemPool.Add(new ShopItemData("shield", "ワンタイムガード保険", "ぶつかり屋との衝突ダメージを1度だけ完全に無効化する", "[SHIELD]", 400, ShopItemType.BarrierShield));
         }
 
         /// <summary>

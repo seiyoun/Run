@@ -83,7 +83,7 @@ namespace Runner
         /// <param name="duration">表示秒数</param>
         /// <param name="title">タイトル</param>
         /// <param name="message">メッセージ本文</param>
-        public void ShowBanner(float duration = 15f, string title = "⚡️ ゲリラタイムセール開催中！", string message = "限定アイテム入荷！今すぐタップしてチェック ➔")
+        public void ShowBanner(float duration = 15f, string title = "【ゲリラタイムセール開催中！】", string message = "限定アイテム入荷！今すぐタップしてチェック ▶")
         {
             isShowing = true;
             remainingDisplayTime = duration;

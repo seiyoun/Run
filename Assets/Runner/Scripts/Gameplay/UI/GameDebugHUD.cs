@@ -160,7 +160,7 @@ namespace Runner
             var toggleTextObj = CreateUIObject("Text", toggleObj.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             var toggleTMP = toggleTextObj.AddComponent<TextMeshProUGUI>();
             if (defaultFont != null) toggleTMP.font = defaultFont;
-            toggleTMP.text = "🔧 Debug UI";
+            toggleTMP.text = "Debug UI";
             toggleTMP.fontSize = 22;
             toggleTMP.fontStyle = FontStyles.Bold;
             toggleTMP.alignment = TextAlignmentOptions.Center;
@@ -199,30 +199,30 @@ namespace Runner
             pointBtn.onClick.AddListener(OnAddPointClicked);
 
             // 2段目: アイテム生成 & 範囲表示 & イベント (Y: 95)
-            var spawnItemObj = CreateButton("SpawnItemButton", debugPanel.transform, new Vector2(-230, 95), new Vector2(140, 55), new Color(1f, 0.75f, 0.1f, 1f), "🪙 コインx5", defaultFont);
+            var spawnItemObj = CreateButton("SpawnItemButton", debugPanel.transform, new Vector2(-230, 95), new Vector2(140, 55), new Color(1f, 0.75f, 0.1f, 1f), "コインx5", defaultFont);
             var spawnItemBtn = spawnItemObj.GetComponent<Button>();
             spawnItemBtn.onClick.AddListener(OnSpawnMoneyItemsClicked);
 
-            var rangeObj = CreateButton("MagnetRangeButton", debugPanel.transform, new Vector2(-78, 95), new Vector2(140, 55), new Color(0.1f, 0.65f, 0.85f, 1f), "🧲 範囲表示", defaultFont);
+            var rangeObj = CreateButton("MagnetRangeButton", debugPanel.transform, new Vector2(-78, 95), new Vector2(140, 55), new Color(0.1f, 0.65f, 0.85f, 1f), "範囲表示", defaultFont);
             magnetRangeBtnImage = rangeObj.GetComponent<Image>();
             magnetRangeBtnText = rangeObj.GetComponentInChildren<TextMeshProUGUI>();
             var rangeBtn = rangeObj.GetComponent<Button>();
             rangeBtn.onClick.AddListener(OnToggleMagnetRangeClicked);
 
-            var saleObj = CreateButton("SaleButton", debugPanel.transform, new Vector2(78, 95), new Vector2(140, 55), new Color(0.95f, 0.7f, 0.1f, 1f), "⚡ セール", defaultFont);
+            var saleObj = CreateButton("SaleButton", debugPanel.transform, new Vector2(78, 95), new Vector2(140, 55), new Color(0.95f, 0.7f, 0.1f, 1f), "セール", defaultFont);
             var saleBtn = saleObj.GetComponent<Button>();
             saleBtn.onClick.AddListener(OnTriggerSaleClicked);
 
-            var rageObj = CreateButton("RageButton", debugPanel.transform, new Vector2(230, 95), new Vector2(140, 55), new Color(1f, 0.25f, 0.15f, 1f), "🔥 覚醒", defaultFont);
+            var rageObj = CreateButton("RageButton", debugPanel.transform, new Vector2(230, 95), new Vector2(140, 55), new Color(1f, 0.25f, 0.15f, 1f), "覚醒", defaultFont);
             var rageBtn = rageObj.GetComponent<Button>();
             rageBtn.onClick.AddListener(OnTriggerAwakeningClicked);
 
             // 3段目: 回避 & 非常口即時開放 (Y: 30)
-            var dodgeObj = CreateButton("DodgeButton", debugPanel.transform, new Vector2(-150, 30), new Vector2(180, 55), new Color(0.7f, 0.3f, 0.9f, 1f), "✨ ジャスト回避", defaultFont);
+            var dodgeObj = CreateButton("DodgeButton", debugPanel.transform, new Vector2(-150, 30), new Vector2(180, 55), new Color(0.7f, 0.3f, 0.9f, 1f), "ジャスト回避", defaultFont);
             var dodgeBtn = dodgeObj.GetComponent<Button>();
             dodgeBtn.onClick.AddListener(OnJustDodgeClicked);
 
-            var exitObj = CreateButton("ExitButton", debugPanel.transform, new Vector2(120, 30), new Vector2(240, 55), new Color(0.1f, 0.8f, 0.4f, 1f), "🚪 出口即時開放", defaultFont);
+            var exitObj = CreateButton("ExitButton", debugPanel.transform, new Vector2(120, 30), new Vector2(240, 55), new Color(0.1f, 0.8f, 0.4f, 1f), "出口即時開放", defaultFont);
             var exitBtn = exitObj.GetComponent<Button>();
             exitBtn.onClick.AddListener(OnOpenExitClicked);
 
@@ -380,7 +380,7 @@ namespace Runner
 
             if (magnetRangeBtnText != null)
             {
-                magnetRangeBtnText.text = nextState ? "🧲 範囲非表示" : "🧲 範囲表示";
+                magnetRangeBtnText.text = nextState ? "範囲非表示" : "範囲表示";
             }
 
             if (magnetRangeBtnImage != null)

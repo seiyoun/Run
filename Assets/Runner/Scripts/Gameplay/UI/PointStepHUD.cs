@@ -189,7 +189,7 @@ namespace Runner
         {
             if (stepText != null)
             {
-                stepText.text = $"👟 {steps:N0} <size=75%>歩</size>";
+                stepText.text = $"{steps:N0} <size=75%>歩</size>";
             }
         }
 

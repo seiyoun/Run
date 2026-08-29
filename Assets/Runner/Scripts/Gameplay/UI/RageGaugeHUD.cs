@@ -171,7 +171,7 @@ namespace Runner
 
             if (statusLabelText != null)
             {
-                statusLabelText.text = "<color=#FF4400>⚡️ ぶっ飛ばし無敵モード ⚡️</color>";
+                statusLabelText.text = "<color=#FF4400>【 ぶっ飛ばし無敵モード 】</color>";
             }
 
             OnAwakeningTriggered?.Invoke();
@@ -191,7 +191,7 @@ namespace Runner
         {
             if (statusLabelText != null)
             {
-                statusLabelText.text = "<color=#FF0040>🔥 怒りMAX! 覚醒可能 🔥</color>";
+                statusLabelText.text = "<color=#FF0040>【 怒りMAX! 覚醒可能 】</color>";
             }
         }
 
@@ -211,7 +211,7 @@ namespace Runner
             if (statusLabelText != null && !isAwakened)
             {
                 statusLabelText.text = targetFillAmount >= 1f 
-                    ? "<color=#FF0040>🔥 怒りMAX! 覚醒 READY 🔥</color>" 
+                    ? "<color=#FF0040>【 怒りMAX! 覚醒 READY 】</color>" 
                     : "逃げて怒りを溜めろ！";
             }
         }

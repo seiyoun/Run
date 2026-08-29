@@ -279,6 +279,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efedf6f78069943a6bf18cb94d6fd2a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Runner.LoadingView
+  rootCanvas: {fileID: 0}
   canvasGroup: {fileID: 245972650934411193}
   spinnerIcon: {fileID: 5221554998901621749}
   messageText: {fileID: 9145545298401247362}
@@ -353,8 +354,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Loading...
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2c4c993c3a1c843698c05f0e607fc682, type: 2}
+  m_sharedMaterial: {fileID: -8443486734874274036, guid: 2c4c993c3a1c843698c05f0e607fc682, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
