@@ -2,8 +2,8 @@
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
  * スクリプト説明: Game シーン用のデバッグ情報表示・テスト操作用 UI コンポーネント。
- *                SANDBOX またはエディタ実行時のみコード駆動でプロシージャル生成され、アセット(Resources/Prefab)を残しません。
- *                アイテム吸引範囲の GameView 表示トグルボタン、コイン生成、各アクションテストを完備します。
+ *                SANDBOX またはエディタ実行時のみコード駆動でプロシージャル生成され、アセットを残しません。
+ *                ウィンドウサイズの大型化、無彩色（モノトーン）ボタン、見やすいステータス表示を提供します。
  */
 
 #if SANDBOX || UNITY_EDITOR
@@ -20,16 +20,25 @@ namespace Runner
 {
     /// <summary>
     /// ゲーム実行中にプレイヤーのステータス・入力・アニメーション状態・ポイ活をリアルタイム表示し、
-    /// デバッグ操作（攻撃、被弾、回復、コイン生成、吸引範囲表示トグル、覚醒、セール、出口開放テスト）を提供する UI クラス。
-    /// C# コードから完全動的（プロシージャル）に Canvas ごと生成されます。
+    /// デバッグ操作を提供する大型 UI クラス。
+    /// C# コードから動的に Canvas ごと生成され、無彩色の見やすいボタンレイアウトを備えます。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class GameDebugHUD : MonoBehaviour
     {
         private const string MoneyItemAddress = "MoneyItem";
+        private static readonly Color NormalButtonColor = new Color(0.2f, 0.2f, 0.24f, 1f);
+        private static readonly Color ActiveButtonColor = new Color(0.35f, 0.35f, 0.42f, 1f);
+        private static readonly Color PanelBackgroundColor = new Color(0.08f, 0.08f, 0.1f, 0.96f);
+        private static readonly Color InfoBoxBackgroundColor = new Color(0.04f, 0.04f, 0.06f, 0.85f);
+
         [Header("Settings")]
+        [Tooltip("開始時にデバッグパネルを表示するかどうか")]
         [SerializeField] private bool showOnStart = false;
+
+        [Tooltip("ステータス情報の更新間隔（秒）")]
         [SerializeField] private float updateInterval = 0.1f;
+
         private GameObject debugPanel;
         private TextMeshProUGUI statusText;
         private Button toggleButton;
@@ -44,8 +53,8 @@ namespace Runner
         private float fpsTimer;
         private int frameCount;
         private float currentFps;
-
         private AddressablePrefabLoader addressableLoader;
+
         /// <summary>
         /// AddressablePrefabLoader のインスタンスを初期化する。
         /// </summary>
@@ -59,7 +68,6 @@ namespace Runner
         /// </summary>
         private void Update()
         {
-            // ショートカットキー（F1 / Backquote / Tab）でのパネル開閉
             var keyboard = Keyboard.current;
             if (keyboard != null)
             {
@@ -69,7 +77,6 @@ namespace Runner
                 }
             }
 
-            // モバイル用 3本指タップでのパネル開閉
             var touchscreen = Touchscreen.current;
             if (touchscreen != null && touchscreen.touches.Count >= 3)
             {
@@ -79,7 +86,6 @@ namespace Runner
                 }
             }
 
-            // FPS 計測
             frameCount++;
             fpsTimer += Time.unscaledDeltaTime;
             if (fpsTimer >= 0.5f)
@@ -89,7 +95,6 @@ namespace Runner
                 fpsTimer = 0f;
             }
 
-            // 情報テキストの定期更新
             if (Time.unscaledTime >= nextUpdateTime)
             {
                 nextUpdateTime = Time.unscaledTime + updateInterval;
@@ -108,6 +113,7 @@ namespace Runner
                 addressableLoader = null;
             }
         }
+
         /// <summary>
         /// コードから動的に DebugCanvas および全 UI をプロシージャル生成する。
         /// </summary>
@@ -142,6 +148,7 @@ namespace Runner
                 debugPanel.SetActive(!debugPanel.activeSelf);
             }
         }
+
         /// <summary>
         /// デバッグ UI の階層構造および全ボタン群を動的に構築する。
         /// </summary>
@@ -150,10 +157,9 @@ namespace Runner
         {
             var defaultFont = TMP_Settings.defaultFontAsset;
 
-            // 1. 開閉トグルボタン（右下）
-            var toggleObj = CreateUIObject("ToggleButton", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-95, 55), new Vector2(160, 60));
+            var toggleObj = CreateUIObject("ToggleButton", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-120, 80), new Vector2(200, 75));
             var toggleImg = toggleObj.AddComponent<Image>();
-            toggleImg.color = new Color(0.2f, 0.2f, 0.35f, 0.9f);
+            toggleImg.color = NormalButtonColor;
             toggleButton = toggleObj.AddComponent<Button>();
             toggleButton.onClick.AddListener(TogglePanel);
 
@@ -161,72 +167,99 @@ namespace Runner
             var toggleTMP = toggleTextObj.AddComponent<TextMeshProUGUI>();
             if (defaultFont != null) toggleTMP.font = defaultFont;
             toggleTMP.text = "Debug UI";
-            toggleTMP.fontSize = 22;
+            toggleTMP.fontSize = 26;
             toggleTMP.fontStyle = FontStyles.Bold;
             toggleTMP.alignment = TextAlignmentOptions.Center;
             toggleTMP.color = Color.white;
 
-            // 2. メインパネル（右下トグルボタンの上）
-            debugPanel = CreateUIObject("DebugPanel", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-335, 440), new Vector2(650, 720));
+            debugPanel = CreateUIObject("DebugPanel", root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1000, 1450));
             var panelImg = debugPanel.AddComponent<Image>();
-            panelImg.color = new Color(0.05f, 0.05f, 0.08f, 0.92f);
+            panelImg.color = PanelBackgroundColor;
 
-            // 3. ステータステキスト
-            var statusObj = CreateUIObject("StatusText", debugPanel.transform, new Vector2(0, 0.35f), Vector2.one, Vector2.zero, new Vector2(-30, -20));
+            var headerObj = CreateUIObject("Header", debugPanel.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -50), new Vector2(-40, 80));
+            var titleObj = CreateUIObject("TitleText", headerObj.transform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(20, 0), new Vector2(-120, 0));
+            var titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
+            if (defaultFont != null) titleTMP.font = defaultFont;
+            titleTMP.text = "<b>GAME DEBUG CONSOLE</b>";
+            titleTMP.fontSize = 32;
+            titleTMP.alignment = TextAlignmentOptions.MidlineLeft;
+            titleTMP.color = Color.white;
+            titleTMP.raycastTarget = false;
+
+            var closeBtnObj = CreateButton("CloseButton", headerObj.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-50, 0), new Vector2(75, 75), NormalButtonColor, "×", defaultFont, 36);
+            var closeBtn = closeBtnObj.GetComponent<Button>();
+            closeBtn.onClick.AddListener(TogglePanel);
+
+            var infoBoxObj = CreateUIObject("InfoBox", debugPanel.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -420), new Vector2(-40, 640));
+            var infoBoxImg = infoBoxObj.AddComponent<Image>();
+            infoBoxImg.color = InfoBoxBackgroundColor;
+            infoBoxImg.raycastTarget = false;
+
+            var statusObj = CreateUIObject("StatusText", infoBoxObj.transform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(-30, -30));
             statusText = statusObj.AddComponent<TextMeshProUGUI>();
             if (defaultFont != null) statusText.font = defaultFont;
             statusText.text = "[DEBUG HUD] Initializing...";
-            statusText.fontSize = 24;
+            statusText.fontSize = 28;
+            statusText.lineSpacing = 15;
             statusText.alignment = TextAlignmentOptions.TopLeft;
             statusText.color = Color.white;
+            statusText.raycastTarget = false;
 
-            // 4. アクションボタン群（3段レイアウト）
-            // 1段目: プレイヤー基本操作 (Y: 160)
-            var attackObj = CreateButton("AttackButton", debugPanel.transform, new Vector2(-230, 160), new Vector2(140, 55), new Color(0.85f, 0.25f, 0.25f, 1f), "Attack", defaultFont);
+            BuildButtonGroup(debugPanel.transform, defaultFont);
+
+            headerObj.transform.SetAsLastSibling();
+
+            debugPanel.SetActive(showOnStart);
+        }
+
+        /// <summary>
+        /// デバッグパネル下部の全操作ボタン群を無彩色グリッドで配置・構築する。
+        /// </summary>
+        /// <param name="parent">パネルの Transform</param>
+        /// <param name="font">使用するフォントアセット</param>
+        private void BuildButtonGroup(Transform parent, TMP_FontAsset font)
+        {
+            var attackObj = CreateButton("AttackButton", parent, new Vector2(-345, 270), new Vector2(215, 75), NormalButtonColor, "攻撃", font, 26);
             attackButton = attackObj.GetComponent<Button>();
             attackButton.onClick.AddListener(OnAttackClicked);
 
-            var damageObj = CreateButton("DamageButton", debugPanel.transform, new Vector2(-78, 160), new Vector2(140, 55), new Color(0.9f, 0.55f, 0.15f, 1f), "-10 HP", defaultFont);
+            var damageObj = CreateButton("DamageButton", parent, new Vector2(-115, 270), new Vector2(215, 75), NormalButtonColor, "-10 HP", font, 26);
             damageButton = damageObj.GetComponent<Button>();
             damageButton.onClick.AddListener(OnDamageClicked);
 
-            var healObj = CreateButton("HealButton", debugPanel.transform, new Vector2(78, 160), new Vector2(140, 55), new Color(0.2f, 0.75f, 0.35f, 1f), "+20 HP", defaultFont);
+            var healObj = CreateButton("HealButton", parent, new Vector2(115, 270), new Vector2(215, 75), NormalButtonColor, "+20 HP", font, 26);
             healButton = healObj.GetComponent<Button>();
             healButton.onClick.AddListener(OnHealClicked);
 
-            var pointObj = CreateButton("PointButton", debugPanel.transform, new Vector2(230, 160), new Vector2(140, 55), new Color(0.15f, 0.65f, 0.95f, 1f), "+500 pt", defaultFont);
-            var pointBtn = pointObj.GetComponent<Button>();
-            pointBtn.onClick.AddListener(OnAddPointClicked);
+            var pointObj = CreateButton("PointButton", parent, new Vector2(345, 270), new Vector2(215, 75), NormalButtonColor, "+500 pt", font, 26);
+            pointButton = pointObj.GetComponent<Button>();
+            pointButton.onClick.AddListener(OnAddPointClicked);
 
-            // 2段目: アイテム生成 & 範囲表示 & イベント (Y: 95)
-            var spawnItemObj = CreateButton("SpawnItemButton", debugPanel.transform, new Vector2(-230, 95), new Vector2(140, 55), new Color(1f, 0.75f, 0.1f, 1f), "コインx5", defaultFont);
+            var spawnItemObj = CreateButton("SpawnItemButton", parent, new Vector2(-345, 175), new Vector2(215, 75), NormalButtonColor, "コインx5", font, 26);
             var spawnItemBtn = spawnItemObj.GetComponent<Button>();
             spawnItemBtn.onClick.AddListener(OnSpawnMoneyItemsClicked);
 
-            var rangeObj = CreateButton("MagnetRangeButton", debugPanel.transform, new Vector2(-78, 95), new Vector2(140, 55), new Color(0.1f, 0.65f, 0.85f, 1f), "範囲表示", defaultFont);
+            var rangeObj = CreateButton("MagnetRangeButton", parent, new Vector2(-115, 175), new Vector2(215, 75), NormalButtonColor, "吸込範囲: OFF", font, 24);
             magnetRangeBtnImage = rangeObj.GetComponent<Image>();
             magnetRangeBtnText = rangeObj.GetComponentInChildren<TextMeshProUGUI>();
             var rangeBtn = rangeObj.GetComponent<Button>();
             rangeBtn.onClick.AddListener(OnToggleMagnetRangeClicked);
 
-            var saleObj = CreateButton("SaleButton", debugPanel.transform, new Vector2(78, 95), new Vector2(140, 55), new Color(0.95f, 0.7f, 0.1f, 1f), "セール", defaultFont);
+            var saleObj = CreateButton("SaleButton", parent, new Vector2(115, 175), new Vector2(215, 75), NormalButtonColor, "セール発火", font, 26);
             var saleBtn = saleObj.GetComponent<Button>();
             saleBtn.onClick.AddListener(OnTriggerSaleClicked);
 
-            var rageObj = CreateButton("RageButton", debugPanel.transform, new Vector2(230, 95), new Vector2(140, 55), new Color(1f, 0.25f, 0.15f, 1f), "覚醒", defaultFont);
+            var rageObj = CreateButton("RageButton", parent, new Vector2(345, 175), new Vector2(215, 75), NormalButtonColor, "怒り覚醒", font, 26);
             var rageBtn = rageObj.GetComponent<Button>();
             rageBtn.onClick.AddListener(OnTriggerAwakeningClicked);
 
-            // 3段目: 回避 & 非常口即時開放 (Y: 30)
-            var dodgeObj = CreateButton("DodgeButton", debugPanel.transform, new Vector2(-150, 30), new Vector2(180, 55), new Color(0.7f, 0.3f, 0.9f, 1f), "ジャスト回避", defaultFont);
+            var dodgeObj = CreateButton("DodgeButton", parent, new Vector2(-230, 80), new Vector2(445, 75), NormalButtonColor, "ジャスト回避 演出", font, 26);
             var dodgeBtn = dodgeObj.GetComponent<Button>();
             dodgeBtn.onClick.AddListener(OnJustDodgeClicked);
 
-            var exitObj = CreateButton("ExitButton", debugPanel.transform, new Vector2(120, 30), new Vector2(240, 55), new Color(0.1f, 0.8f, 0.4f, 1f), "出口即時開放", defaultFont);
+            var exitObj = CreateButton("ExitButton", parent, new Vector2(230, 80), new Vector2(445, 75), NormalButtonColor, "非常口 即時開放", font, 26);
             var exitBtn = exitObj.GetComponent<Button>();
             exitBtn.onClick.AddListener(OnOpenExitClicked);
-
-            debugPanel.SetActive(showOnStart);
         }
 
         /// <summary>
@@ -249,23 +282,33 @@ namespace Runner
         /// <summary>
         /// デバッグ用ボタンスタイルの UI オブジェクトを作成する。
         /// </summary>
-        private GameObject CreateButton(string name, Transform parent, Vector2 pos, Vector2 size, Color color, string label, TMP_FontAsset font)
+        private GameObject CreateButton(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 pos, Vector2 size, Color color, string label, TMP_FontAsset font, float fontSize = 26f)
         {
-            var btnObj = CreateUIObject(name, parent, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), pos, size);
+            var btnObj = CreateUIObject(name, parent, anchorMin, anchorMax, pos, size);
             var img = btnObj.AddComponent<Image>();
             img.color = color;
+            img.raycastTarget = true;
             btnObj.AddComponent<Button>();
 
             var textObj = CreateUIObject("Text", btnObj.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             var tmp = textObj.AddComponent<TextMeshProUGUI>();
             if (font != null) tmp.font = font;
             tmp.text = label;
-            tmp.fontSize = 22;
+            tmp.fontSize = fontSize;
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = Color.white;
+            tmp.raycastTarget = false;
 
             return btnObj;
+        }
+
+        /// <summary>
+        /// デバッグパネル下部（Bottom-Center アンカー）用のボタンスタイル UI オブジェクトを作成する。
+        /// </summary>
+        private GameObject CreateButton(string name, Transform parent, Vector2 pos, Vector2 size, Color color, string label, TMP_FontAsset font, float fontSize = 26f)
+        {
+            return CreateButton(name, parent, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), pos, size, color, label, font, fontSize);
         }
 
         /// <summary>
@@ -278,7 +321,7 @@ namespace Runner
             var player = PlayerController.Instance;
             if (player == null)
             {
-                statusText.text = $"<color=#FFFF00>[DEBUG HUD]</color>\nFPS: {currentFps:F1}\n\n<color=#FF6666>Player: Not Spawned</color>";
+                statusText.text = $"<b>FPS:</b> {currentFps:F1}\n\n<color=#FF7777>プレイヤーが生成されていません。</color>";
                 return;
             }
 
@@ -289,36 +332,34 @@ namespace Runner
             var animator = player.CharacterAnimator;
 
             var hpText = status != null 
-                ? $"<color=#00FF88>{status.CurrentHp}</color> / {status.MaxHp} (Dead: {status.IsDead})" 
+                ? $"{status.CurrentHp} / {status.MaxHp} (Dead: {status.IsDead})" 
                 : "N/A";
 
             var hud = GameHUDView.Instance;
             var pointInfoText = hud != null && hud.PointStepHUD != null 
-                ? $"¥<color=#FFD700>{hud.PointStepHUD.CurrentPoint:N0}</color> pt | <color=#00D4FF>{hud.PointStepHUD.CurrentSteps}</color> 歩" 
+                ? $"¥{hud.PointStepHUD.CurrentPoint:N0} pt  |  {hud.PointStepHUD.CurrentSteps} 歩" 
                 : "N/A";
 
             var rageInfoText = hud != null && hud.RageGaugeHUD != null 
-                ? $"<color=#FF5522>{hud.RageGaugeHUD.CurrentRage:F0}</color>% (Awake: {hud.RageGaugeHUD.IsAwakened})" 
+                ? $"{hud.RageGaugeHUD.CurrentRage:F0}%  (Awakened: {hud.RageGaugeHUD.IsAwakened})" 
                 : "N/A";
 
             var animStateText = animator != null 
-                ? $"<color=#00D4FF>{animator.CurrentState}</color>" 
+                ? $"{animator.CurrentState}" 
                 : "None";
 
             var magnetVisible = PlayerDebugRangeVisualizer.IsRangeVisible(player.transform);
-            var magnetInfo = $"<b>吸込範囲:</b> <color=#00D4FF>{player.MagnetRadius:F1}m</color> (表示: {(magnetVisible ? "ON" : "OFF")})";
+            var magnetInfo = $"{player.MagnetRadius:F1}m  (表示: {(magnetVisible ? "ON" : "OFF")})";
 
             statusText.text = 
-                $"<color=#FFFF00><b>[GAME DEBUG HUD]</b></color>\n" +
-                $"FPS: <color=#00FF88>{currentFps:F1}</color> | Time: {Time.time:F1}s\n" +
-                $"------------------------\n" +
-                $"<b>Position:</b> ({pos.x:F2}, {pos.y:F2})\n" +
-                $"<b>Input:</b> ({input.x:F2}, {input.y:F2}) | Speed: {speed:F1}\n" +
-                $"<b>HP:</b> {hpText}\n" +
+                $"<b>[System]</b>  FPS: <b>{currentFps:F1}</b>  |  Time: <b>{Time.time:F1}s</b>\n" +
+                $"────────────────────────────────────\n" +
+                $"<b>座標:</b> ({pos.x:F2}, {pos.y:F2})    <b>入力:</b> ({input.x:F2}, {input.y:F2})    <b>速度:</b> {speed:F1}\n" +
+                $"<b>体力 (HP):</b> {hpText}\n" +
                 $"<b>ポイ活:</b> {pointInfoText}\n" +
-                $"<b>怒り:</b> {rageInfoText}\n" +
-                $"{magnetInfo}\n" +
-                $"<b>Anim:</b> {animStateText}";
+                $"<b>怒りゲージ:</b> {rageInfoText}\n" +
+                $"<b>アイテム吸引:</b> {magnetInfo}\n" +
+                $"<b>アニメーション:</b> {animStateText}";
         }
 
         /// <summary>
@@ -380,14 +421,12 @@ namespace Runner
 
             if (magnetRangeBtnText != null)
             {
-                magnetRangeBtnText.text = nextState ? "範囲非表示" : "範囲表示";
+                magnetRangeBtnText.text = nextState ? "吸込範囲: ON" : "吸込範囲: OFF";
             }
 
             if (magnetRangeBtnImage != null)
             {
-                magnetRangeBtnImage.color = nextState 
-                    ? new Color(0.1f, 0.85f, 0.65f, 1f) 
-                    : new Color(0.1f, 0.65f, 0.85f, 1f);
+                magnetRangeBtnImage.color = nextState ? ActiveButtonColor : NormalButtonColor;
             }
 
             DebugLogger.Log($"[GameDebugHUD] デバッグ操作: アイテム吸引範囲の表示を {(nextState ? "ON" : "OFF")} に切り替えました。");
