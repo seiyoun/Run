@@ -8,7 +8,9 @@
         "Unity.InputSystem",
         "Unity.TextMeshPro",
         "Unity.Cinemachine",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "GUID:73907d139b13f8a43b7e3e95c329d30a",
+        "GUID:20ee76f6d94ae4b0595f3ceb1c5359a7"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

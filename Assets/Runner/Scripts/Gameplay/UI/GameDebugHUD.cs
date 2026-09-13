@@ -260,6 +260,10 @@ namespace Runner
             var exitObj = CreateButton("ExitButton", parent, new Vector2(230, 80), new Vector2(445, 75), NormalButtonColor, "非常口 即時開放", font, 26);
             var exitBtn = exitObj.GetComponent<Button>();
             exitBtn.onClick.AddListener(OnOpenExitClicked);
+
+            var spawnEnemyObj = CreateButton("EnemySpawnButton", parent, new Vector2(0, 365), new Vector2(445, 75), NormalButtonColor, "敵スポーン x1", font, 26);
+            var spawnEnemyBtn = spawnEnemyObj.GetComponent<Button>();
+            spawnEnemyBtn.onClick.AddListener(OnSpawnEnemyClicked);
         }
 
         /// <summary>
@@ -489,6 +493,60 @@ namespace Runner
                 GameHUDView.Instance.OnJustDodge();
                 DebugLogger.Log("[GameDebugHUD] デバッグ操作: ジャスト回避演出をトリガーしました。");
             }
+        }
+
+        /// <summary>
+        /// 敵1体スポーンボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
+        private void OnSpawnEnemyClicked()
+        {
+            var player = PlayerController.Instance;
+            if (player == null)
+            {
+                DebugLogger.Log("[GameDebugHUD] プレイヤーが存在しないためエネミーを生成できません。");
+                return;
+            }
+
+            var spawner = UnityEngine.Object.FindFirstObjectByType<EnemySpawner>();
+            if (spawner != null)
+            {
+                var spawned = spawner.SpawnEnemy();
+                if (spawned != null)
+                {
+                    DebugLogger.Log($"[GameDebugHUD] デバッグ操作: EnemySpawner からエネミーを生成しました。座標: {spawned.transform.position}");
+                    return;
+                }
+            }
+
+            var factory = UnityEngine.Object.FindFirstObjectByType<EnemyFactory>();
+            if (factory != null)
+            {
+                var spawnPos = player.transform.position + new Vector3(3.5f, 2.5f, 0f);
+                var spawned = factory.CreateEnemy(spawnPos, player.transform);
+                if (spawned != null)
+                {
+                    DebugLogger.Log($"[GameDebugHUD] デバッグ操作: EnemyFactory からエネミーを生成しました。座標: {spawnPos}");
+                    return;
+                }
+            }
+
+#if UNITY_EDITOR
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Runner/Prefabs/Enemy.prefab");
+            if (prefab != null)
+            {
+                var spawnPos = player.transform.position + new Vector3(3.5f, 2.5f, 0f);
+                var instance = UnityEngine.Object.Instantiate(prefab, spawnPos, Quaternion.identity);
+                var enemyController = instance.GetComponent<EnemyController>();
+                if (enemyController != null)
+                {
+                    enemyController.Initialize(player.transform);
+                }
+                DebugLogger.Log($"[GameDebugHUD] デバッグ操作: プレハブからエネミーを直接生成しました。座標: {spawnPos}");
+                return;
+            }
+#endif
+
+            DebugLogger.Error("[GameDebugHUD] エネミーの生成に失敗しました (EnemySpawner, EnemyFactory, Prefab が見つかりません)。");
         }
     }
 }
