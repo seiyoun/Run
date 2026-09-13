@@ -24,7 +24,10 @@ namespace Runner
     {
         private const float DefaultMoveSpeed = 3.0f;
         private const string TargetVariableName = "Target";
-        private const string AgentVariableName = "Self";
+        private const string SelfVariableName = "Self";
+        private const string AttackPowerVariableName = "AttackPower";
+        private const string AttackIntervalVariableName = "AttackInterval";
+        private const string AttackRangeVariableName = "AttackRange";
 
         [Header("AI Settings")]
         [Tooltip("Blackboard に登録するターゲット変数名")]
@@ -33,7 +36,7 @@ namespace Runner
 
         [Tooltip("Blackboard に登録する自身のエージェント変数名（Unity Behavior デフォルトは Self）")]
         [SerializeField]
-        private string agentBlackboardKey = AgentVariableName;
+        private string agentBlackboardKey = SelfVariableName;
 
         private CharacterMovement2D movementComponent;
         private CharacterStatus statusComponent;
@@ -72,6 +75,15 @@ namespace Runner
                 }
             }
         }
+
+        /// <summary>攻撃力</summary>
+        public int AttackPower { get; private set; } = 10;
+
+        /// <summary>攻撃間隔（秒）</summary>
+        public float AttackInterval { get; private set; } = 1.0f;
+
+        /// <summary>攻撃射程（m）</summary>
+        public float AttackRange { get; private set; } = 1.0f;
 
         /// <summary>
         /// 必要なコンポーネントの参照取得と初期データのロードを行う。
@@ -205,6 +217,10 @@ namespace Runner
             {
                 colliderComponent.radius = data.colliderRadius;
             }
+
+            AttackPower = data.attackPower;
+            AttackInterval = data.attackInterval;
+            AttackRange = data.attackRange;
         }
 
         /// <summary>
@@ -219,7 +235,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// BehaviorGraphAgent の Blackboard 変数（Self, Target）へ最新の参照を同期する。
+        /// BehaviorGraphAgent の Blackboard 変数（Self, Target, 攻撃設定等）へ最新の参照を同期する。
         /// </summary>
         private void SyncBlackboardVariables()
         {
@@ -230,15 +246,19 @@ namespace Runner
                 behaviorAgent.SetVariableValue(agentBlackboardKey, gameObject);
             }
 
-            if (agentBlackboardKey != "Self")
+            if (agentBlackboardKey != SelfVariableName)
             {
-                behaviorAgent.SetVariableValue("Self", gameObject);
+                behaviorAgent.SetVariableValue(SelfVariableName, gameObject);
             }
 
             if (!string.IsNullOrEmpty(targetBlackboardKey) && targetTransform != null)
             {
                 behaviorAgent.SetVariableValue(targetBlackboardKey, targetTransform.gameObject);
             }
+
+            behaviorAgent.SetVariableValue(AttackPowerVariableName, AttackPower);
+            behaviorAgent.SetVariableValue(AttackIntervalVariableName, AttackInterval);
+            behaviorAgent.SetVariableValue(AttackRangeVariableName, AttackRange);
         }
 
         /// <summary>

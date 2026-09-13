@@ -1,7 +1,9 @@
 {
   "enemyName": "StandardEnemy",
   "maxHp": 20,
-  "moveSpeed": 1.0,
-  "colliderRadius": 0.5
+  "moveSpeed": 2.0,
+  "colliderRadius": 0.5,
+  "attackPower": 10,
+  "attackInterval": 1.0,
+  "attackRange": 1.0
 }
-

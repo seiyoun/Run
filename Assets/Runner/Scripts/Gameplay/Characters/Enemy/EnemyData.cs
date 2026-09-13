@@ -22,10 +22,19 @@ namespace Runner
         public int maxHp = 20;
 
         [Tooltip("移動速度")]
-        public float moveSpeed = 3.0f;
+        public float moveSpeed = 2.0f;
 
         [Tooltip("当たり判定（CircleCollider2D）の半径 (m)")]
         public float colliderRadius = 0.5f;
+
+        [Tooltip("攻撃力")]
+        public int attackPower = 10;
+
+        [Tooltip("攻撃間隔（秒）")]
+        public float attackInterval = 1.0f;
+
+        [Tooltip("攻撃射程（m）")]
+        public float attackRange = 1.0f;
 
         /// <summary>
         /// JSON 文字列から EnemyData を生成する。
