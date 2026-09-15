@@ -42,15 +42,28 @@ namespace Runner
         private CharacterStatus statusComponent;
         private CircleCollider2D colliderComponent;
         private BehaviorGraphAgent behaviorAgent;
-        private Transform targetTransform;
         private EnemyData currentEnemyData;
         private bool isDeathHandled;
 
         /// <summary>死亡状態であるか</summary>
         public bool IsDead => isDeathHandled || (statusComponent != null && statusComponent.IsDead);
 
-        /// <summary>追尾対象の Transform</summary>
-        public Transform Target => targetTransform;
+        /// <summary>Blackboard に設定されている追尾対象の Transform</summary>
+        public Transform Target
+        {
+            get
+            {
+                if (behaviorAgent != null &&
+                    !string.IsNullOrEmpty(targetBlackboardKey) &&
+                    behaviorAgent.BlackboardReference.GetVariableValue(targetBlackboardKey, out GameObject targetGo) &&
+                    targetGo != null)
+                {
+                    return targetGo.transform;
+                }
+
+                return null;
+            }
+        }
 
         /// <summary>移動制御コンポーネント</summary>
         public CharacterMovement2D Movement => movementComponent;
@@ -103,33 +116,19 @@ namespace Runner
         }
 
         /// <summary>
-        /// 初回フレームでターゲットが未指定の場合に自動検索し、Blackboard 変数を初期バインドする。
+        /// 初回フレームで Blackboard 変数を初期バインドする。
         /// </summary>
         private void Start()
         {
-            if (targetTransform == null)
-            {
-                AutoFindPlayerTarget();
-            }
-
             SyncBlackboardVariables();
         }
 
         /// <summary>
-        /// 毎フレームの更新処理（ターゲット再検索等）を行う。
+        /// 毎フレームの更新処理を行う。
         /// </summary>
         private void Update()
         {
             if (IsDead) return;
-
-            if (targetTransform == null)
-            {
-                AutoFindPlayerTarget();
-                if (targetTransform != null)
-                {
-                    SyncBlackboardVariables();
-                }
-            }
         }
 
         /// <summary>
@@ -137,7 +136,6 @@ namespace Runner
         /// </summary>
         private void OnDestroy()
         {
-            targetTransform = null;
             behaviorAgent = null;
         }
 
@@ -162,8 +160,10 @@ namespace Runner
         /// <param name="target">設定するターゲット Transform</param>
         public void SetTarget(Transform target)
         {
-            targetTransform = target;
-            SyncBlackboardVariables();
+            if (behaviorAgent != null && !string.IsNullOrEmpty(targetBlackboardKey))
+            {
+                behaviorAgent.SetVariableValue(targetBlackboardKey, target != null ? target.gameObject : null);
+            }
         }
 
         /// <summary>
@@ -224,17 +224,6 @@ namespace Runner
         }
 
         /// <summary>
-        /// シーン上のプレイヤーを検索してターゲットに設定する（静的インスタンス参照による O(1) 軽量アクセス）。
-        /// </summary>
-        private void AutoFindPlayerTarget()
-        {
-            if (PlayerController.Instance != null)
-            {
-                targetTransform = PlayerController.Instance.transform;
-            }
-        }
-
-        /// <summary>
         /// BehaviorGraphAgent の Blackboard 変数（Self, Target, 攻撃設定等）へ最新の参照を同期する。
         /// </summary>
         private void SyncBlackboardVariables()
@@ -249,11 +238,6 @@ namespace Runner
             if (agentBlackboardKey != SelfVariableName)
             {
                 behaviorAgent.SetVariableValue(SelfVariableName, gameObject);
-            }
-
-            if (!string.IsNullOrEmpty(targetBlackboardKey) && targetTransform != null)
-            {
-                behaviorAgent.SetVariableValue(targetBlackboardKey, targetTransform.gameObject);
             }
 
             behaviorAgent.SetVariableValue(AttackPowerVariableName, AttackPower);
