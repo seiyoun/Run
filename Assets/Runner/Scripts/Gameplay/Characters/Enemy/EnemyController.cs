@@ -44,6 +44,10 @@ namespace Runner
         private BehaviorGraphAgent behaviorAgent;
         private Transform targetTransform;
         private EnemyData currentEnemyData;
+        private bool isDeathHandled;
+
+        /// <summary>死亡状態であるか</summary>
+        public bool IsDead => isDeathHandled || (statusComponent != null && statusComponent.IsDead);
 
         /// <summary>追尾対象の Transform</summary>
         public Transform Target => targetTransform;
@@ -95,11 +99,6 @@ namespace Runner
             colliderComponent = GetComponent<CircleCollider2D>();
             behaviorAgent = GetComponent<BehaviorGraphAgent>();
 
-            if (statusComponent != null)
-            {
-                statusComponent.OnDead += HandleDead;
-            }
-
             LoadEnemyData();
         }
 
@@ -121,11 +120,7 @@ namespace Runner
         /// </summary>
         private void Update()
         {
-            if (statusComponent != null && statusComponent.IsDead)
-            {
-                movementComponent?.Stop();
-                return;
-            }
+            if (IsDead) return;
 
             if (targetTransform == null)
             {
@@ -138,15 +133,10 @@ namespace Runner
         }
 
         /// <summary>
-        /// オブジェクト破棄時の参照解放とイベント購読解除を行う。
+        /// オブジェクト破棄時の参照解放を行う。
         /// </summary>
         private void OnDestroy()
         {
-            if (statusComponent != null)
-            {
-                statusComponent.OnDead -= HandleDead;
-            }
-
             targetTransform = null;
             behaviorAgent = null;
         }
@@ -224,6 +214,16 @@ namespace Runner
         }
 
         /// <summary>
+        /// 死亡アクション（Die2DAction 等）の実行を通知し、死亡フラグの更新と移動停止を一度だけ行う。
+        /// </summary>
+        public void NotifyDeathActionExecuted()
+        {
+            if (isDeathHandled) return;
+            isDeathHandled = true;
+            movementComponent?.Stop();
+        }
+
+        /// <summary>
         /// シーン上のプレイヤーを検索してターゲットに設定する（静的インスタンス参照による O(1) 軽量アクセス）。
         /// </summary>
         private void AutoFindPlayerTarget()
@@ -259,18 +259,6 @@ namespace Runner
             behaviorAgent.SetVariableValue(AttackPowerVariableName, AttackPower);
             behaviorAgent.SetVariableValue(AttackIntervalVariableName, AttackInterval);
             behaviorAgent.SetVariableValue(AttackRangeVariableName, AttackRange);
-        }
-
-        /// <summary>
-        /// 死亡時に移動停止および BehaviorGraphAgent の無効化を行う。
-        /// </summary>
-        private void HandleDead()
-        {
-            movementComponent?.Stop();
-            if (behaviorAgent != null)
-            {
-                behaviorAgent.enabled = false;
-            }
         }
     }
 }

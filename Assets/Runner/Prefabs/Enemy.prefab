@@ -187,7 +187,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Runner.Gameplay::Runner.CharacterStatus
   maxHp: 20
   currentHp: 20
-  destroyOnDead: 1
+  destroyOnDead: 0
 --- !u!114 &6266484430374443275
 MonoBehaviour:
   m_ObjectHideFlags: 0
