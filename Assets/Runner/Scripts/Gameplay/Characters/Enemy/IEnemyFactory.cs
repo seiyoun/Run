@@ -19,6 +19,14 @@ namespace Runner
         /// <param name="position">生成位置</param>
         /// <returns>生成された EnemyController インスタンス</returns>
         EnemyController CreateEnemy(Vector3 position);
+
+        /// <summary>
+        /// 指定されたエネミー種別とワールド座標に基づいてエネミーを生成し、パラメータを適用して返す。
+        /// </summary>
+        /// <param name="position">生成位置</param>
+        /// <param name="enemyType">生成するエネミー種別</param>
+        /// <returns>生成された EnemyController インスタンス</returns>
+        EnemyController CreateEnemy(Vector3 position, EnemyType enemyType);
     }
 }
 

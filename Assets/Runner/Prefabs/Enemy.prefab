@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 4461160251545292691}
   - component: {fileID: 6266484430374443275}
   - component: {fileID: 3039347634334950352}
+  - component: {fileID: 7080154026156085524}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -87,8 +88,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 5
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 2868101353237766674, guid: a2a040d9a81a445d789b200c308067b3, type: 3}
-  m_Color: {r: 0.95, g: 0.25, b: 0.25, a: 1}
+  m_Sprite: {fileID: 21300000, guid: 55bd3d9e5d8544e47985dc1a555625cd, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -159,7 +160,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.5
+  m_Radius: 0.4
 --- !u!114 &1238795094022293040
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -231,3 +232,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Runner.Gameplay::Runner.EnemyController
   targetBlackboardKey: Target
   agentBlackboardKey: Self
+--- !u!114 &7080154026156085524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6755883909957094918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Runner.Gameplay::Runner.CharacterVisual2D
+  spriteRenderer: {fileID: 1575206666447997853}

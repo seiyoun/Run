@@ -20,14 +20,6 @@ namespace Runner
         void SetFacingDirection(Vector2 facingDirection);
 
         /// <summary>
-        /// 移動状態・速度に応じたアニメーションやボビング（上下揺れ）を更新する。
-        /// </summary>
-        /// <param name="moveInput">移動入力ベクトル</param>
-        /// <param name="moveSpeed">現在の移動速度</param>
-        /// <param name="deltaTime">フレーム経過時間</param>
-        void UpdateMovementVisuals(Vector2 moveInput, float moveSpeed, float deltaTime);
-
-        /// <summary>
         /// 被ダメージ時の点滅（ヒットフラッシュ）エフェクトを再生する。
         /// </summary>
         /// <param name="flashDuration">点滅時間（秒）</param>
@@ -44,5 +36,17 @@ namespace Runner
         /// </summary>
         /// <param name="visible">表示フラグ</param>
         void SetVisible(bool visible);
+
+        /// <summary>
+        /// スプライト画像を直接設定する。
+        /// </summary>
+        /// <param name="sprite">設定するスプライト</param>
+        void SetSprite(Sprite sprite);
+
+        /// <summary>
+        /// 指定された画像名に基づいてキャッシュまたはリソースからスプライトを読み込み適用する。
+        /// </summary>
+        /// <param name="imageName">スプライト画像名（拡張子なし）</param>
+        void LoadSprite(string imageName);
     }
 }

@@ -402,15 +402,11 @@ namespace Runner
         }
 
         /// <summary>
-        /// Resources から PlayerData をロードして全コンポーネントへ適用する。
+        /// MasterDataManager のキャッシュから PlayerData を取得して全コンポーネントへ適用する。
         /// </summary>
         public void LoadPlayerData()
         {
-            var jsonAsset = Resources.Load<TextAsset>("Data/PlayerData");
-            var data = (jsonAsset != null && !string.IsNullOrWhiteSpace(jsonAsset.text))
-                ? PlayerData.FromJson(jsonAsset.text)
-                : new PlayerData();
-
+            var data = MasterDataManager.GetPlayerData();
             ApplyData(data);
         }
 
@@ -532,7 +528,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// 外観の向きおよび移動エフェクトを更新する。
+        /// 外観の向きを更新する。
         /// </summary>
         /// <param name="deltaTime">フレーム経過時間</param>
         private void UpdateVisuals(float deltaTime)
@@ -540,7 +536,6 @@ namespace Runner
             if (visualComponent == null || movementComponent == null) return;
 
             visualComponent.SetFacingDirection(movementComponent.FacingDirection);
-            visualComponent.UpdateMovementVisuals(movementComponent.MoveInput, movementComponent.MoveSpeed, deltaTime);
         }
 
         /// <summary>

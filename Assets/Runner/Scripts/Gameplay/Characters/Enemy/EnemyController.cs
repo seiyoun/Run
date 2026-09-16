@@ -42,6 +42,8 @@ namespace Runner
         private CharacterStatus statusComponent;
         private CircleCollider2D colliderComponent;
         private BehaviorGraphAgent behaviorAgent;
+        private SpriteRenderer spriteRenderer;
+        private ICharacterVisual visualComponent;
         private EnemyData currentEnemyData;
         private bool isDeathHandled;
 
@@ -111,6 +113,8 @@ namespace Runner
             statusComponent = GetComponent<CharacterStatus>();
             colliderComponent = GetComponent<CircleCollider2D>();
             behaviorAgent = GetComponent<BehaviorGraphAgent>();
+            spriteRenderer = GetComponent<SpriteRenderer>();
+            visualComponent = GetComponent<ICharacterVisual>();
 
             LoadEnemyData();
         }
@@ -124,11 +128,30 @@ namespace Runner
         }
 
         /// <summary>
-        /// 毎フレームの更新処理を行う。
+        /// 毎フレームの更新処理を行い、移動方向に応じたスプライトの左右反転を制御する。
         /// </summary>
         private void Update()
         {
             if (IsDead) return;
+
+            if (movementComponent != null)
+            {
+                if (visualComponent != null)
+                {
+                    visualComponent.SetFacingDirection(movementComponent.FacingDirection);
+                }
+                else if (spriteRenderer != null)
+                {
+                    if (movementComponent.FacingDirection.x < 0f)
+                    {
+                        spriteRenderer.flipX = true;
+                    }
+                    else if (movementComponent.FacingDirection.x > 0f)
+                    {
+                        spriteRenderer.flipX = false;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -175,20 +198,17 @@ namespace Runner
         }
 
         /// <summary>
-        /// Resources から EnemyData をロードして各コンポーネントへ適用する。
+        /// MasterDataManager のキャッシュから初期エネミーデータを取得して適用する。
         /// </summary>
         public void LoadEnemyData()
         {
-            var jsonAsset = Resources.Load<TextAsset>("Data/EnemyData");
-            var data = (jsonAsset != null && !string.IsNullOrWhiteSpace(jsonAsset.text))
-                ? EnemyData.FromJson(jsonAsset.text)
-                : new EnemyData();
-
+            var data = MasterDataManager.GetEnemyData(EnemyType.Salaryman);
             ApplyData(data);
         }
 
         /// <summary>
         /// EnemyData の各設定値を対応するコンポーネントへ適用する。
+        /// スプライトのロードと設定は CharacterVisual2D を通じてシームレスに行われます。
         /// </summary>
         /// <param name="data">適用するエネミーデータ</param>
         public void ApplyData(EnemyData data)
@@ -200,6 +220,7 @@ namespace Runner
             if (statusComponent == null) statusComponent = GetComponent<CharacterStatus>();
             if (movementComponent == null) movementComponent = GetComponent<CharacterMovement2D>();
             if (colliderComponent == null) colliderComponent = GetComponent<CircleCollider2D>();
+            if (visualComponent == null) visualComponent = GetComponent<ICharacterVisual>();
 
             if (statusComponent != null)
             {
@@ -214,6 +235,16 @@ namespace Runner
             if (colliderComponent != null)
             {
                 colliderComponent.radius = data.colliderRadius;
+            }
+
+            // スプライトの画像ロードは CharacterVisual2D に一任（シームレスにオンデマンドロード）
+            if (visualComponent != null)
+            {
+                visualComponent.LoadSprite(data.imageName);
+            }
+            else if (spriteRenderer != null)
+            {
+                spriteRenderer.sprite = Resources.Load<Sprite>($"Sprites/Characters/{data.imageName}");
             }
 
             AttackPower = data.attackPower;

@@ -45,9 +45,20 @@ namespace Runner
         [SerializeField]
         private int maxActiveEnemies = 15;
 
+        [Tooltip("スポーンさせるエネミーの種類")]
+        [SerializeField]
+        private EnemyType spawnEnemyType = EnemyType.Salaryman;
+
         private Transform playerTransform;
         private float timer;
         private int activeEnemyCount;
+
+        /// <summary>スポーンさせるエネミーの種類</summary>
+        public EnemyType SpawnEnemyType
+        {
+            get => spawnEnemyType;
+            set => spawnEnemyType = value;
+        }
 
         /// <summary>スポーン間隔（秒）</summary>
         public float SpawnInterval
@@ -109,10 +120,20 @@ namespace Runner
         }
 
         /// <summary>
-        /// エネミーを1体生成し、初期化する。
+        /// 設定された EnemyType のエネミーを1体生成し、初期化する。
         /// </summary>
         /// <returns>生成された EnemyController インスタンス（生成失敗時は null）</returns>
         public EnemyController SpawnEnemy()
+        {
+            return SpawnEnemy(spawnEnemyType);
+        }
+
+        /// <summary>
+        /// 指定された EnemyType のエネミーを1体生成し、パラメータを適用して初期化する。
+        /// </summary>
+        /// <param name="enemyType">生成するエネミー種別</param>
+        /// <returns>生成された EnemyController インスタンス（生成失敗時は null）</returns>
+        public EnemyController SpawnEnemy(EnemyType enemyType)
         {
             if (enemyFactory == null)
             {
@@ -121,7 +142,7 @@ namespace Runner
             }
 
             var spawnPos = CalculateSpawnPosition();
-            var enemy = enemyFactory.CreateEnemy(spawnPos);
+            var enemy = enemyFactory.CreateEnemy(spawnPos, enemyType);
 
             if (enemy != null)
             {

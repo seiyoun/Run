@@ -64,12 +64,35 @@ namespace Runner
         }
 
         /// <summary>
+        /// 指定されたエネミー種別のパラメータを適用してエネミーを生成する。
+        /// </summary>
+        /// <param name="position">生成ワールド座標</param>
+        /// <param name="enemyType">生成するエネミー種別</param>
+        /// <returns>生成された EnemyController インスタンス（失敗時は null）</returns>
+        public EnemyController CreateEnemy(Vector3 position, EnemyType enemyType)
+        {
+            return CreateEnemy(enemyPrefab, position, enemyType);
+        }
+
+        /// <summary>
         /// 指定されたプレハブからエネミーを生成し、初期設定を行って返す。
         /// </summary>
         /// <param name="prefab">生成に使用する EnemyController プレハブ</param>
         /// <param name="position">生成ワールド座標</param>
         /// <returns>生成された EnemyController インスタンス（失敗時は null）</returns>
         public EnemyController CreateEnemy(EnemyController prefab, Vector3 position)
+        {
+            return CreateEnemy(prefab, position, EnemyType.Salaryman);
+        }
+
+        /// <summary>
+        /// 指定されたプレハブとエネミー種別に基づいてエネミーを生成し、パラメータを適用して返す。
+        /// </summary>
+        /// <param name="prefab">生成に使用する EnemyController プレハブ</param>
+        /// <param name="position">生成ワールド座標</param>
+        /// <param name="enemyType">生成するエネミー種別</param>
+        /// <returns>生成された EnemyController インスタンス（失敗時は null）</returns>
+        public EnemyController CreateEnemy(EnemyController prefab, Vector3 position, EnemyType enemyType)
         {
             if (prefab == null)
             {
@@ -78,9 +101,12 @@ namespace Runner
             }
 
             var instance = Instantiate(prefab, position, Quaternion.identity, spawnContainer);
-            instance.Initialize(defaultMoveSpeed);
 
-            DebugLogger.Log($"[EnemyFactory] エネミーを生成しました: {instance.name} (Position: {position})");
+            // MasterDataManager のキャッシュからデータを取得して注入
+            var data = MasterDataManager.GetEnemyData(enemyType);
+            instance.ApplyData(data);
+
+            DebugLogger.Log($"[EnemyFactory] エネミーを生成しました: {instance.name} (Type: {enemyType}, Position: {position})");
             return instance;
         }
     }

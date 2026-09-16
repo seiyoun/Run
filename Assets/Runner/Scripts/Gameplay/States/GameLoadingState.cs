@@ -37,6 +37,9 @@ namespace Runner
         {
             DebugLogger.Log("[GameLoadingState] ゲームプレイのロードを開始します...");
 
+            // 0. マスターデータ（エネミーデータ、プレイヤーデータ等）の事前ロード・キャッシュ
+            await MasterDataManager.InitializeAsync();
+
             // 1. 背景プレハブのロード・生成
             var bgObj = await LoadBackgroundAsync(cancellationToken);
 

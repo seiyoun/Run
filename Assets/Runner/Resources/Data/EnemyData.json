@@ -1,9 +1,26 @@
 {
-  "enemyName": "StandardEnemy",
-  "maxHp": 20,
-  "moveSpeed": 2.0,
-  "colliderRadius": 0.5,
-  "attackPower": 10,
-  "attackInterval": 1.0,
-  "attackRange": 1.0
+  "enemies": [
+    {
+      "enemyType": 0,
+      "enemyName": "Salaryman",
+      "imageName": "Enemy",
+      "maxHp": 20,
+      "moveSpeed": 2.0,
+      "colliderRadius": 0.4,
+      "attackPower": 10,
+      "attackInterval": 1.0,
+      "attackRange": 1.0
+    },
+    {
+      "enemyType": 1,
+      "enemyName": "Granny",
+      "imageName": "EnemyGranny",
+      "maxHp": 30,
+      "moveSpeed": 2.3,
+      "colliderRadius": 0.45,
+      "attackPower": 15,
+      "attackInterval": 1.2,
+      "attackRange": 1.0
+    }
+  ]
 }
