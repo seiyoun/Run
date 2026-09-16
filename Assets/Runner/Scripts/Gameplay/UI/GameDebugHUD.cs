@@ -498,7 +498,7 @@ namespace Runner
         /// <summary>
         /// 敵1体スポーンボタンクリック時のデバッグ操作を処理する。
         /// </summary>
-        private void OnSpawnEnemyClicked()
+        private async void OnSpawnEnemyClicked()
         {
             var player = PlayerController.Instance;
             if (player == null)
@@ -507,46 +507,16 @@ namespace Runner
                 return;
             }
 
-            var spawner = UnityEngine.Object.FindFirstObjectByType<EnemySpawner>();
-            if (spawner != null)
+            var factory = new EnemyFactory();
+            var spawnPos = player.transform.position + new Vector3(3.5f, 2.5f, 0f);
+            var spawned = await factory.CreateEnemyAsync(spawnPos);
+            if (spawned != null)
             {
-                var spawned = spawner.SpawnEnemy();
-                if (spawned != null)
-                {
-                    DebugLogger.Log($"[GameDebugHUD] デバッグ操作: EnemySpawner からエネミーを生成しました。座標: {spawned.transform.position}");
-                    return;
-                }
-            }
-
-            var factory = UnityEngine.Object.FindFirstObjectByType<EnemyFactory>();
-            if (factory != null)
-            {
-                var spawnPos = player.transform.position + new Vector3(3.5f, 2.5f, 0f);
-                var spawned = factory.CreateEnemy(spawnPos);
-                if (spawned != null)
-                {
-                    DebugLogger.Log($"[GameDebugHUD] デバッグ操作: EnemyFactory からエネミーを生成しました。座標: {spawnPos}");
-                    return;
-                }
-            }
-
-#if UNITY_EDITOR
-            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Runner/Prefabs/Enemy.prefab");
-            if (prefab != null)
-            {
-                var spawnPos = player.transform.position + new Vector3(3.5f, 2.5f, 0f);
-                var instance = UnityEngine.Object.Instantiate(prefab, spawnPos, Quaternion.identity);
-                var enemyController = instance.GetComponent<EnemyController>();
-                if (enemyController != null)
-                {
-                    enemyController.Initialize();
-                }
-                DebugLogger.Log($"[GameDebugHUD] デバッグ操作: プレハブからエネミーを直接生成しました。座標: {spawnPos}");
+                DebugLogger.Log($"[GameDebugHUD] デバッグ操作: EnemyFactory からエネミーを生成しました。座標: {spawnPos}");
                 return;
             }
-#endif
 
-            DebugLogger.Error("[GameDebugHUD] エネミーの生成に失敗しました (EnemySpawner, EnemyFactory, Prefab が見つかりません)。");
+            DebugLogger.Error("[GameDebugHUD] エネミーの生成に失敗しました。");
         }
     }
 }

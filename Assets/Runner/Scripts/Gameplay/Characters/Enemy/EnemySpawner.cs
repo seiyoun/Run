@@ -1,57 +1,45 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: IEnemyFactory を利用して定期的にプレイヤー周辺へエネミーを生成するスポナークラス。
+ * スクリプト説明: IEnemyFactory を利用して定期的にプレイヤー周辺へエネミーを生成するスポナークラス（POCO）。
  */
 
+using System.Threading;
+using System.Threading.Tasks;
 using Shiyuan.Foundation.Core;
 using UnityEngine;
 
 namespace Runner
 {
     /// <summary>
-    /// EnemyFactory を利用してプレイヤー周囲へエネミーを定期出現・管理するスポナーコンポーネント。
+    /// EnemyFactory を利用してプレイヤー周囲へエネミーを定期出現・管理する純粋な C# スポナークラス。
+    /// MonoBehaviour に依存せず、ゲームステートやループから Tick(deltaTime) を呼ぶことで駆動します。
     /// </summary>
-    [DisallowMultipleComponent]
-    public sealed class EnemySpawner : MonoBehaviour
+    public sealed class EnemySpawner
     {
         private const float DefaultInterval = 3.0f;
         private const float DefaultMinRadius = 6.0f;
         private const float DefaultMaxRadius = 10.0f;
+        private const int DefaultMaxActiveEnemies = 15;
 
-        [Header("Factory Reference")]
-        [Tooltip("エネミー生成を担当するファクトリ")]
-        [SerializeField]
-        private EnemyFactory enemyFactory;
-
-        [Header("Spawn Settings")]
-        [Tooltip("自動スポーンを有効にするか")]
-        [SerializeField]
+        private IEnemyFactory enemyFactory;
         private bool autoSpawn = true;
-
-        [Tooltip("スポーン間隔（秒）")]
-        [SerializeField]
         private float spawnInterval = DefaultInterval;
-
-        [Tooltip("プレイヤーからの最小スポーン距離")]
-        [SerializeField]
         private float spawnRadiusMin = DefaultMinRadius;
-
-        [Tooltip("プレイヤーからの最大スポーン距離")]
-        [SerializeField]
         private float spawnRadiusMax = DefaultMaxRadius;
-
-        [Tooltip("最大生存エネミー数")]
-        [SerializeField]
-        private int maxActiveEnemies = 15;
-
-        [Tooltip("スポーンさせるエネミーの種類")]
-        [SerializeField]
+        private int maxActiveEnemies = DefaultMaxActiveEnemies;
         private EnemyType spawnEnemyType = EnemyType.Salaryman;
 
         private Transform playerTransform;
         private float timer;
         private int activeEnemyCount;
+
+        /// <summary>エネミー生成ファクトリ</summary>
+        public IEnemyFactory Factory
+        {
+            get => enemyFactory;
+            set => enemyFactory = value;
+        }
 
         /// <summary>スポーンさせるエネミーの種類</summary>
         public EnemyType SpawnEnemyType
@@ -67,6 +55,27 @@ namespace Runner
             set => spawnInterval = Mathf.Max(0.1f, value);
         }
 
+        /// <summary>プレイヤーからの最小スポーン距離</summary>
+        public float SpawnRadiusMin
+        {
+            get => spawnRadiusMin;
+            set => spawnRadiusMin = Mathf.Max(0f, value);
+        }
+
+        /// <summary>プレイヤーからの最大スポーン距離</summary>
+        public float SpawnRadiusMax
+        {
+            get => spawnRadiusMax;
+            set => spawnRadiusMax = Mathf.Max(spawnRadiusMin, value);
+        }
+
+        /// <summary>最大生存エネミー数</summary>
+        public int MaxActiveEnemies
+        {
+            get => maxActiveEnemies;
+            set => maxActiveEnemies = Mathf.Max(1, value);
+        }
+
         /// <summary>自動スポーンの有効フラグ</summary>
         public bool AutoSpawn
         {
@@ -78,28 +87,43 @@ namespace Runner
         public int ActiveEnemyCount => activeEnemyCount;
 
         /// <summary>
-        /// ファクトリコンポーネントの参照取得と初期化を行う。
+        /// EnemySpawner のデフォルトコンストラクタ。
         /// </summary>
-        private void Awake()
+        public EnemySpawner() : this(null)
         {
-            if (enemyFactory == null)
-            {
-                enemyFactory = GetComponent<EnemyFactory>();
-            }
         }
 
         /// <summary>
-        /// 初回フレームでプレイヤー参照の検索を行う。
+        /// EnemySpawner のコンストラクタ。
         /// </summary>
-        private void Start()
+        /// <param name="factory">エネミー生成ファクトリ（null の場合は EnemyFactory を自動生成）</param>
+        /// <param name="spawnEnemyType">スポーンさせる初期エネミー種別</param>
+        /// <param name="spawnInterval">スポーン間隔（秒）</param>
+        /// <param name="spawnRadiusMin">最小スポーン半径</param>
+        /// <param name="spawnRadiusMax">最大スポーン半径</param>
+        /// <param name="maxActiveEnemies">最大生存エネミー数</param>
+        public EnemySpawner(
+            IEnemyFactory factory = null,
+            EnemyType spawnEnemyType = EnemyType.Salaryman,
+            float spawnInterval = DefaultInterval,
+            float spawnRadiusMin = DefaultMinRadius,
+            float spawnRadiusMax = DefaultMaxRadius,
+            int maxActiveEnemies = DefaultMaxActiveEnemies)
         {
-            FindPlayerTransform();
+            this.enemyFactory = factory ?? new EnemyFactory();
+            this.spawnEnemyType = spawnEnemyType;
+            this.spawnInterval = spawnInterval;
+            this.spawnRadiusMin = spawnRadiusMin;
+            this.spawnRadiusMax = spawnRadiusMax;
+            this.maxActiveEnemies = maxActiveEnemies;
         }
 
         /// <summary>
-        /// 毎フレームのスポーンタイマー更新と生成処理を行う。
+        /// ゲームループ（GamePlayingState 等）から毎フレーム呼び出される更新処理。
+        /// タイマーを進行させ、一定間隔で自動スポーンを実行します。
         /// </summary>
-        private void Update()
+        /// <param name="deltaTime">経過時間（秒）</param>
+        public void Tick(float deltaTime)
         {
             if (!autoSpawn) return;
 
@@ -111,16 +135,55 @@ namespace Runner
 
             if (activeEnemyCount >= maxActiveEnemies) return;
 
-            timer += Time.deltaTime;
+            timer += deltaTime;
             if (timer >= spawnInterval)
             {
                 timer = 0f;
-                SpawnEnemy();
+                _ = SpawnEnemyAsync();
             }
         }
 
         /// <summary>
-        /// 設定された EnemyType のエネミーを1体生成し、初期化する。
+        /// 設定された EnemyType のエネミーを1体非同期生成し、初期化する。
+        /// </summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>生成された EnemyController インスタンス（生成失敗時は null）</returns>
+        public Task<EnemyController> SpawnEnemyAsync(CancellationToken cancellationToken = default)
+        {
+            return SpawnEnemyAsync(spawnEnemyType, cancellationToken);
+        }
+
+        /// <summary>
+        /// 指定された EnemyType のエネミーを1体非同期生成し、パラメータを適用して初期化する。
+        /// </summary>
+        /// <param name="enemyType">生成するエネミー種別</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>生成された EnemyController インスタンス（生成失敗時は null）</returns>
+        public async Task<EnemyController> SpawnEnemyAsync(EnemyType enemyType, CancellationToken cancellationToken = default)
+        {
+            if (enemyFactory == null)
+            {
+                DebugLogger.Error("[EnemySpawner] EnemyFactory が設定されていません。");
+                return null;
+            }
+
+            var spawnPos = CalculateSpawnPosition();
+            var enemy = await enemyFactory.CreateEnemyAsync(spawnPos, enemyType, cancellationToken);
+
+            if (enemy != null)
+            {
+                activeEnemyCount++;
+                if (enemy.Status != null)
+                {
+                    enemy.Status.OnDead += HandleEnemyDead;
+                }
+            }
+
+            return enemy;
+        }
+
+        /// <summary>
+        /// 設定された EnemyType のエネミーを1体同期生成し、初期化する。
         /// </summary>
         /// <returns>生成された EnemyController インスタンス（生成失敗時は null）</returns>
         public EnemyController SpawnEnemy()
@@ -129,7 +192,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// 指定された EnemyType のエネミーを1体生成し、パラメータを適用して初期化する。
+        /// 指定された EnemyType のエネミーを1体同期生成し、パラメータを適用して初期化する。
         /// </summary>
         /// <param name="enemyType">生成するエネミー種別</param>
         /// <returns>生成された EnemyController インスタンス（生成失敗時は null）</returns>
@@ -162,7 +225,7 @@ namespace Runner
         /// <returns>算出されたスポーン座標</returns>
         private Vector3 CalculateSpawnPosition()
         {
-            var center = playerTransform != null ? playerTransform.position : transform.position;
+            var center = playerTransform != null ? playerTransform.position : Vector3.zero;
             var angle = Random.Range(0f, Mathf.PI * 2f);
             var distance = Random.Range(spawnRadiusMin, spawnRadiusMax);
 
@@ -171,7 +234,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// プレイヤーの Transform を検索してキャッシュする（静的インスタンス参照による O(1) 軽量アクセス）。
+        /// プレイヤーの Transform を検索してキャッシュする。
         /// </summary>
         private void FindPlayerTransform()
         {
@@ -190,4 +253,3 @@ namespace Runner
         }
     }
 }
-

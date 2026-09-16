@@ -2,9 +2,12 @@
     "name": "Runner.Gameplay",
     "rootNamespace": "Runner",
     "references": [
+        "Runner.MasterData",
         "Runner.Input",
         "Shiyuan.Foundation.Core",
         "Shiyuan.Foundation.Addressables",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
         "Unity.InputSystem",
         "Unity.TextMeshPro",
         "Unity.Cinemachine",

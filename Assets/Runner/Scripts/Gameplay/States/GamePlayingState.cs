@@ -21,11 +21,15 @@ namespace Runner
         private const long SaleTriggerPointInterval = 300;
 
         private readonly IGameContext context;
+        private EnemySpawner enemySpawner;
         private float remainingEscapeTime;
         private bool isExitUnlocked;
         private long nextSaleTriggerPoint = SaleTriggerPointInterval;
 
         public GamePlayState State => GamePlayState.Playing;
+
+        /// <summary>エネミースポナーインスタンス</summary>
+        public EnemySpawner EnemySpawner => enemySpawner;
 
         /// <summary>脱出制限時間の残り秒数</summary>
         public float RemainingEscapeTime => remainingEscapeTime;
@@ -55,6 +59,7 @@ namespace Runner
             remainingEscapeTime = DefaultEscapeDurationSeconds;
             isExitUnlocked = false;
             nextSaleTriggerPoint = SaleTriggerPointInterval;
+            enemySpawner = new EnemySpawner();
 
             var player = context.Player;
             if (player != null)
@@ -110,6 +115,11 @@ namespace Runner
                             || Time.timeScale <= 0f;
 
             float deltaTime = isPaused ? 0f : Time.deltaTime;
+
+            if (!isPaused)
+            {
+                enemySpawner?.Tick(deltaTime);
+            }
 
             var player = context.Player;
             if (player != null)
@@ -168,6 +178,7 @@ namespace Runner
                 player.Status.OnDead -= HandlePlayerDead;
             }
 
+            enemySpawner = null;
             DebugLogger.Log("[GamePlayingState] プレイ中ステートを終了しました。");
         }
 

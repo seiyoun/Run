@@ -1,17 +1,8 @@
 {
-    "name": "Runner.Scenes",
+    "name": "Runner.MasterData",
     "rootNamespace": "Runner",
     "references": [
-        "Runner.MasterData",
-        "Runner.Gameplay",
-        "Runner.Input",
-        "Runner.UI",
-        "Shiyuan.Foundation.Core",
-        "Shiyuan.Foundation.Scenes",
-        "Shiyuan.Foundation.Addressables",
-        "Unity.Cinemachine",
-        "Unity.TextMeshPro",
-        "UnityEngine.UI"
+        "Shiyuan.Foundation.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -23,3 +14,4 @@
     "versionDefines": [],
     "noEngineReferences": false
 }
+
