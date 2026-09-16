@@ -57,11 +57,10 @@ namespace Runner
         /// 設定されたプレハブからエネミーを生成し、初期設定を行って返す。
         /// </summary>
         /// <param name="position">生成ワールド座標</param>
-        /// <param name="target">追尾ターゲット（プレイヤー等）</param>
         /// <returns>生成された EnemyController インスタンス（失敗時は null）</returns>
-        public EnemyController CreateEnemy(Vector3 position, Transform target = null)
+        public EnemyController CreateEnemy(Vector3 position)
         {
-            return CreateEnemy(enemyPrefab, position, target);
+            return CreateEnemy(enemyPrefab, position);
         }
 
         /// <summary>
@@ -69,9 +68,8 @@ namespace Runner
         /// </summary>
         /// <param name="prefab">生成に使用する EnemyController プレハブ</param>
         /// <param name="position">生成ワールド座標</param>
-        /// <param name="target">追尾ターゲット（プレイヤー等）</param>
         /// <returns>生成された EnemyController インスタンス（失敗時は null）</returns>
-        public EnemyController CreateEnemy(EnemyController prefab, Vector3 position, Transform target = null)
+        public EnemyController CreateEnemy(EnemyController prefab, Vector3 position)
         {
             if (prefab == null)
             {
@@ -80,7 +78,7 @@ namespace Runner
             }
 
             var instance = Instantiate(prefab, position, Quaternion.identity, spawnContainer);
-            instance.Initialize(target, defaultMoveSpeed);
+            instance.Initialize(defaultMoveSpeed);
 
             DebugLogger.Log($"[EnemyFactory] エネミーを生成しました: {instance.name} (Position: {position})");
             return instance;

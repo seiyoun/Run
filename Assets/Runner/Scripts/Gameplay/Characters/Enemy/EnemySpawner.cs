@@ -121,7 +121,7 @@ namespace Runner
             }
 
             var spawnPos = CalculateSpawnPosition();
-            var enemy = enemyFactory.CreateEnemy(spawnPos, playerTransform);
+            var enemy = enemyFactory.CreateEnemy(spawnPos);
 
             if (enemy != null)
             {

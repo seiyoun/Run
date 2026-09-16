@@ -61,6 +61,12 @@ namespace Runner
         /// <returns>ノードの実行ステータス</returns>
         protected override Status OnStart()
         {
+            var targetGo = ResolveTargetGameObject();
+            if (targetGo == null)
+            {
+                return Status.Failure;
+            }
+
             var interval = Cooldown != null ? Cooldown.Value : DefaultCooldown;
             cooldownTimer = interval;
             return Status.Running;
@@ -77,13 +83,13 @@ namespace Runner
             var targetGo = ResolveTargetGameObject();
             if (targetGo == null)
             {
-                return Status.Running;
+                return Status.Failure;
             }
 
             var agentGo = ResolveAgentGameObject();
             if (agentGo == null)
             {
-                return Status.Running;
+                return Status.Failure;
             }
 
             var range = AttackRange != null ? AttackRange.Value : DefaultAttackRange;
@@ -118,11 +124,6 @@ namespace Runner
             if (Target != null && Target.Value != null)
             {
                 return Target.Value;
-            }
-
-            if (PlayerController.Instance != null)
-            {
-                return PlayerController.Instance.gameObject;
             }
 
             return null;

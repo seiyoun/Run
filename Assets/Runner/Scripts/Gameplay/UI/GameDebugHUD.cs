@@ -522,7 +522,7 @@ namespace Runner
             if (factory != null)
             {
                 var spawnPos = player.transform.position + new Vector3(3.5f, 2.5f, 0f);
-                var spawned = factory.CreateEnemy(spawnPos, player.transform);
+                var spawned = factory.CreateEnemy(spawnPos);
                 if (spawned != null)
                 {
                     DebugLogger.Log($"[GameDebugHUD] デバッグ操作: EnemyFactory からエネミーを生成しました。座標: {spawnPos}");
@@ -539,7 +539,7 @@ namespace Runner
                 var enemyController = instance.GetComponent<EnemyController>();
                 if (enemyController != null)
                 {
-                    enemyController.Initialize(player.transform);
+                    enemyController.Initialize();
                 }
                 DebugLogger.Log($"[GameDebugHUD] デバッグ操作: プレハブからエネミーを直接生成しました。座標: {spawnPos}");
                 return;

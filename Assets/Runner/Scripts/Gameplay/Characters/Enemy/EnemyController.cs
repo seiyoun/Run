@@ -140,18 +140,26 @@ namespace Runner
         }
 
         /// <summary>
-        /// エネミーを初期化し、追尾対象と移動速度を設定する。
+        /// エネミーを初期化し、移動速度を設定する。
+        /// </summary>
+        /// <param name="speed">移動速度（0以下の場合は既存値を維持）</param>
+        public void Initialize(float speed = 0f)
+        {
+            if (speed > 0f)
+            {
+                MoveSpeed = speed;
+            }
+        }
+
+        /// <summary>
+        /// エネミーを初期化し、追尾対象と移動速度を設定する（後方互換用）。
         /// </summary>
         /// <param name="target">追尾ターゲット（プレイヤー等）</param>
         /// <param name="speed">移動速度（0以下の場合は既存値を維持）</param>
         public void Initialize(Transform target, float speed = 0f)
         {
             SetTarget(target);
-
-            if (speed > 0f)
-            {
-                MoveSpeed = speed;
-            }
+            Initialize(speed);
         }
 
         /// <summary>

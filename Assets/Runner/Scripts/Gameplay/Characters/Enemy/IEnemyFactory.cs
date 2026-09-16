@@ -17,9 +17,8 @@ namespace Runner
         /// 指定されたワールド座標にエネミーを生成し、初期設定を行って返す。
         /// </summary>
         /// <param name="position">生成位置</param>
-        /// <param name="target">追尾対象（プレイヤー等の Transform）</param>
         /// <returns>生成された EnemyController インスタンス</returns>
-        EnemyController CreateEnemy(Vector3 position, Transform target = null);
+        EnemyController CreateEnemy(Vector3 position);
     }
 }
 
