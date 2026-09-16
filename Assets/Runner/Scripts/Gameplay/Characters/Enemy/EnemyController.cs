@@ -44,7 +44,7 @@ namespace Runner
         private BehaviorGraphAgent behaviorAgent;
         private SpriteRenderer spriteRenderer;
         private ICharacterVisual visualComponent;
-        private EnemyData currentEnemyData;
+        private EnemyMasterData currentEnemyData;
         private bool isDeathHandled;
 
         /// <summary>死亡状態であるか</summary>
@@ -76,8 +76,8 @@ namespace Runner
         /// <summary>当たり判定コンポーネント</summary>
         public CircleCollider2D Collider => colliderComponent;
 
-        /// <summary>現在適用中のエネミー設定データ</summary>
-        public EnemyData CurrentEnemyData => currentEnemyData;
+        /// <summary>現在適用中のエネミー設定マスターデータ</summary>
+        public EnemyMasterData CurrentEnemyData => currentEnemyData;
 
         /// <summary>BehaviorGraphAgent コンポーネント</summary>
         public BehaviorGraphAgent BehaviorAgent => behaviorAgent;
@@ -198,20 +198,20 @@ namespace Runner
         }
 
         /// <summary>
-        /// MasterDataManager のキャッシュから初期エネミーデータを取得して適用する。
+        /// MasterDataManager のキャッシュから初期エネミーマスターデータを取得して適用する。
         /// </summary>
         public void LoadEnemyData()
         {
-            var data = MasterDataManager.GetEnemyData(EnemyType.Salaryman);
+            var data = MasterDataManager.GetEnemyMasterData(EnemyType.Salaryman);
             ApplyData(data);
         }
 
         /// <summary>
-        /// EnemyData の各設定値を対応するコンポーネントへ適用する。
+        /// EnemyMasterData の各設定値を対応するコンポーネントへ適用する。
         /// スプライトのロードと設定は CharacterVisual2D を通じてシームレスに行われます。
         /// </summary>
-        /// <param name="data">適用するエネミーデータ</param>
-        public void ApplyData(EnemyData data)
+        /// <param name="data">適用するエネミーマスターデータ</param>
+        public void ApplyData(EnemyMasterData data)
         {
             if (data == null) return;
 

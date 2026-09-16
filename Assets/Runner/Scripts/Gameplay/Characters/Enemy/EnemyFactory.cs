@@ -103,7 +103,7 @@ namespace Runner
             var instance = Instantiate(prefab, position, Quaternion.identity, spawnContainer);
 
             // MasterDataManager のキャッシュからデータを取得して注入
-            var data = MasterDataManager.GetEnemyData(enemyType);
+            var data = MasterDataManager.GetEnemyMasterData(enemyType);
             instance.ApplyData(data);
 
             DebugLogger.Log($"[EnemyFactory] エネミーを生成しました: {instance.name} (Type: {enemyType}, Position: {position})");

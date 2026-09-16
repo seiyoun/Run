@@ -40,11 +40,11 @@ namespace Runner
         private PlayerRage rageComponent;
         private PlayerMagnet magnetComponent;
         private InputController boundInputController;
-        private PlayerData currentPlayerData;
+        private PlayerMasterData currentPlayerData;
         private Vector3 lastPosition;
 
-        /// <summary>現在のプレイヤー設定データ</summary>
-        public PlayerData CurrentData => currentPlayerData;
+        /// <summary>現在のプレイヤー設定マスターデータ</summary>
+        public PlayerMasterData CurrentData => currentPlayerData;
 
         /// <summary>キャラクター外観コンポーネント</summary>
         public ICharacterVisual CharacterVisual => visualComponent;
@@ -402,19 +402,19 @@ namespace Runner
         }
 
         /// <summary>
-        /// MasterDataManager のキャッシュから PlayerData を取得して全コンポーネントへ適用する。
+        /// MasterDataManager のキャッシュから PlayerMasterData を取得して全コンポーネントへ適用する。
         /// </summary>
         public void LoadPlayerData()
         {
-            var data = MasterDataManager.GetPlayerData();
+            var data = MasterDataManager.GetPlayerMasterData();
             ApplyData(data);
         }
 
         /// <summary>
-        /// PlayerData の各設定値を対応するサブコンポーネントへ分配・適用する。
+        /// PlayerMasterData の各設定値を対応するサブコンポーネントへ分配・適用する。
         /// </summary>
-        /// <param name="data">適用するデータ</param>
-        public void ApplyData(PlayerData data)
+        /// <param name="data">適用するマスターデータ</param>
+        public void ApplyData(PlayerMasterData data)
         {
             if (data == null) return;
 
