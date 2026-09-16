@@ -4,10 +4,12 @@
  * スクリプト説明: IEnemyFactory を利用して定期的にプレイヤー周辺へエネミーを生成するスポナークラス（POCO）。
  */
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Shiyuan.Foundation.Core;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Runner
 {
@@ -15,7 +17,7 @@ namespace Runner
     /// EnemyFactory を利用してプレイヤー周囲へエネミーを定期出現・管理する純粋な C# スポナークラス。
     /// MonoBehaviour に依存せず、ゲームステートやループから Tick(deltaTime) を呼ぶことで駆動します。
     /// </summary>
-    public sealed class EnemySpawner
+    public sealed class EnemySpawner : IDisposable
     {
         private const float DefaultInterval = 3.0f;
         private const float DefaultMinRadius = 6.0f;
@@ -119,6 +121,20 @@ namespace Runner
         }
 
         /// <summary>
+        /// スポナーを破棄し、保持するファクトリのリソースを解放する。
+        /// </summary>
+        public void Dispose()
+        {
+            if (enemyFactory is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
+            enemyFactory = null;
+            playerTransform = null;
+        }
+
+        /// <summary>
         /// ゲームループ（GamePlayingState 等）から毎フレーム呼び出される更新処理。
         /// タイマーを進行させ、一定間隔で自動スポーンを実行します。
         /// </summary>
@@ -169,43 +185,6 @@ namespace Runner
 
             var spawnPos = CalculateSpawnPosition();
             var enemy = await enemyFactory.CreateEnemyAsync(spawnPos, enemyType, cancellationToken);
-
-            if (enemy != null)
-            {
-                activeEnemyCount++;
-                if (enemy.Status != null)
-                {
-                    enemy.Status.OnDead += HandleEnemyDead;
-                }
-            }
-
-            return enemy;
-        }
-
-        /// <summary>
-        /// 設定された EnemyType のエネミーを1体同期生成し、初期化する。
-        /// </summary>
-        /// <returns>生成された EnemyController インスタンス（生成失敗時は null）</returns>
-        public EnemyController SpawnEnemy()
-        {
-            return SpawnEnemy(spawnEnemyType);
-        }
-
-        /// <summary>
-        /// 指定された EnemyType のエネミーを1体同期生成し、パラメータを適用して初期化する。
-        /// </summary>
-        /// <param name="enemyType">生成するエネミー種別</param>
-        /// <returns>生成された EnemyController インスタンス（生成失敗時は null）</returns>
-        public EnemyController SpawnEnemy(EnemyType enemyType)
-        {
-            if (enemyFactory == null)
-            {
-                DebugLogger.Error("[EnemySpawner] EnemyFactory が設定されていません。");
-                return null;
-            }
-
-            var spawnPos = CalculateSpawnPosition();
-            var enemy = enemyFactory.CreateEnemy(spawnPos, enemyType);
 
             if (enemy != null)
             {

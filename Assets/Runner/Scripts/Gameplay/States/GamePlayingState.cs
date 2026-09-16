@@ -178,7 +178,12 @@ namespace Runner
                 player.Status.OnDead -= HandlePlayerDead;
             }
 
-            enemySpawner = null;
+            if (enemySpawner != null)
+            {
+                enemySpawner.Dispose();
+                enemySpawner = null;
+            }
+
             DebugLogger.Log("[GamePlayingState] プレイ中ステートを終了しました。");
         }
 
