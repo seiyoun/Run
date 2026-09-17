@@ -500,23 +500,20 @@ namespace Runner
         /// </summary>
         private async void OnSpawnEnemyClicked()
         {
-            var player = PlayerController.Instance;
-            if (player == null)
+            if (EnemySpawner.Instance == null)
             {
-                DebugLogger.Log("[GameDebugHUD] プレイヤーが存在しないためエネミーを生成できません。");
+                DebugLogger.Error("[GameDebugHUD] EnemySpawner が存在しないためエネミーを生成できません。");
                 return;
             }
 
-            var factory = new EnemyFactory();
-            var spawnPos = player.transform.position + new Vector3(3.5f, 2.5f, 0f);
-            var spawned = await factory.CreateEnemyAsync(spawnPos);
+            var spawned = await EnemySpawner.Instance.SpawnEnemyAsync(destroyCancellationToken);
             if (spawned != null)
             {
-                DebugLogger.Log($"[GameDebugHUD] デバッグ操作: EnemyFactory からエネミーを生成しました。座標: {spawnPos}");
+                DebugLogger.Log($"[GameDebugHUD] デバッグ操作: EnemySpawner からエネミーを生成しました。座標: {spawned.transform.position}");
                 return;
             }
 
-            DebugLogger.Error("[GameDebugHUD] エネミーの生成に失敗しました。");
+            DebugLogger.Error("[GameDebugHUD] エネミーの生成に失敗しました（最大上限到達または生成エラー）。");
         }
     }
 }

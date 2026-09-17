@@ -31,6 +31,9 @@ namespace Runner
         /// <summary>キャッシュされたプレイヤーマスターデータ</summary>
         public static PlayerMasterData PlayerMasterData => GetPlayerMasterData();
 
+        /// <summary>キャッシュされた全エネミーマスターデータのコレクション</summary>
+        public static IEnumerable<EnemyMasterData> AllEnemyMasterData => EnemyDataCache.Values;
+
         /// <summary>
         /// 全マスターデータ（EnemyMasterData, PlayerMasterData 等）を同期的にロードしてキャッシュする。
         /// </summary>

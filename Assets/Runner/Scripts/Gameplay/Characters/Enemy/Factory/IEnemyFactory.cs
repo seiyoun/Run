@@ -31,5 +31,20 @@ namespace Runner
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>生成された EnemyController インスタンス</returns>
         Task<EnemyController> CreateEnemyAsync(Vector3 position, EnemyType enemyType, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// エネミープレハブアセットを事前に非同期ロードしてキャッシュする。
+        /// </summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>完了タスク</returns>
+        Task PreloadPrefabAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 事前ロード済みのエネミープレハブアセットからエネミーを即座にインスタンス化し、初期化して返す。
+        /// </summary>
+        /// <param name="position">生成位置</param>
+        /// <param name="enemyType">生成するエネミー種別</param>
+        /// <returns>生成された EnemyController インスタンス（未ロード時は null）</returns>
+        EnemyController CreateEnemy(Vector3 position, EnemyType enemyType);
     }
 }

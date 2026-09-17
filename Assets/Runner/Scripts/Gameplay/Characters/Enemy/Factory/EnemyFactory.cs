@@ -46,6 +46,33 @@ namespace Runner
         }
 
         /// <summary>
+        /// エネミープレハブアセットを事前に非同期ロードしてキャッシュする。
+        /// </summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>完了タスク</returns>
+        public async Task PreloadPrefabAsync(CancellationToken cancellationToken = default)
+        {
+            await GetOrLoadPrefabAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// 事前ロード済みのエネミープレハブアセットからエネミーを即座にインスタンス化し、初期化して返す。
+        /// </summary>
+        /// <param name="position">生成ワールド座標</param>
+        /// <param name="enemyType">生成するエネミー種別</param>
+        /// <returns>生成された EnemyController インスタンス（未ロード時は null）</returns>
+        public EnemyController CreateEnemy(Vector3 position, EnemyType enemyType)
+        {
+            if (enemyPrefab == null)
+            {
+                DebugLogger.Error("[EnemyFactory] エネミープレハブが事前ロードされていません。PreloadPrefabAsync を実行してください。");
+                return null;
+            }
+
+            return InstantiateEnemy(enemyPrefab, position, enemyType);
+        }
+
+        /// <summary>
         /// AddressableManager からエネミープレハブを非同期ロードしてエネミーを生成し、初期設定を行って返す。
         /// </summary>
         /// <param name="position">生成ワールド座標</param>

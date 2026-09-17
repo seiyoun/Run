@@ -4,6 +4,8 @@
  * スクリプト説明: キャラクターやエンティティの見た目・アニメーション表示を抽象化するインターフェース。
  */
 
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Runner
@@ -44,9 +46,17 @@ namespace Runner
         void SetSprite(Sprite sprite);
 
         /// <summary>
-        /// 指定された画像名に基づいてキャッシュまたはリソースからスプライトを読み込み適用する。
+        /// スプライト画像名を指定してアセットをロードし設定する。
         /// </summary>
-        /// <param name="imageName">スプライト画像名（拡張子なし）</param>
-        void LoadSprite(string imageName);
+        /// <param name="spriteName">スプライト画像名</param>
+        void SetSprite(string spriteName);
+
+        /// <summary>
+        /// スプライト画像名を指定してアセットを非同期ロードし設定する。
+        /// </summary>
+        /// <param name="spriteName">スプライト画像名</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>完了タスク</returns>
+        Task SetSpriteAsync(string spriteName, CancellationToken cancellationToken = default);
     }
 }

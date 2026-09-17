@@ -1,35 +1,36 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: ICharacterVisual を実装し、2D スプライト描画・向き反転・非同期シームレス画像ロード・被弾フラッシュを制御するコンポーネント。
+ * スクリプト説明: ICharacterVisual を実装し、2D スプライト描画・向き反転・被弾フラッシュ等の見た目を制御する描画コンポーネント。
  */
 
+using System;
 using System.Collections;
+using System.Threading;
+using System.Threading.Tasks;
+using Shiyuan.Foundation.Core;
 using UnityEngine;
 
 namespace Runner
 {
     /// <summary>
-    /// 2D スプライトの向き反転、非同期シームレス画像ロード、被弾フラッシュ等の見た目を制御するコンポーネント。
-    /// スプライトの読み込みをオンデマンドかつ非同期で行うことで、起動時のメモリ負荷と描画スパイクを抑制します。
+    /// 2D スプライトの描画、向き反転、被弾フラッシュ等の見た目を制御する描画コンポーネント。
+    /// スプライトの直接指定、および GameAssetLoader を介したスプライト名からの非同期ロード表示に対応します。
     /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     [DisallowMultipleComponent]
     public sealed class CharacterVisual2D : MonoBehaviour, ICharacterVisual
     {
-        private const string SpriteResourcePrefix = "Sprites/Characters/";
-
         [Header("References")]
+        [Tooltip("描画対象の SpriteRenderer")]
         [SerializeField]
         private SpriteRenderer spriteRenderer;
 
         private Color baseColor = Color.white;
         private Coroutine flashCoroutine;
-        private Coroutine loadSpriteCoroutine;
-        private string currentImageName;
 
-        /// <summary>現在ロード・表示されている画像名</summary>
-        public string CurrentImageName => currentImageName;
+        /// <summary>現在設定されているスプライト名</summary>
+        public string CurrentImageName => (spriteRenderer != null && spriteRenderer.sprite != null) ? spriteRenderer.sprite.name : null;
 
         /// <summary>
         /// SpriteRenderer の参照を解決し、基本色をキャッシュする。
@@ -49,12 +50,6 @@ namespace Runner
             {
                 StopCoroutine(flashCoroutine);
                 flashCoroutine = null;
-            }
-
-            if (loadSpriteCoroutine != null)
-            {
-                StopCoroutine(loadSpriteCoroutine);
-                loadSpriteCoroutine = null;
             }
         }
 
@@ -129,61 +124,50 @@ namespace Runner
         }
 
         /// <summary>
-        /// 指定された画像名に基づいて Resources から非同期でスプライトを読み込み、シームレスに適用する。
-        /// キャラクター生成時にオンデマンドでロードするため、ゲーム起動時のメモリ負荷を抑えられます。
+        /// スプライト画像名を指定して、GameAssetLoader 経由で非同期ロードし適用する。
+        /// キャッシュが存在すれば即座に適用され、未ロードの場合はバックグラウンドでロード完了時に適用されます。
         /// </summary>
-        /// <param name="imageName">スプライト画像名（拡張子なし）</param>
-        public void LoadSprite(string imageName)
+        /// <param name="spriteName">スプライト画像名（Addressables アドレス）</param>
+        public void SetSprite(string spriteName)
         {
-            if (string.IsNullOrWhiteSpace(imageName)) return;
-
-            if (currentImageName == imageName && spriteRenderer != null && spriteRenderer.sprite != null)
-            {
-                return;
-            }
+            if (string.IsNullOrWhiteSpace(spriteName)) return;
 
             EnsureSpriteRenderer();
 
-            if (loadSpriteCoroutine != null)
+            if (GameAssetLoader.Instance != null && GameAssetLoader.Instance.TryGetLoadedSprite(spriteName, out var cachedSprite))
             {
-                StopCoroutine(loadSpriteCoroutine);
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.sprite = cachedSprite;
+                }
+                return;
             }
 
-            loadSpriteCoroutine = StartCoroutine(LoadSpriteRoutine(imageName));
+            _ = LoadAndSetSpriteAsync(spriteName, destroyCancellationToken);
         }
 
         /// <summary>
-        /// Resources からスプライトを非同期ロードして SpriteRenderer に適用するコルーチン。
+        /// スプライト画像名を指定して、GameAssetLoader 経由で非同期ロードし適用する。
         /// </summary>
-        /// <param name="imageName">スプライト画像名</param>
-        /// <returns>コルーチン反復子</returns>
-        private IEnumerator LoadSpriteRoutine(string imageName)
+        /// <param name="spriteName">スプライト画像名（Addressables アドレス）</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>完了タスク</returns>
+        public async Task SetSpriteAsync(string spriteName, CancellationToken cancellationToken = default)
         {
-            var path = $"{SpriteResourcePrefix}{imageName}";
-            var request = Resources.LoadAsync<Sprite>(path);
+            if (string.IsNullOrWhiteSpace(spriteName)) return;
 
-            yield return request;
+            EnsureSpriteRenderer();
 
-            var sprite = request.asset as Sprite;
-            if (sprite == null)
+            if (GameAssetLoader.Instance != null && GameAssetLoader.Instance.TryGetLoadedSprite(spriteName, out var cachedSprite))
             {
-                // 接頭辞なしのパスでもフォールバック試行
-                var fallbackReq = Resources.LoadAsync<Sprite>(imageName);
-                yield return fallbackReq;
-                sprite = fallbackReq.asset as Sprite;
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.sprite = cachedSprite;
+                }
+                return;
             }
 
-            if (sprite != null && spriteRenderer != null)
-            {
-                spriteRenderer.sprite = sprite;
-                currentImageName = imageName;
-            }
-            else
-            {
-                Debug.LogWarning($"[CharacterVisual2D] スプライト '{imageName}' の非同期ロードに失敗しました (Path: {path})。");
-            }
-
-            loadSpriteCoroutine = null;
+            await LoadAndSetSpriteAsync(spriteName, cancellationToken);
         }
 
         /// <summary>
@@ -212,6 +196,34 @@ namespace Runner
             }
 
             flashCoroutine = null;
+        }
+
+        /// <summary>
+        /// スプライトを GameAssetLoader から非同期ロードし、完了時に適用する。
+        /// </summary>
+        /// <param name="spriteName">スプライト画像名</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>完了タスク</returns>
+        private async Task LoadAndSetSpriteAsync(string spriteName, CancellationToken cancellationToken)
+        {
+            if (GameAssetLoader.Instance == null) return;
+
+            try
+            {
+                var loaded = await GameAssetLoader.Instance.LoadSpriteAsync(spriteName, cancellationToken);
+                if (loaded != null && spriteRenderer != null && !cancellationToken.IsCancellationRequested)
+                {
+                    spriteRenderer.sprite = loaded;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // オブジェクト破棄やキャンセル時は中断
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"[CharacterVisual2D] スプライトロード失敗 ({spriteName}): {ex.Message}");
+            }
         }
     }
 }

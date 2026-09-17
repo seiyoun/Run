@@ -5,6 +5,8 @@
  */
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Shiyuan.Foundation.Core;
 using Unity.Behavior;
 using UnityEngine;
@@ -208,10 +210,11 @@ namespace Runner
 
         /// <summary>
         /// EnemyMasterData の各設定値を対応するコンポーネントへ適用する。
-        /// スプライトのロードと設定は CharacterVisual2D を通じてシームレスに行われます。
+        /// スプライトが指定されていない場合はシームレスに非同期ロードして反映します。
         /// </summary>
         /// <param name="data">適用するエネミーマスターデータ</param>
-        public void ApplyData(EnemyMasterData data)
+        /// <param name="sprite">適用するエネミースプライト（未指定時は自動ロード）</param>
+        public void ApplyData(EnemyMasterData data, Sprite sprite = null)
         {
             if (data == null) return;
 
@@ -237,14 +240,13 @@ namespace Runner
                 colliderComponent.radius = data.colliderRadius;
             }
 
-            // スプライトの画像ロードは CharacterVisual2D に一任（シームレスにオンデマンドロード）
-            if (visualComponent != null)
+            if (sprite != null)
             {
-                visualComponent.LoadSprite(data.imageName);
+                visualComponent?.SetSprite(sprite);
             }
-            else if (spriteRenderer != null)
+            else if (!string.IsNullOrEmpty(data.imageName))
             {
-                spriteRenderer.sprite = Resources.Load<Sprite>($"Sprites/Characters/{data.imageName}");
+                visualComponent?.SetSprite(data.imageName);
             }
 
             AttackPower = data.attackPower;
