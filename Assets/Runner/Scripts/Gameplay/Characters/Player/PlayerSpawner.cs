@@ -46,6 +46,7 @@ namespace Runner
                 addressableLoader = null;
             }
         }
+
         /// <summary>
         /// Addressables からプレイヤーアセットをロードし、指定された位置（または設定されたスポーン位置）に生成する。
         /// </summary>
@@ -56,6 +57,7 @@ namespace Runner
         {
             var targetPoint = customSpawnPoint != null ? customSpawnPoint : spawnPoint;
             var spawnPos = targetPoint != null ? targetPoint.position : transform.position;
+            spawnPos.z = 0f;
             GameObject playerObj = null;
 
             try
