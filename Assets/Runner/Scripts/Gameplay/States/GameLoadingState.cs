@@ -137,7 +137,7 @@ namespace Runner
         {
             DebugLogger.Log("[GameLoadingState] PlayerSpawner を呼び出してプレイヤー生成を開始します...");
 
-            var spawner = Object.FindFirstObjectByType<PlayerSpawner>();
+            var spawner = PlayerSpawner.Instance;
             if (spawner != null)
             {
                 var player = await spawner.SpawnPlayerAsync(spawnPoint, cancellationToken);

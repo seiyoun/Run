@@ -19,44 +19,74 @@ namespace Runner
     /// GameLoadingState から呼び出されてインスタンス化を実行し、破棄時に AddressablePrefabLoader を Dispose します。
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerSpawner : MonoBehaviour
+    public sealed class PlayerSpawner : SingletonMonoBehaviour<PlayerSpawner>
     {
         private const string PlayerAddress = "Player";
-        [Header("Spawn Settings")]
-        [Tooltip("スポーン位置（未指定の場合は本オブジェクトの位置）")]
-        [SerializeField]
-        private Transform spawnPoint;
+
         private AddressablePrefabLoader addressableLoader;
+
+        /// <summary>Game シーン破棄時に一緒に破棄させ、確実にリソースを解放する</summary>
+        protected override bool ShouldDontDestroyOnLoad => false;
+
+        /// <summary>インスタンスが既に存在するかどうか</summary>
+        public static bool HasInstance => SingletonMonoBehaviour<PlayerSpawner>.Instance != null;
+
         /// <summary>
-        /// AddressablePrefabLoader のインスタンスを初期化する。
+        /// PlayerSpawner の正規インスタンスを取得する。シーン上に存在しない場合は動的に生成します。
         /// </summary>
-        private void Awake()
+        public new static PlayerSpawner Instance
         {
+            get
+            {
+                if (!Application.isPlaying) return null;
+
+                var baseInstance = SingletonMonoBehaviour<PlayerSpawner>.Instance;
+                if (baseInstance != null) return baseInstance;
+
+                var existing = FindFirstObjectByType<PlayerSpawner>();
+                if (existing != null) return existing;
+
+                var obj = new GameObject(nameof(PlayerSpawner));
+                return obj.AddComponent<PlayerSpawner>();
+            }
+        }
+
+        /// <summary>
+        /// シングルトンの初期化および AddressablePrefabLoader のインスタンスを初期化する。
+        /// </summary>
+        protected override void Awake()
+        {
+            base.Awake();
+            if (!IsPrimaryInstance) return;
+
             addressableLoader = new AddressablePrefabLoader();
         }
 
         /// <summary>
         /// オブジェクト破棄時に AddressablePrefabLoader を Dispose してロードしたアセットを解放する。
         /// </summary>
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
+            if (!IsPrimaryInstance) return;
+
             if (addressableLoader != null)
             {
                 addressableLoader.Dispose();
                 addressableLoader = null;
             }
+
+            base.OnDestroy();
         }
 
         /// <summary>
-        /// Addressables からプレイヤーアセットをロードし、指定された位置（または設定されたスポーン位置）に生成する。
+        /// Addressables からプレイヤーアセットをロードし、指定された位置（未指定時は原点）に生成する。
         /// </summary>
-        /// <param name="customSpawnPoint">スポーン位置として使用する Transform（null の場合は本オブジェクトの spawnPoint または transform を使用）</param>
+        /// <param name="spawnPoint">スポーン位置として使用する Transform（null の場合は Vector3.zero を使用）</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>生成された PlayerController インスタンス</returns>
-        public async Task<PlayerController> SpawnPlayerAsync(Transform customSpawnPoint = null, CancellationToken cancellationToken = default)
+        public async Task<PlayerController> SpawnPlayerAsync(Transform spawnPoint = null, CancellationToken cancellationToken = default)
         {
-            var targetPoint = customSpawnPoint != null ? customSpawnPoint : spawnPoint;
-            var spawnPos = targetPoint != null ? targetPoint.position : transform.position;
+            var spawnPos = spawnPoint != null ? spawnPoint.position : Vector3.zero;
             spawnPos.z = 0f;
             GameObject playerObj = null;
 
