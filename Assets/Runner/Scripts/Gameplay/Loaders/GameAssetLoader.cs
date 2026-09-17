@@ -22,8 +22,6 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class GameAssetLoader : SingletonMonoBehaviour<GameAssetLoader>
     {
-        private static bool isApplicationQuitting;
-
         private readonly Dictionary<string, Sprite> loadedSprites = new();
         private readonly Dictionary<string, AsyncOperationHandle<Sprite>> spriteHandles = new();
 
@@ -43,7 +41,7 @@ namespace Runner
         {
             get
             {
-                if (isApplicationQuitting) return null;
+                if (!Application.isPlaying) return null;
 
                 var baseInstance = SingletonMonoBehaviour<GameAssetLoader>.Instance;
                 if (baseInstance != null) return baseInstance;
@@ -63,14 +61,6 @@ namespace Runner
         {
             base.Awake();
             if (!IsPrimaryInstance) return;
-        }
-
-        /// <summary>
-        /// アプリケーション終了フラグを設定する。
-        /// </summary>
-        private void OnApplicationQuit()
-        {
-            isApplicationQuitting = true;
         }
 
         /// <summary>

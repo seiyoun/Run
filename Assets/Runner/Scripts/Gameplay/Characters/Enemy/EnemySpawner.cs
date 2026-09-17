@@ -24,8 +24,6 @@ namespace Runner
         private const float DefaultMaxRadius = 10.0f;
         private const int DefaultMaxActiveEnemies = 15;
 
-        private static bool isApplicationQuitting;
-
         [Header("Spawn Settings")]
         [Tooltip("プレイヤーからの最小スポーン距離")]
         [SerializeField]
@@ -60,7 +58,7 @@ namespace Runner
         {
             get
             {
-                if (isApplicationQuitting) return null;
+                if (!Application.isPlaying) return null;
 
                 var baseInstance = SingletonMonoBehaviour<EnemySpawner>.Instance;
                 if (baseInstance != null) return baseInstance;
@@ -71,14 +69,6 @@ namespace Runner
                 var obj = new GameObject(nameof(EnemySpawner));
                 return obj.AddComponent<EnemySpawner>();
             }
-        }
-
-        /// <summary>
-        /// アプリケーション終了フラグを設定する。
-        /// </summary>
-        private void OnApplicationQuit()
-        {
-            isApplicationQuitting = true;
         }
 
         /// <summary>
