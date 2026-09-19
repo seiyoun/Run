@@ -7,6 +7,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Shiyuan.Foundation.Addressables;
 using Shiyuan.Foundation.Core;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -19,6 +20,8 @@ namespace Runner
     /// </summary>
     public sealed class GameLoadingState : IState<GamePlayState>
     {
+        private const string ResultModalAddress = "GameResultModalView";
+
         public GamePlayState State => GamePlayState.Loading;
 
         private readonly IGameContext context;
@@ -37,10 +40,8 @@ namespace Runner
         {
             DebugLogger.Log("[GameLoadingState] ゲームプレイのロードを開始します...");
 
-            // 1. 背景プレハブのロード・生成
             var bgObj = await LoadBackgroundAsync(cancellationToken);
 
-            // 背景からプレイヤー生成位置 Transform を取得
             Transform playerSpawnPoint = null;
             if (bgObj != null)
             {
@@ -52,18 +53,14 @@ namespace Runner
                 }
             }
 
-            // 2. プレイヤーのロード・生成（背景のスポーン位置を優先）
             await LoadPlayerAsync(playerSpawnPoint, cancellationToken);
-
-            // 3. ゲーム画面HUD（ポイ活・怒りゲージ・脱出タイマー・スマホ通販）のセットアップ
+            await LoadResultModalAsync(cancellationToken);
             SetupGameHUD();
 
 #if SANDBOX || UNITY_EDITOR
-            // 4. SANDBOX 定義時（または Unity エディタ実行時）のみ DebugCanvas を動的ロード・生成
             SpawnDebugHUD();
 #endif
 
-            // ロード完了後、Playing ステートへ遷移
             if (context.StateMachine != null)
             {
                 await context.StateMachine.ChangeStateAsync(GamePlayState.Playing, cancellationToken);
@@ -157,15 +154,58 @@ namespace Runner
             }
         }
 
+        /// <summary>
+        /// Addressables からリザルトモーダルプレハブをロード・生成し、非表示状態で待機させてローダーを委託する。
+        /// </summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        private async Task LoadResultModalAsync(CancellationToken cancellationToken)
+        {
+            DebugLogger.Log("[GameLoadingState] Addressables から GameResultModalView のロードを開始します...");
+
+            var loader = new AddressablePrefabLoader();
+            try
+            {
+                var modalObj = await loader.LoadAsync(ResultModalAddress, cancellationToken);
+                if (modalObj != null)
+                {
+                    var modalView = modalObj.GetComponent<GameResultModalView>();
+                    if (modalView != null)
+                    {
+                        modalView.BindLoader(loader);
+                        modalView.Hide();
+                        DebugLogger.Log("[GameLoadingState] GameResultModalView のロードおよび非表示待機化が完了しました。");
+                    }
+                    else
+                    {
+                        DebugLogger.Error("[GameLoadingState] ロードされたプレハブに GameResultModalView がアタッチされていません。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"[GameLoadingState] GameResultModalView のロードに失敗しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// ステート待機非同期処理。
+        /// </summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
         public async Task WaitAsync(CancellationToken cancellationToken)
         {
             await Task.Yield();
         }
 
+        /// <summary>
+        /// 毎フレームの更新処理。
+        /// </summary>
         public void Update()
         {
         }
 
+        /// <summary>
+        /// ステート終了時のクリーンアップ処理。
+        /// </summary>
         public void Exit()
         {
             DebugLogger.Log("[GameLoadingState] ロード完了。Playing ステートへ移行しました。");

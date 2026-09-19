@@ -22,6 +22,15 @@
       }
     ]
   },
+  "yagni-guard": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "./scripts/yagni_guard.py",
+        "timeout": 5
+      }
+    ]
+  },
   "task-completion-validator": {
     "Stop": [
       {

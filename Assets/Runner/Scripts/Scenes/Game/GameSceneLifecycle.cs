@@ -78,8 +78,10 @@ namespace Runner
             }
 
             playerInstance = null;
+
             DebugLogger.Log("[GameScene] GameSceneLifecycle 破棄処理完了。");
         }
+
         /// <summary>
         /// 生成された PlayerController インスタンスを GameContext に登録する。
         /// </summary>
@@ -87,6 +89,18 @@ namespace Runner
         public void SetPlayerInstance(PlayerController player)
         {
             playerInstance = player;
+        }
+
+        /// <summary>
+        /// Home シーンへの復帰を要求し、シーン遷移を実行する。
+        /// </summary>
+        public async void RequestExitToHome()
+        {
+            DebugLogger.Log("[GameScene] Home シーンへの復帰が要求されました。シーン遷移を開始します。");
+            if (SceneManager.Instance != null)
+            {
+                await SceneManager.Instance.ChangeScene(SceneType.Home, showLoading: true);
+            }
         }
     }
 }
