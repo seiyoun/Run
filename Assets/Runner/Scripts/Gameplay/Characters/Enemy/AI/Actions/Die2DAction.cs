@@ -88,7 +88,15 @@ namespace Runner
                 var shouldDestroy = DestroyOnComplete == null || DestroyOnComplete.Value;
                 if (shouldDestroy)
                 {
-                    UnityEngine.Object.Destroy(agentGo);
+                    var enemy = agentGo.GetComponent<EnemyController>();
+                    if (EnemySpawner.HasInstance && enemy != null)
+                    {
+                        EnemySpawner.Instance.ReturnEnemy(enemy);
+                    }
+                    else
+                    {
+                        UnityEngine.Object.Destroy(agentGo);
+                    }
                 }
 
                 return Status.Success;

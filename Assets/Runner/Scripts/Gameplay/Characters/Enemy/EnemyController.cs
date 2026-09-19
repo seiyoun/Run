@@ -265,6 +265,37 @@ namespace Runner
         }
 
         /// <summary>
+        /// オブジェクトプールからの再取得時にエネミーの状態をリセットし、再初期化する。
+        /// </summary>
+        /// <param name="position">リスポーンワールド座標</param>
+        /// <param name="enemyType">エネミー種別</param>
+        /// <param name="target">追尾対象 Transform</param>
+        public void ResetForPool(Vector3 position, EnemyType enemyType, Transform target)
+        {
+            transform.position = position;
+            isDeathHandled = false;
+
+            if (colliderComponent != null)
+            {
+                colliderComponent.enabled = true;
+            }
+
+            var data = MasterDataManager.GetEnemyMasterData(enemyType);
+            ApplyData(data);
+            SetTarget(target);
+
+            if (movementComponent != null)
+            {
+                movementComponent.Stop();
+            }
+
+            if (behaviorAgent != null)
+            {
+                behaviorAgent.Restart();
+            }
+        }
+
+        /// <summary>
         /// BehaviorGraphAgent の Blackboard 変数（Self, Target, 攻撃設定等）へ最新の参照を同期する。
         /// </summary>
         private void SyncBlackboardVariables()

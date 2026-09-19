@@ -20,6 +20,7 @@ namespace Runner
     /// </summary>
     public sealed class GameLoadingState : IState<GamePlayState>
     {
+        private const string BackgroundAddress = "ArenaBackground";
         private const string ResultModalAddress = "GameResultModalView";
 
         public GamePlayState State => GamePlayState.Loading;
@@ -95,31 +96,36 @@ namespace Runner
 #endif
 
         /// <summary>
-        /// BackgroundSpawner を通じて背景プレハブをロード・生成する。
+        /// Addressables から背景プレハブをロード・生成する。
         /// </summary>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>生成された背景 GameObject インスタンス</returns>
         private async Task<GameObject> LoadBackgroundAsync(CancellationToken cancellationToken)
         {
-            DebugLogger.Log("[GameLoadingState] BackgroundSpawner を呼び出して背景プレハブ生成を開始します...");
+            DebugLogger.Log("[GameLoadingState] Addressables から背景プレハブのロードを開始します...");
 
-            var bgSpawner = Object.FindFirstObjectByType<BackgroundSpawner>();
-            if (bgSpawner != null)
+            var loader = new AddressablePrefabLoader();
+            try
             {
-                var bg = await bgSpawner.SpawnBackgroundAsync(cancellationToken);
-                if (bg != null)
+                var bgObj = await loader.LoadAsync(BackgroundAddress, cancellationToken);
+                if (bgObj != null)
                 {
-                    DebugLogger.Log("[GameLoadingState] BackgroundSpawner による背景プレハブ生成が完了しました。");
-                    return bg;
+                    var arenaBg = bgObj.GetComponent<ArenaBackground>();
+                    if (arenaBg != null)
+                    {
+                        arenaBg.BindLoader(loader);
+                    }
+                    DebugLogger.Log("[GameLoadingState] 背景プレハブのロード・生成が完了しました。");
+                    return bgObj;
                 }
                 else
                 {
-                    DebugLogger.Error("[GameLoadingState] BackgroundSpawner による背景プレハブ生成に失敗しました。");
+                    DebugLogger.Error("[GameLoadingState] 背景プレハブのロード結果が null です。");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                DebugLogger.Error("[GameLoadingState] シーン上に BackgroundSpawner が見つかりません。");
+                DebugLogger.Error($"[GameLoadingState] 背景プレハブのロードに失敗しました: {ex.Message}");
             }
 
             return null;

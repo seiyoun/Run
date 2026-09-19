@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Shiyuan.Foundation.Core;
 using UnityEngine;
+using UnityEngine.Pool;
 using Random = UnityEngine.Random;
 
 namespace Runner
@@ -38,6 +39,7 @@ namespace Runner
 
         private IEnemyFactory enemyFactory;
         private Transform playerTransform;
+        private ObjectPool<EnemyController> enemyPool;
 
         /// <summary>Game シーン破棄時に一緒に破棄させ、確実にリソースを解放する</summary>
         protected override bool ShouldDontDestroyOnLoad => false;
@@ -66,7 +68,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// シングルトンの初期化およびファクトリの初期生成を行う。
+        /// シングルトンの初期化およびファクトリ・オブジェクトプールの初期生成を行う。
         /// </summary>
         protected override void Awake()
         {
@@ -74,14 +76,21 @@ namespace Runner
             if (!IsPrimaryInstance) return;
 
             enemyFactory ??= new EnemyFactory();
+            InitializePool();
         }
 
         /// <summary>
-        /// 破棄時にファクトリのリソースを解放する。
+        /// 破棄時にファクトリおよびオブジェクトプールのリソースを解放する。
         /// </summary>
         protected override void OnDestroy()
         {
             if (!IsPrimaryInstance) return;
+
+            if (enemyPool != null)
+            {
+                enemyPool.Dispose();
+                enemyPool = null;
+            }
 
             if (enemyFactory is IDisposable disposable)
             {
@@ -103,7 +112,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// 指定されたエネミー種別のエネミーを1体非同期生成し、初期化する。
+        /// 指定されたエネミー種別のエネミーを1体非同期生成（またはプールから再取得）し、初期化する。
         /// </summary>
         /// <param name="enemyType">生成するエネミー種別</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
@@ -117,8 +126,76 @@ namespace Runner
             }
 
             var spawnPos = CalculateSpawnPosition();
-            var enemy = await enemyFactory.CreateEnemyAsync(spawnPos, enemyType, cancellationToken);
-            return enemy;
+
+            if (enemyPool != null && enemyPool.CountInactive > 0)
+            {
+                var pooledEnemy = enemyPool.Get();
+                if (pooledEnemy != null)
+                {
+                    if (playerTransform == null)
+                    {
+                        FindPlayerTransform();
+                    }
+                    pooledEnemy.ResetForPool(spawnPos, enemyType, playerTransform);
+                    return pooledEnemy;
+                }
+            }
+
+            var newEnemy = await enemyFactory.CreateEnemyAsync(spawnPos, enemyType, cancellationToken);
+            return newEnemy;
+        }
+
+        /// <summary>
+        /// エネミーをオブジェクトプールに返却し、非アクティブ化する。
+        /// </summary>
+        /// <param name="enemy">返却する EnemyController</param>
+        public void ReturnEnemy(EnemyController enemy)
+        {
+            if (enemy == null) return;
+
+            if (enemyPool != null)
+            {
+                enemyPool.Release(enemy);
+            }
+            else
+            {
+                Destroy(enemy.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// エネミーのオブジェクトプールを初期化する。
+        /// </summary>
+        private void InitializePool()
+        {
+            enemyPool = new ObjectPool<EnemyController>(
+                createFunc: () =>
+                {
+                    return enemyFactory?.CreateEnemy(Vector3.zero, spawnEnemyType);
+                },
+                actionOnGet: enemy =>
+                {
+                    if (enemy != null)
+                    {
+                        enemy.gameObject.SetActive(true);
+                    }
+                },
+                actionOnRelease: enemy =>
+                {
+                    if (enemy != null)
+                    {
+                        enemy.gameObject.SetActive(false);
+                    }
+                },
+                actionOnDestroy: enemy =>
+                {
+                    if (enemy != null)
+                    {
+                        Destroy(enemy.gameObject);
+                    }
+                },
+                collectionCheck: false
+            );
         }
 
         /// <summary>
