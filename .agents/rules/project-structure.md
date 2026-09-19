@@ -6,8 +6,19 @@ All project-specific assets and source code are located under `Assets/Runner/`.
 
 ```text
 Assets/Runner/
+├── Art/                # Visual & graphic assets
+│   ├── Animations/     # Animation clips & Animator controllers
+│   ├── Fonts/          # Font files & TMP Font Assets
+│   └── Sprites/        # 2D Sprites categorized by domain (Characters, Items, Stage, UI)
+├── Behaviors/          # Unity Behavior graph assets
 ├── Editor/             # Editor-only scripts and tools (Runner.Editor.asmdef)
-├── Prefabs/            # Prefab assets (including Addressable prefabs)
+├── Prefabs/            # Prefab assets categorized by domain (including Addressables)
+│   ├── Characters/     # Player, Enemy
+│   ├── Items/          # MoneyItem, etc.
+│   ├── Stage/          # ArenaBackground, etc.
+│   ├── System/         # CameraManager, etc.
+│   └── UI/             # Modal views, LoadingView, etc.
+├── Resources/          # Runtime resources (e.g. Data/ JSON master data)
 ├── Scenes/             # Unity scene files (Boot.unity, Title.unity, Home.unity, Game.unity, etc.)
 ├── Settings/           # ScriptableObject settings and asset configurations
 └── Scripts/            # Runtime C# scripts
@@ -17,6 +28,7 @@ Assets/Runner/
     │   ├── States/     # In-game StateMachine states (GamePlayingState, GameOverState, etc.)
     │   └── UI/         # Gameplay-specific UI (e.g. FloatingHpBar)
     ├── Input/          # Player input handling & Input System binding (Runner.Input.asmdef)
+    ├── MasterData/     # Master data models and loaders (Enemy, Player, Shop)
     ├── Scenes/         # Scene-level lifecycles & state machines (Runner.Scenes.asmdef)
     │   ├── Boot/
     │   ├── Title/
