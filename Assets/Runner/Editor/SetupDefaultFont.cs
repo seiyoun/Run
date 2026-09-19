@@ -18,10 +18,10 @@ namespace Runner.Editor
     /// </summary>
     public static class SetupDefaultFont
     {
-        private const string FontPath = "Assets/Runner/Fonts/NotoSansJP-VariableFont_wght.ttf";
-        private const string FontAssetPath = "Assets/Runner/Fonts/NotoSansJP-VariableFont_wght_SDF.asset";
-        private const string OldFontAssetPath = "Assets/Runner/Fonts/NotoSansJP_SDF.asset";
-        private const string OldTtfPath = "Assets/Runner/Fonts/NotoSansJP.ttf";
+        private const string FontPath = "Assets/Runner/Art/Fonts/NotoSansJP-VariableFont_wght.ttf";
+        private const string FontAssetPath = "Assets/Runner/Art/Fonts/NotoSansJP-VariableFont_wght_SDF.asset";
+        private const string OldFontAssetPath = "Assets/Runner/Art/Fonts/NotoSansJP_SDF.asset";
+        private const string OldTtfPath = "Assets/Runner/Art/Fonts/NotoSansJP.ttf";
 
         // 絵文字・フォント未収録の特殊記号（➔等）を検出する正規表現
         private static readonly Regex EmojiRegex = new Regex(
