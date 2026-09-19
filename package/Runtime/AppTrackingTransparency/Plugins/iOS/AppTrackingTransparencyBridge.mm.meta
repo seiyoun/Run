@@ -1,0 +1,28 @@
+fileFormatVersion: 2
+guid: 62a3f1ed4bd04dd185e43e0c88a53fec
+PluginImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  icon: {fileID: 0}
+  platformData:
+    - first:
+        Any: 0
+      second:
+        enabled: 0
+        excludeEditor: 0
+        excludeLinux64: 0
+        excludeOSXUniversal: 0
+        excludeWin: 0
+        excludeWin64: 0
+    - first:
+        iOS: 1
+      second:
+        enabled: 1
+        excludeEditor: 0
+        excludeLinux64: 0
+        excludeOSXUniversal: 0
+        excludeWin: 0
+        excludeWin64: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

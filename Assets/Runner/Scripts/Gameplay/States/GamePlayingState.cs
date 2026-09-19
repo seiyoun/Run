@@ -56,7 +56,7 @@ namespace Runner
             isExitUnlocked = false;
             nextSaleTriggerPoint = SaleTriggerPointInterval;
 
-            var player = context.Player;
+            var player = PlayerController.Instance;
             if (player != null)
             {
                 if (InputController.Instance != null)
@@ -86,10 +86,12 @@ namespace Runner
                 float initialProgress = (float)initialCycleEarned / SaleTriggerPointInterval;
                 GameHUDView.Instance.UpdateRestockProgress(initialRemaining, initialProgress, true);
             }
+
+            DebugLogger.Log("[GamePlayingState] ゲームプレイ準備が完了しました。");
         }
 
         /// <summary>
-        /// ステートの完了を待機する。ゲームオーバーや遷移イベントが発生するまで待機します。
+        /// プレイ中ステート待機非同期処理。
         /// </summary>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>待機タスク</returns>
@@ -99,20 +101,19 @@ namespace Runner
         }
 
         /// <summary>
-        /// 毎フレームのゲームプレイ更新処理（プレイヤー更新、脱出タイマー減算、セール発火判定）を実行する。
+        /// 毎フレームのゲームプレイ更新処理（脱出タイマー減算、セール発火判定）を実行する。
         /// ショップモーダル表示中などのポーズ時は deltaTime を 0 にして更新を一時停止します。
         /// </summary>
-        public void Update()
+        /// <param name="deltaTime">前フレームからの経過時間（秒）</param>
+        public void Update(float deltaTime)
         {
             bool isPaused = (GameHUDView.Instance != null && GameHUDView.Instance.ShopModal != null && GameHUDView.Instance.ShopModal.IsOpen)
                             || Time.timeScale <= 0f;
-            float deltaTime = isPaused ? 0f : Time.deltaTime;
+            float actualDeltaTime = isPaused ? 0f : deltaTime;
 
-            var player = context.Player;
+            var player = PlayerController.Instance;
             if (player != null)
             {
-                player.OnUpdate(deltaTime);
-
                 long totalEarned = player.TotalEarnedMoney;
                 long cycleEarned = totalEarned % SaleTriggerPointInterval;
                 long remainingPoints = SaleTriggerPointInterval - cycleEarned;
@@ -140,7 +141,7 @@ namespace Runner
             // 脱出タイマーの減算および非常口開放判定
             if (!isPaused && !isExitUnlocked && remainingEscapeTime > 0f)
             {
-                remainingEscapeTime -= deltaTime;
+                remainingEscapeTime -= actualDeltaTime;
                 if (remainingEscapeTime <= 0f)
                 {
                     remainingEscapeTime = 0f;
@@ -159,7 +160,7 @@ namespace Runner
         /// </summary>
         public void Exit()
         {
-            var player = context.Player;
+            var player = PlayerController.Instance;
             if (player != null && player.Status != null)
             {
                 player.Status.OnDead -= HandlePlayerDead;

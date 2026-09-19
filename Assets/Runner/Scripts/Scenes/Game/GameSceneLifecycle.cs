@@ -20,13 +20,9 @@ namespace Runner
     public sealed class GameSceneLifecycle : SceneLifecycleBase, IGameContext
     {
         private StateMachine<GamePlayState> stateMachine;
-        private PlayerController playerInstance;
 
         /// <summary>ゲームプレイ進行ステートマシン</summary>
         public StateMachine<GamePlayState> StateMachine => stateMachine;
-
-        /// <summary>現在シーン上に生成されているプレイヤーコントローラー</summary>
-        public PlayerController Player => playerInstance;
 
         /// <summary>
         /// Game シーン初期化前の通信およびアセット読み込み待機処理。
@@ -59,11 +55,7 @@ namespace Runner
         /// </summary>
         protected override void OnUpdate()
         {
-            if (stateMachine != null && stateMachine.HasCurrentState)
-            {
-                var currentState = stateMachine.GetState(stateMachine.CurrentState);
-                currentState?.Update();
-            }
+            stateMachine?.Update(Time.deltaTime);
         }
 
         /// <summary>
@@ -77,18 +69,7 @@ namespace Runner
                 stateMachine = null;
             }
 
-            playerInstance = null;
-
             DebugLogger.Log("[GameScene] GameSceneLifecycle 破棄処理完了。");
-        }
-
-        /// <summary>
-        /// 生成された PlayerController インスタンスを GameContext に登録する。
-        /// </summary>
-        /// <param name="player">登録する PlayerController</param>
-        public void SetPlayerInstance(PlayerController player)
-        {
-            playerInstance = player;
         }
 
         /// <summary>

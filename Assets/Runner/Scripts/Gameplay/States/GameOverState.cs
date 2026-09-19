@@ -42,7 +42,7 @@ namespace Runner
         {
             DebugLogger.Log("[GameOverState] ゲームオーバー。プレイヤー入力を切断し、リザルト画面を表示します。");
 
-            var player = context.Player;
+            var player = PlayerController.Instance;
             int steps = 0;
             long money = 0;
 
@@ -79,7 +79,8 @@ namespace Runner
         /// <summary>
         /// 毎フレームの更新処理。
         /// </summary>
-        public void Update() { }
+        /// <param name="deltaTime">前フレームからの経過時間（秒）</param>
+        public void Update(float deltaTime) { }
 
         /// <summary>
         /// ステート終了時のクリーンアップ処理。

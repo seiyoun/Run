@@ -1,0 +1,14 @@
+﻿{
+    "name": "Shiyuan.Foundation.Core",
+    "rootNamespace": "Shiyuan.Foundation.Core",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

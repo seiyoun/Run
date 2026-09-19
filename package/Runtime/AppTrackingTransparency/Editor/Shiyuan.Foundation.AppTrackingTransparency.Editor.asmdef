@@ -1,0 +1,19 @@
+{
+    "name": "Shiyuan.Foundation.AppTrackingTransparency.Editor",
+    "rootNamespace": "Shiyuan.Foundation.AppTrackingTransparency.Editor",
+    "references": [
+        "Shiyuan.Foundation.AppTrackingTransparency",
+        "Shiyuan.Foundation.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

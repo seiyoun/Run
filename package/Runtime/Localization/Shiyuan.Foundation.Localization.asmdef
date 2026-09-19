@@ -1,0 +1,19 @@
+﻿{
+    "name": "Shiyuan.Foundation.Localization",
+    "rootNamespace": "Shiyuan.Foundation.Localization",
+    "references": [
+        "Shiyuan.Foundation.Core",
+        "Unity.Localization",
+        "Unity.ResourceManager",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

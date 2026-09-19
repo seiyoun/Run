@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.shiyuan.foundation": {
-      "version": "file:/Users/jinshiyuan/Documents/GitHub/com.shiyuan.foundation/com.shiyuan.foundation-1.0.0.tgz",
+      "version": "file:/Users/jinshiyuan/Documents/Project/GitHub/com.shiyuan.foundation/com.shiyuan.foundation-1.0.1.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {

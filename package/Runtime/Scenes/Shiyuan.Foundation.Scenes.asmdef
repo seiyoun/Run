@@ -1,0 +1,16 @@
+﻿{
+    "name": "Shiyuan.Foundation.Scenes",
+    "rootNamespace": "Shiyuan.Foundation.Scenes",
+    "references": [
+        "Shiyuan.Foundation.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

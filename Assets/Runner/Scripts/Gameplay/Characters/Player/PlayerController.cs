@@ -209,6 +209,35 @@ namespace Runner
         }
 
         /// <summary>
+        /// 毎フレームの更新処理（攻撃タイマー、怒りゲージ、アイテム吸引、外観、アニメーション）を実行する。
+        /// </summary>
+        private void Update()
+        {
+            bool isPaused = (GameHUDView.Instance != null && GameHUDView.Instance.ShopModal != null && GameHUDView.Instance.ShopModal.IsOpen)
+                            || Time.timeScale <= 0f;
+            if (isPaused)
+            {
+                movementComponent?.Stop();
+                animatorComponent?.PlayIdle();
+                return;
+            }
+
+            if (IsDead)
+            {
+                movementComponent?.Stop();
+                return;
+            }
+
+            float deltaTime = Time.deltaTime;
+            attackerComponent?.OnUpdate(deltaTime);
+            rageComponent?.OnUpdate(deltaTime, MoveInput.sqrMagnitude > 0.01f);
+            magnetComponent?.OnUpdate(deltaTime);
+
+            UpdateVisuals(deltaTime);
+            UpdateAnimation();
+        }
+
+        /// <summary>
         /// 破棄時に入力バインドおよびイベント購読を解除する。
         /// </summary>
         private void OnDestroy()
@@ -229,33 +258,6 @@ namespace Runner
         public override string ToString()
         {
             return $"PlayerController (Steps: {CurrentSteps}, Money: {CurrentMoney}, Speed: {MoveSpeed}, Magnet: {MagnetRadius}m)";
-        }
-
-        /// <summary>
-        /// 毎フレームの更新処理（攻撃タイマー、怒りゲージ、アイテム吸引、外観、アニメーション）を一括駆動する。
-        /// </summary>
-        /// <param name="deltaTime">フレーム経過時間（ポーズ時は0）</param>
-        public void OnUpdate(float deltaTime)
-        {
-            if (deltaTime <= 0f)
-            {
-                movementComponent?.Stop();
-                animatorComponent?.PlayIdle();
-                return;
-            }
-
-            if (IsDead)
-            {
-                movementComponent?.Stop();
-                return;
-            }
-
-            attackerComponent?.OnUpdate(deltaTime);
-            rageComponent?.OnUpdate(deltaTime, MoveInput.sqrMagnitude > 0.01f);
-            magnetComponent?.OnUpdate(deltaTime);
-
-            UpdateVisuals(deltaTime);
-            UpdateAnimation();
         }
 
         /// <summary>

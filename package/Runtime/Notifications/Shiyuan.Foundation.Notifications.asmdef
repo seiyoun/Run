@@ -1,0 +1,19 @@
+{
+    "name": "Shiyuan.Foundation.Notifications",
+    "rootNamespace": "Shiyuan.Foundation.Notifications",
+    "references": [
+        "Shiyuan.Foundation.Core",
+        "Unity.Notifications",
+        "Unity.Notifications.Android",
+        "Unity.Notifications.iOS"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

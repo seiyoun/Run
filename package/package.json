@@ -1,0 +1,16 @@
+{
+  "name": "com.shiyuan.foundation",
+  "version": "1.0.1",
+  "displayName": "Foundation Core",
+  "description": "Common framework foundation for Hero client application, including addressables, localization, local storage, custom scenes management, and firebase integration.",
+  "unity": "6000.3",
+  "author": {
+    "name": "shiyuan.jin",
+    "email": "shiyuan0106bot@gmail.com"
+  },
+  "dependencies": {
+    "com.unity.addressables": "2.9.1",
+    "com.unity.localization": "1.5.11",
+    "com.unity.mobile.notifications": "2.4.3"
+  }
+}

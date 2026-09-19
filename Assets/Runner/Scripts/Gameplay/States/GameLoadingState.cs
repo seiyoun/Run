@@ -140,7 +140,6 @@ namespace Runner
                 var player = await spawner.SpawnPlayerAsync(spawnPoint, cancellationToken);
                 if (player != null)
                 {
-                    context.SetPlayerInstance(player);
                     DebugLogger.Log("[GameLoadingState] PlayerSpawner によるプレイヤー生成が完了しました。");
                 }
                 else
@@ -199,7 +198,8 @@ namespace Runner
         /// <summary>
         /// 毎フレームの更新処理。
         /// </summary>
-        public void Update()
+        /// <param name="deltaTime">前フレームからの経過時間（秒）</param>
+        public void Update(float deltaTime)
         {
         }
 
