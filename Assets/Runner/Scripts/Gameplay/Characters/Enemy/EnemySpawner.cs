@@ -1,12 +1,13 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: IEnemyFactory を利用してプレイヤー周辺へエネミーを生成するシーン限定シングルトンスポナー。
+ * スクリプト説明: Addressables からエネミープレハブをロード・生成し、オブジェクトプールで再利用管理するシーン限定シングルトンスポナー。
  */
 
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Shiyuan.Foundation.Addressables;
 using Shiyuan.Foundation.Core;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -15,12 +16,13 @@ using Random = UnityEngine.Random;
 namespace Runner
 {
     /// <summary>
-    /// エネミーの生成を行うシーン限定シングルトンスポナー。
+    /// エネミーの生成およびオブジェクトプールによる再利用管理を行うシーン限定シングルトンスポナー。
     /// 外部からの要求に応じてプレイヤー周辺のワールド座標を算出し、エネミーの生成を行います。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class EnemySpawner : SingletonMonoBehaviour<EnemySpawner>
     {
+        private const string EnemyAddress = "Enemy";
         private const float DefaultMinRadius = 6.0f;
         private const float DefaultMaxRadius = 10.0f;
 
@@ -37,7 +39,8 @@ namespace Runner
         [SerializeField]
         private EnemyType spawnEnemyType = EnemyType.Salaryman;
 
-        private IEnemyFactory enemyFactory;
+        private GameObject enemyPrefab;
+        private bool isAssetLoaded;
         private Transform playerTransform;
         private ObjectPool<EnemyController> enemyPool;
 
@@ -68,19 +71,18 @@ namespace Runner
         }
 
         /// <summary>
-        /// シングルトンの初期化およびファクトリ・オブジェクトプールの初期生成を行う。
+        /// シングルトンの初期化およびオブジェクトプールの初期生成を行う。
         /// </summary>
         protected override void Awake()
         {
             base.Awake();
             if (!IsPrimaryInstance) return;
 
-            enemyFactory ??= new EnemyFactory();
             InitializePool();
         }
 
         /// <summary>
-        /// 破棄時にファクトリおよびオブジェクトプールのリソースを解放する。
+        /// 破棄時にオブジェクトプールおよび Addressables プレハブアセットのリソースを解放する。
         /// </summary>
         protected override void OnDestroy()
         {
@@ -92,9 +94,11 @@ namespace Runner
                 enemyPool = null;
             }
 
-            if (enemyFactory is IDisposable disposable)
+            if (isAssetLoaded)
             {
-                disposable.Dispose();
+                AddressableManager.ReleaseAsset(EnemyAddress);
+                isAssetLoaded = false;
+                enemyPrefab = null;
             }
 
             playerTransform = null;
@@ -119,12 +123,6 @@ namespace Runner
         /// <returns>生成された EnemyController インスタンス（失敗時は null）</returns>
         public async Task<EnemyController> SpawnEnemyAsync(EnemyType enemyType, CancellationToken cancellationToken = default)
         {
-            if (enemyFactory == null)
-            {
-                DebugLogger.Error("[EnemySpawner] EnemyFactory が設定されていません。");
-                return null;
-            }
-
             var spawnPos = CalculateSpawnPosition();
 
             if (enemyPool != null && enemyPool.CountInactive > 0)
@@ -141,7 +139,14 @@ namespace Runner
                 }
             }
 
-            var newEnemy = await enemyFactory.CreateEnemyAsync(spawnPos, enemyType, cancellationToken);
+            var prefab = await GetOrLoadPrefabAsync(cancellationToken);
+            if (prefab == null)
+            {
+                DebugLogger.Error("[EnemySpawner] 生成対象のエネミープレハブのロードに失敗しました。");
+                return null;
+            }
+
+            var newEnemy = InstantiateEnemy(prefab, spawnPos, enemyType);
             return newEnemy;
         }
 
@@ -171,7 +176,11 @@ namespace Runner
             enemyPool = new ObjectPool<EnemyController>(
                 createFunc: () =>
                 {
-                    return enemyFactory?.CreateEnemy(Vector3.zero, spawnEnemyType);
+                    if (enemyPrefab != null)
+                    {
+                        return InstantiateEnemy(enemyPrefab, Vector3.zero, spawnEnemyType);
+                    }
+                    return null;
                 },
                 actionOnGet: enemy =>
                 {
@@ -196,6 +205,58 @@ namespace Runner
                 },
                 collectionCheck: false
             );
+        }
+
+        /// <summary>
+        /// プレハブからエネミーをインスタンス化し、マスターデータを適用して初期化する。
+        /// </summary>
+        /// <param name="prefab">対象プレハブ GameObject</param>
+        /// <param name="position">生成ワールド座標</param>
+        /// <param name="enemyType">エネミー種別</param>
+        /// <returns>生成された EnemyController インスタンス（失敗時は null）</returns>
+        private EnemyController InstantiateEnemy(GameObject prefab, Vector3 position, EnemyType enemyType)
+        {
+            var instanceObj = Instantiate(prefab, position, Quaternion.identity);
+            var enemyController = instanceObj.GetComponent<EnemyController>();
+            if (enemyController == null)
+            {
+                DebugLogger.Error("[EnemySpawner] 生成されたプレハブに EnemyController がアタッチされていません。");
+                return null;
+            }
+
+            if (playerTransform == null)
+            {
+                FindPlayerTransform();
+            }
+
+            var data = MasterDataManager.GetEnemyMasterData(enemyType);
+            enemyController.ApplyData(data);
+            enemyController.SetTarget(playerTransform);
+
+            DebugLogger.Log($"[EnemySpawner] エネミーを生成しました: {enemyController.name} (Type: {enemyType}, Position: {position})");
+            return enemyController;
+        }
+
+        /// <summary>
+        /// エネミープレハブを取得する。未ロードの場合は AddressableManager から非同期ロードしてキャッシュする。
+        /// </summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>エネミープレハブ GameObject</returns>
+        private async Task<GameObject> GetOrLoadPrefabAsync(CancellationToken cancellationToken)
+        {
+            if (enemyPrefab != null) return enemyPrefab;
+
+            try
+            {
+                enemyPrefab = await AddressableManager.LoadAssetAsync<GameObject>(EnemyAddress, cancellationToken);
+                isAssetLoaded = true;
+                return enemyPrefab;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"[EnemySpawner] AddressableManager ({EnemyAddress}) のロードに失敗しました: {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>
