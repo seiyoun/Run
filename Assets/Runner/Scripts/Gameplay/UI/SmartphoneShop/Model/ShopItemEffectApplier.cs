@@ -39,21 +39,17 @@ namespace Runner
 
             switch (item.itemType)
             {
-                case ShopItemType.EnergyDrink:
+                case ShopItemType.Recovery:
                     player.Heal(EnergyDrinkHealAmount);
                     player.AddRage(EnergyDrinkRageGain);
                     break;
 
-                case ShopItemType.SpeedSneakers:
+                case ShopItemType.Enhancement:
                     player.MoveSpeed *= SpeedSneakersMultiplier;
                     break;
 
-                case ShopItemType.Drone:
-                case ShopItemType.Bodyguard:
-                case ShopItemType.PointMagnet:
-                case ShopItemType.BarrierShield:
-                    // 将来の拡張用スロット
-                    DebugLogger.Log($"[ShopItemEffectApplier] 拡張アイテム効果を発動: {item.itemName}");
+                case ShopItemType.Attack:
+                    DebugLogger.Log($"[ShopItemEffectApplier] 攻撃系アイテム効果を発動: {item.itemName}");
                     break;
             }
         }

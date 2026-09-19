@@ -80,17 +80,17 @@ namespace Runner
         }
 
         /// <summary>
-        /// デフォルトのアイテムプールを構築する。
+        /// マスターデータからアイテムプールを初期化・構築する。
         /// </summary>
         private void InitializeDefaultItems()
         {
             availableItemPool.Clear();
-            availableItemPool.Add(new ShopItemData("drone", "追従自律ドローン", "周囲のぶつかり屋を自動索敵して撃退する", "【機】", 300, ShopItemType.Drone));
-            availableItemPool.Add(new ShopItemData("bodyguard", "専属ボディガード", "プレイヤーにピッタリ密着して敵をタックルで吹き飛ばす", "【護】", 500, ShopItemType.Bodyguard));
-            availableItemPool.Add(new ShopItemData("energy_drink", "メガエナジードリンク", "体力を即座に全快にし、一定時間怒りゲージ上昇UP", "【薬】", 200, ShopItemType.EnergyDrink));
-            availableItemPool.Add(new ShopItemData("sneakers", "エアジェットスニーカー", "移動速度が恒久的に25%アップし、回避しやすくなる", "【靴】", 350, ShopItemType.SpeedSneakers));
-            availableItemPool.Add(new ShopItemData("magnet", "超電導ポイ活マグネット", "周囲に落ちているポイントやアイテムを一瞬で引き寄せる", "【磁】", 250, ShopItemType.PointMagnet));
-            availableItemPool.Add(new ShopItemData("shield", "ワンタイムガード保険", "ぶつかり屋との衝突ダメージを1度だけ完全に無効化する", "【盾】", 400, ShopItemType.BarrierShield));
+
+            var shopItems = MasterDataManager.AllShopItemData;
+            if (shopItems != null && shopItems.Count > 0)
+            {
+                availableItemPool.AddRange(shopItems);
+            }
         }
     }
 }

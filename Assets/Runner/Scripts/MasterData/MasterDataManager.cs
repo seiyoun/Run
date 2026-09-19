@@ -18,36 +18,16 @@ namespace Runner
     /// </summary>
     public static class MasterDataManager
     {
-        private const string EnemyDataResourcePath = "Data/EnemyData";
-        private const string PlayerDataResourcePath = "Data/PlayerData";
-
         private static readonly Dictionary<EnemyType, EnemyMasterData> EnemyDataCache = new Dictionary<EnemyType, EnemyMasterData>();
+        private static readonly List<ShopItemData> ShopItemDataCache = new List<ShopItemData>();
         private static PlayerMasterData cachedPlayerData;
         private static bool isInitialized;
 
-        /// <summary>初期化およびキャッシュが完了しているか</summary>
-        public static bool IsInitialized => isInitialized;
-
-        /// <summary>キャッシュされたプレイヤーマスターデータ</summary>
-        public static PlayerMasterData PlayerMasterData => GetPlayerMasterData();
-
-        /// <summary>キャッシュされた全エネミーマスターデータのコレクション</summary>
-        public static IEnumerable<EnemyMasterData> AllEnemyMasterData => EnemyDataCache.Values;
+        /// <summary>キャッシュされた全ショップアイテムマスターデータのコレクション</summary>
+        public static IReadOnlyList<ShopItemData> AllShopItemData => ShopItemDataCache;
 
         /// <summary>
-        /// 全マスターデータ（EnemyMasterData, PlayerMasterData 等）を同期的にロードしてキャッシュする。
-        /// </summary>
-        public static void Initialize()
-        {
-            if (isInitialized) return;
-
-            LoadEnemyMasterData();
-            LoadPlayerMasterData();
-            isInitialized = true;
-        }
-
-        /// <summary>
-        /// ゲーム初期化ステート等から呼び出される非同期ロード初期化処理。
+        /// ゲーム起動時に全マスターデータを非同期的にロードしてキャッシュする。
         /// </summary>
         /// <returns>非同期タスク</returns>
         public static async Task InitializeAsync()
@@ -56,6 +36,22 @@ namespace Runner
 
             Initialize();
             await Task.Yield();
+        }
+
+        /// <summary>
+        /// キャッシュされたプレイヤーマスターデータを取得する。
+        /// </summary>
+        /// <returns>キャッシュされた PlayerMasterData（未登録時はデフォルトデータ）</returns>
+        public static PlayerMasterData GetPlayerMasterData()
+        {
+            if (cachedPlayerData != null)
+            {
+                return cachedPlayerData;
+            }
+
+            DebugLogger.Warning("[MasterDataManager] PlayerMasterData のキャッシュが存在しません。デフォルト値を生成します。");
+            cachedPlayerData = PlayerMasterData.LoadFromResources();
+            return cachedPlayerData;
         }
 
         /// <summary>
@@ -75,115 +71,22 @@ namespace Runner
         }
 
         /// <summary>
-        /// 指定されたエネミー種別に対応する EnemyMasterData を取得する（GetEnemyMasterData へのエイリアス）。
+        /// 全マスターデータ（EnemyMasterData, PlayerMasterData, ShopItemData）を同期的にロードしてキャッシュする。
         /// </summary>
-        /// <param name="enemyType">取得対象のエネミー種別</param>
-        /// <returns>キャッシュされた EnemyMasterData</returns>
-        public static EnemyMasterData GetEnemyData(EnemyType enemyType)
+        private static void Initialize()
         {
-            return GetEnemyMasterData(enemyType);
-        }
+            cachedPlayerData = PlayerMasterData.LoadFromResources();
 
-        /// <summary>
-        /// キャッシュされたプレイヤーマスターデータを取得する。
-        /// </summary>
-        /// <returns>キャッシュされた PlayerMasterData（未登録時はデフォルトデータ）</returns>
-        public static PlayerMasterData GetPlayerMasterData()
-        {
-            if (cachedPlayerData != null)
-            {
-                return cachedPlayerData;
-            }
-
-            DebugLogger.Warning("[MasterDataManager] PlayerMasterData のキャッシュが存在しません。デフォルト値を生成します。");
-            cachedPlayerData = new PlayerMasterData();
-            return cachedPlayerData;
-        }
-
-        /// <summary>
-        /// キャッシュされたプレイヤーマスターデータを取得する（GetPlayerMasterData へのエイリアス）。
-        /// </summary>
-        /// <returns>キャッシュされた PlayerMasterData</returns>
-        public static PlayerMasterData GetPlayerData()
-        {
-            return GetPlayerMasterData();
-        }
-
-        /// <summary>
-        /// EnemyData.json を Resources から読み込みキャッシュに格納する。
-        /// </summary>
-        private static void LoadEnemyMasterData()
-        {
             EnemyDataCache.Clear();
-
-            var jsonAsset = Resources.Load<TextAsset>(EnemyDataResourcePath);
-            if (jsonAsset == null || string.IsNullOrWhiteSpace(jsonAsset.text))
+            foreach (var enemy in EnemyMasterData.LoadAllFromResources())
             {
-                DebugLogger.Error($"[MasterDataManager] '{EnemyDataResourcePath}' のロードに失敗しました。");
-                return;
+                EnemyDataCache[enemy.Type] = enemy;
             }
 
-            try
-            {
-                var container = JsonUtility.FromJson<EnemyMasterDataContainer>(jsonAsset.text);
-                if (container != null && container.enemies != null && container.enemies.Count > 0)
-                {
-                    foreach (var enemy in container.enemies)
-                    {
-                        EnemyDataCache[enemy.Type] = enemy;
-                    }
+            ShopItemDataCache.Clear();
+            ShopItemDataCache.AddRange(ShopItemData.LoadAllFromResources());
 
-                    DebugLogger.Log($"[MasterDataManager] {EnemyDataCache.Count} 種類のエネミーパラメータをキャッシュしました。");
-                }
-                else
-                {
-                    var singleData = JsonUtility.FromJson<EnemyMasterData>(jsonAsset.text);
-                    if (singleData != null)
-                    {
-                        EnemyDataCache[singleData.Type] = singleData;
-                        DebugLogger.Log("[MasterDataManager] 単一エネミーパラメータをキャッシュしました。");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.Error($"[MasterDataManager] EnemyMasterData JSONパースエラー: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// PlayerData.json を Resources から読み込みキャッシュに格納する。
-        /// </summary>
-        private static void LoadPlayerMasterData()
-        {
-            var jsonAsset = Resources.Load<TextAsset>(PlayerDataResourcePath);
-            if (jsonAsset == null || string.IsNullOrWhiteSpace(jsonAsset.text))
-            {
-                DebugLogger.Error($"[MasterDataManager] '{PlayerDataResourcePath}' のロードに失敗しました。デフォルト値を使用します。");
-                cachedPlayerData = new PlayerMasterData();
-                return;
-            }
-
-            try
-            {
-                cachedPlayerData = PlayerMasterData.FromJson(jsonAsset.text);
-                DebugLogger.Log($"[MasterDataManager] PlayerMasterData をキャッシュしました: HP={cachedPlayerData.maxHp}, Speed={cachedPlayerData.moveSpeed}");
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.Error($"[MasterDataManager] PlayerMasterData JSONパースエラー: {ex.Message}");
-                cachedPlayerData = new PlayerMasterData();
-            }
-        }
-
-        /// <summary>
-        /// EnemyData.json のリスト形式（ルートオブジェクト）を JsonUtility でデシリアライズするための内部コンテナクラス。
-        /// </summary>
-        [Serializable]
-        private class EnemyMasterDataContainer
-        {
-            [Tooltip("エネミーマスターデータのリスト")]
-            public List<EnemyMasterData> enemies = new List<EnemyMasterData>();
+            isInitialized = true;
         }
     }
 }

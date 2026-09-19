@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using Shiyuan.Foundation.Core;
 using UnityEngine;
 
 namespace Runner
@@ -16,6 +17,9 @@ namespace Runner
     [Serializable]
     public class EnemyMasterData
     {
+        /// <summary>デフォルトのリソース配置パス</summary>
+        public const string DefaultResourcePath = "Data/EnemyData";
+
         [Tooltip("エネミーの種類数値（0: Salaryman, 1: Granny 等）")]
         public int enemyType;
 
@@ -79,6 +83,57 @@ namespace Runner
         public string ToJson(bool prettyPrint = true)
         {
             return JsonUtility.ToJson(this, prettyPrint);
+        }
+
+        /// <summary>
+        /// Resources から EnemyData.json を読み込み、全 EnemyMasterData のリストを生成する。
+        /// </summary>
+        /// <param name="path">リソースパス（デフォルト: Data/EnemyData）</param>
+        /// <returns>EnemyMasterData のリスト</returns>
+        public static List<EnemyMasterData> LoadAllFromResources(string path = DefaultResourcePath)
+        {
+            var result = new List<EnemyMasterData>();
+            var jsonAsset = Resources.Load<TextAsset>(path);
+            if (jsonAsset == null || string.IsNullOrWhiteSpace(jsonAsset.text))
+            {
+                DebugLogger.Error($"[EnemyMasterData] '{path}' のロードに失敗しました。");
+                return result;
+            }
+
+            try
+            {
+                var container = JsonUtility.FromJson<EnemyMasterDataContainer>(jsonAsset.text);
+                if (container != null && container.enemies != null && container.enemies.Count > 0)
+                {
+                    result.AddRange(container.enemies);
+                    DebugLogger.Log($"[EnemyMasterData] {result.Count} 種類のエネミーパラメータを読み込みました。");
+                }
+                else
+                {
+                    var singleData = FromJson(jsonAsset.text);
+                    if (singleData != null)
+                    {
+                        result.Add(singleData);
+                        DebugLogger.Log("[EnemyMasterData] 単一エネミーパラメータを読み込みました。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"[EnemyMasterData] JSONパースエラー: {ex.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// EnemyData.json のリスト形式を JsonUtility でデシリアライズするための内部コンテナクラス。
+        /// </summary>
+        [Serializable]
+        private class EnemyMasterDataContainer
+        {
+            [Tooltip("エネミーマスターデータのリスト")]
+            public List<EnemyMasterData> enemies = new List<EnemyMasterData>();
         }
     }
 }

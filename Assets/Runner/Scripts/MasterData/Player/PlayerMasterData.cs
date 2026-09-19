@@ -5,6 +5,7 @@
  */
 
 using System;
+using Shiyuan.Foundation.Core;
 using UnityEngine;
 
 namespace Runner
@@ -15,6 +16,9 @@ namespace Runner
     [Serializable]
     public class PlayerMasterData
     {
+        /// <summary>デフォルトのリソース配置パス</summary>
+        public const string DefaultResourcePath = "Data/PlayerData";
+
         [Tooltip("プレイヤーのキャラクター名")]
         public string characterName;
 
@@ -79,6 +83,33 @@ namespace Runner
         public string ToJson(bool prettyPrint = true)
         {
             return JsonUtility.ToJson(this, prettyPrint);
+        }
+
+        /// <summary>
+        /// Resources から PlayerData.json を読み込み、PlayerMasterData インスタンスを生成する。
+        /// </summary>
+        /// <param name="path">リソースパス（デフォルト: Data/PlayerData）</param>
+        /// <returns>パースされた PlayerMasterData インスタンス（失敗時はデフォルト値）</returns>
+        public static PlayerMasterData LoadFromResources(string path = DefaultResourcePath)
+        {
+            var jsonAsset = Resources.Load<TextAsset>(path);
+            if (jsonAsset == null || string.IsNullOrWhiteSpace(jsonAsset.text))
+            {
+                DebugLogger.Error($"[PlayerMasterData] '{path}' のロードに失敗しました。デフォルト値を使用します。");
+                return new PlayerMasterData();
+            }
+
+            try
+            {
+                var data = FromJson(jsonAsset.text);
+                DebugLogger.Log($"[PlayerMasterData] 読み込み完了: HP={data.maxHp}, Speed={data.moveSpeed}");
+                return data;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"[PlayerMasterData] JSONパースエラー: {ex.Message}");
+                return new PlayerMasterData();
+            }
         }
     }
 }
