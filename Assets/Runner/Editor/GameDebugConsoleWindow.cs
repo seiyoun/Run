@@ -117,6 +117,20 @@ namespace Runner.Editor
                 float fps = Time.unscaledDeltaTime > 0f ? (1f / Time.unscaledDeltaTime) : 0f;
                 EditorGUILayout.LabelField($"FPS: {fps:F1}  |  Time: {Time.time:F1}s  |  TimeScale: {Time.timeScale:F1}");
 
+                var progress = GameProgressManager.Instance;
+                if (progress != null && progress.IsProgressing)
+                {
+                    var wave = progress.CurrentWave;
+                    string waveStr = wave != null 
+                        ? $"Wave {wave.WaveId} ({wave.StartTime:F0}s-{wave.EndTime:F0}s) | 進行: {progress.ElapsedTime:F1}s/{progress.EscapeDuration:F0}s | 敵上限: {wave.MaxAliveCount}"
+                        : $"進行中 (Waveなし) | {progress.ElapsedTime:F1}s";
+                    EditorGUILayout.LabelField("Wave", waveStr);
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("Wave", "未開始 / 停止中");
+                }
+
                 EditorGUILayout.Space(4);
                 using (new EditorGUILayout.HorizontalScope())
                 {

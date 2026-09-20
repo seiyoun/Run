@@ -358,9 +358,16 @@ namespace Runner
             var magnetVisible = PlayerDebugRangeVisualizer.IsRangeVisible(player.transform);
             var magnetInfo = $"{player.MagnetRadius:F1}m  (表示: {(magnetVisible ? "ON" : "OFF")})";
 
+            var progress = GameProgressManager.Instance;
+            var currentWave = progress != null ? progress.CurrentWave : null;
+            var waveInfoText = currentWave != null
+                ? $"Wave {currentWave.WaveId} ({currentWave.StartTime:F0}s-{currentWave.EndTime:F0}s)  |  進行: {progress.ElapsedTime:F1}s / {progress.EscapeDuration:F0}s  |  上限: {currentWave.MaxAliveCount}体"
+                : (progress != null && progress.IsProgressing ? $"Wave なし  |  進行: {progress.ElapsedTime:F1}s" : "待機中");
+
             statusText.text = 
                 $"<b>[System]</b>  FPS: <b>{currentFps:F1}</b>  |  Time: <b>{Time.time:F1}s</b>\n" +
                 $"────────────────────────────────────\n" +
+                $"<b>ウェーブ:</b> {waveInfoText}\n" +
                 $"<b>座標:</b> ({pos.x:F2}, {pos.y:F2})    <b>入力:</b> ({input.x:F2}, {input.y:F2})    <b>速度:</b> {speed:F1}\n" +
                 $"<b>体力 (HP):</b> {hpText}\n" +
                 $"<b>ポイ活:</b> {pointInfoText}\n" +
