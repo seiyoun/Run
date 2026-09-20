@@ -21,11 +21,15 @@ namespace Runner
         private static readonly Dictionary<EnemyType, EnemyMasterData> EnemyDataCache = new Dictionary<EnemyType, EnemyMasterData>();
         private static readonly Dictionary<int, StageMasterData> StageDataCache = new Dictionary<int, StageMasterData>();
         private static readonly List<ShopItemData> ShopItemDataCache = new List<ShopItemData>();
+        private static readonly Dictionary<WeaponType, WeaponMasterData> WeaponDataCache = new Dictionary<WeaponType, WeaponMasterData>();
         private static PlayerMasterData cachedPlayerData;
         private static bool isInitialized;
 
         /// <summary>キャッシュされた全ショップアイテムマスターデータのコレクション</summary>
         public static IReadOnlyList<ShopItemData> AllShopItemData => ShopItemDataCache;
+
+        /// <summary>キャッシュされた全武器マスターデータのコレクション</summary>
+        public static IReadOnlyCollection<WeaponMasterData> AllWeaponMasterData => WeaponDataCache.Values;
 
         /// <summary>
         /// ゲーム起動時に全マスターデータを非同期的にロードしてキャッシュする。
@@ -93,7 +97,28 @@ namespace Runner
         }
 
         /// <summary>
-        /// 全マスターデータ（EnemyMasterData, PlayerMasterData, ShopItemData, StageMasterData）を同期的にロードしてキャッシュする。
+        /// 指定された武器種別に対応する WeaponMasterData を取得する。
+        /// </summary>
+        /// <param name="weaponType">取得対象の武器種別</param>
+        /// <returns>キャッシュされた WeaponMasterData（未登録時はデフォルトデータ）</returns>
+        public static WeaponMasterData GetWeaponMasterData(WeaponType weaponType)
+        {
+            if (!isInitialized)
+            {
+                Initialize();
+            }
+
+            if (WeaponDataCache.TryGetValue(weaponType, out var data))
+            {
+                return data;
+            }
+
+            DebugLogger.Error($"[MasterDataManager] WeaponType '{weaponType}' のデータが見つかりません。デフォルト値を返します。");
+            return new WeaponMasterData();
+        }
+
+        /// <summary>
+        /// 全マスターデータ（EnemyMasterData, PlayerMasterData, ShopItemData, StageMasterData, WeaponMasterData）を同期的にロードしてキャッシュする。
         /// </summary>
         private static void Initialize()
         {
@@ -112,6 +137,12 @@ namespace Runner
             foreach (var stage in StageMasterData.LoadAllFromResources())
             {
                 StageDataCache[stage.StageId] = stage;
+            }
+
+            WeaponDataCache.Clear();
+            foreach (var weapon in WeaponMasterData.LoadAllFromResources())
+            {
+                WeaponDataCache[weapon.Type] = weapon;
             }
 
             isInitialized = true;

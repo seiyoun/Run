@@ -9,6 +9,7 @@ using System.Threading;
 using Shiyuan.Foundation.Core;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace Runner.Editor
 {
@@ -22,6 +23,7 @@ namespace Runner.Editor
         private const string WindowTitle = "Game Debug Console";
         private const float MinWindowWidth = 360f;
         private const float MinWindowHeight = 480f;
+        private const string DroneAddress = "Drone";
 
         private Vector2 scrollPosition;
 
@@ -218,10 +220,7 @@ namespace Runner.Editor
                     var charStatus = player != null ? player.Status as CharacterStatus : null;
                     bool isInvincible = charStatus != null && charStatus.IsInvincible;
                     string invincibleText = isInvincible ? "無敵: ON" : "無敵: OFF";
-                    if (GUILayout.Button(invincibleText, GUILayout.Height(28f)))
-                    {
-                        OnToggleInvincibleClicked(player);
-                    }
+                    DrawButtonPair(invincibleText, () => OnToggleInvincibleClicked(player), "ドローン生成", () => OnSpawnDroneClicked(player));
                 }
 
                 EditorGUILayout.Space(8);
@@ -399,6 +398,35 @@ namespace Runner.Editor
             if (GameDebugHUD.Instance != null)
             {
                 GameDebugHUD.Instance.TogglePanel();
+            }
+        }
+
+        /// <summary>
+        /// プレイヤー付近へのドローン生成ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
+        /// <param name="player">対象の PlayerController</param>
+        private async void OnSpawnDroneClicked(PlayerController player)
+        {
+            if (player == null) return;
+
+            try
+            {
+                var spawnPos = player.transform.position + new Vector3(-0.45f, 0.55f, 0f);
+                var handle = Addressables.InstantiateAsync(DroneAddress, spawnPos, Quaternion.identity);
+                var droneObj = await handle.Task;
+                if (droneObj != null)
+                {
+                    var follower = droneObj.GetComponent<DroneFollower>();
+                    if (follower != null)
+                    {
+                        follower.SetTarget(player.transform);
+                    }
+                    DebugLogger.Log($"[GameDebugConsoleWindow] デバッグ操作: プレイヤー付近にドローンを生成しました。座標: {droneObj.transform.position}");
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"[GameDebugConsoleWindow] ドローンの生成に失敗しました: {ex.Message}");
             }
         }
     }

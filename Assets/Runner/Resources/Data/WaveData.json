@@ -3,7 +3,7 @@
     {
       "waveId": 1,
       "startTime": 0.0,
-      "endTime": 60.0,
+      "endTime": 30.0,
       "spawnInterval": 3.0,
       "maxAliveCount": 6,
       "enemyWeights": [
@@ -15,18 +15,18 @@
     },
     {
       "waveId": 2,
-      "startTime": 60.0,
+      "startTime": 30.0,
       "endTime": 120.0,
       "spawnInterval": 2.0,
       "maxAliveCount": 12,
       "enemyWeights": [
         {
           "enemyType": 0,
-          "weight": 70
+          "weight": 0
         },
         {
           "enemyType": 1,
-          "weight": 30
+          "weight": 70
         }
       ]
     },
