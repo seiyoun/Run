@@ -452,6 +452,7 @@ namespace Runner
         private void InitializeSubComponents()
         {
             movementComponent = EnsureSubComponent<CharacterMovement2D>();
+            movementComponent.ClampToStageBounds = true;
             attackerComponent = EnsureSubComponent<CharacterAttacker2D>();
             statusComponent = EnsureSubComponent<CharacterStatus>();
             visualComponent = EnsureSubComponent<CharacterVisual2D>();

@@ -23,6 +23,9 @@ namespace Runner
         [Tooltip("移動速度")]
         [SerializeField] private float moveSpeed = DefaultSpeed;
 
+        [Tooltip("ステージ枠内への移動制限を有効にするか")]
+        [SerializeField] private bool clampToStageBounds = false;
+
         private Rigidbody2D rb;
         private Vector2 moveInput;
         private Vector2 facingDirection = Vector2.right;
@@ -32,6 +35,13 @@ namespace Runner
         {
             get => moveSpeed;
             set => moveSpeed = Mathf.Max(0.1f, value);
+        }
+
+        /// <summary>ステージ枠内への移動制限を有効にするか</summary>
+        public bool ClampToStageBounds
+        {
+            get => clampToStageBounds;
+            set => clampToStageBounds = value;
         }
 
         /// <summary>現在の移動入力ベクトル</summary>
@@ -60,7 +70,17 @@ namespace Runner
             if (rb == null) return;
 
             var delta = moveInput * (moveSpeed * Time.fixedDeltaTime);
-            rb.MovePosition(rb.position + delta);
+            var targetPos = rb.position + delta;
+
+            if (clampToStageBounds && ArenaBackground.Instance != null && ArenaBackground.Instance.BoundaryCollider != null)
+            {
+                var bounds = ArenaBackground.Instance.BoundaryCollider.bounds;
+                float padding = 0.35f;
+                targetPos.x = Mathf.Clamp(targetPos.x, bounds.min.x + padding, bounds.max.x - padding);
+                targetPos.y = Mathf.Clamp(targetPos.y, bounds.min.y + padding, bounds.max.y - padding);
+            }
+
+            rb.MovePosition(targetPos);
             rb.linearVelocity = moveInput * moveSpeed;
         }
 
