@@ -200,7 +200,7 @@ namespace Runner.Editor
         }
 
         /// <summary>
-        /// プレイヤー操作およびゲーム進行に関するデバッグアクションボタン群を描画する。
+        /// プレイヤー操作、武器、バフ、およびゲーム進行に関するデバッグアクションボタン群を描画する。
         /// </summary>
         /// <param name="player">対象の PlayerController インスタンス</param>
         private void DrawActionsSection(PlayerController player)
@@ -221,8 +221,25 @@ namespace Runner.Editor
                     var charStatus = player != null ? player.Status as CharacterStatus : null;
                     bool isInvincible = charStatus != null && charStatus.IsInvincible;
                     string invincibleText = isInvincible ? "無敵: ON" : "無敵: OFF";
-                    DrawButtonPair(invincibleText, () => OnToggleInvincibleClicked(player), "ドローン生成", () => OnSpawnDroneClicked(player));
+                    if (GUILayout.Button(invincibleText, GUILayout.Height(28)))
+                    {
+                        OnToggleInvincibleClicked(player);
+                    }
+                }
 
+                EditorGUILayout.Space(8);
+                EditorGUILayout.LabelField("Weapons", EditorStyles.boldLabel);
+
+                using (new EditorGUI.DisabledScope(player == null))
+                {
+                    DrawButtonPair("ドローン生成", () => OnSpawnDroneClicked(player), "全武器 解除", OnReleaseAllWeaponsClicked);
+                }
+
+                EditorGUILayout.Space(8);
+                EditorGUILayout.LabelField("Buffs", EditorStyles.boldLabel);
+
+                using (new EditorGUI.DisabledScope(player == null))
+                {
                     string buffBtnText = player != null && player.HasSpeedBuff
                         ? $"速度バフ (+50% {player.SpeedBuffRemainingDuration:F1}s)"
                         : "速度バフ (+50% 5s)";
@@ -418,6 +435,18 @@ namespace Runner.Editor
             if (WeaponSpawner.Instance != null)
             {
                 await WeaponSpawner.Instance.SpawnWeaponAsync(WeaponType.Drone, player.transform.position, CancellationToken.None);
+            }
+        }
+
+        /// <summary>
+        /// すべての武器を解放・クリアするデバッグ操作を処理する。
+        /// </summary>
+        private void OnReleaseAllWeaponsClicked()
+        {
+            if (WeaponSpawner.Instance != null)
+            {
+                WeaponSpawner.Instance.ReleaseAllWeapons();
+                DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: すべての武器を解放しました。");
             }
         }
 
