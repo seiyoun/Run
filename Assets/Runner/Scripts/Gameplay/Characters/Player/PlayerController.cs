@@ -1,8 +1,8 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: 各種インターフェース（IMovable, IAttacker, IDamageable, IHealable, IMoneyCollector）に準拠した
- *                サブコンポーネント群を統括・協調動作させるプレイヤーのファサードコントローラー。
+ * スクリプト説明: プレイヤーの各サブコンポーネント（移動、攻撃、体力、所持金、歩数、マグネット、バフ）を統括・公開し、
+ *                入力バインドおよび全体協調動作を制御するコントローラー。
  */
 
 using System;
@@ -12,8 +12,8 @@ using UnityEngine;
 namespace Runner
 {
     /// <summary>
-    /// プレイヤーの各機能コンポーネント（移動、攻撃、体力、所持金、歩数、マグネット）を統括するファサードクラス。
-    /// 各種インターフェースを実装し、外部呼び出しを内部の特化コンポーネントへ移譲します。
+    /// プレイヤーの各機能サブコンポーネントへの参照ハブとして機能し、
+    /// 入力受付や状態変化（死亡・ポーズ等）の全体協調を管理するコントローラークラス。
     /// </summary>
     [RequireComponent(typeof(CharacterMovement2D))]
     [RequireComponent(typeof(CharacterAttacker2D))]
@@ -23,9 +23,10 @@ namespace Runner
     [RequireComponent(typeof(PlayerWallet))]
     [RequireComponent(typeof(PlayerStepTracker))]
     [RequireComponent(typeof(PlayerMagnet))]
+    [RequireComponent(typeof(CharacterBuffHandler))]
     [RequireComponent(typeof(CircleCollider2D))]
     [DisallowMultipleComponent]
-    public sealed class PlayerController : MonoBehaviour, IMovable, IAttacker, IDamageable, IHealable, IMoneyCollector
+    public sealed class PlayerController : MonoBehaviour, IDamageable
     {
         public static PlayerController Instance { get; private set; }
 
@@ -37,34 +38,51 @@ namespace Runner
         private PlayerWallet walletComponent;
         private PlayerStepTracker stepTrackerComponent;
         private PlayerMagnet magnetComponent;
+        private CharacterBuffHandler buffHandlerComponent;
         private InputController boundInputController;
         private PlayerMasterData currentPlayerData;
         private Vector3 lastPosition;
-        private IBuff currentSpeedBuff;
 
         /// <summary>現在のプレイヤー設定マスターデータ</summary>
         public PlayerMasterData CurrentData => currentPlayerData;
 
+        /// <summary>キャラクター移動コンポーネント</summary>
+        public CharacterMovement2D Movement => movementComponent;
+
+        /// <summary>キャラクター攻撃コンポーネント</summary>
+        public CharacterAttacker2D Attacker => attackerComponent;
+
+        /// <summary>キャラクターステータス（HP・ダメージ・回復）コンポーネント</summary>
+        public CharacterStatus Status => statusComponent;
+
         /// <summary>キャラクター外観コンポーネント</summary>
-        public ICharacterVisual CharacterVisual => visualComponent;
+        public CharacterVisual2D CharacterVisual => visualComponent;
+
+        /// <summary>キャラクター外観コンポーネント（エイリアス）</summary>
+        public CharacterVisual2D Visual => visualComponent;
 
         /// <summary>キャラクターアニメーションコンポーネント</summary>
-        public ICharacterAnimator CharacterAnimator => animatorComponent;
+        public CharacterAnimator2D CharacterAnimator => animatorComponent;
 
-        /// <summary>キャラクターステータスコンポーネント</summary>
-        public ICharacterStatus Status => statusComponent;
+        /// <summary>キャラクターアニメーションコンポーネント（エイリアス）</summary>
+        public CharacterAnimator2D Animator => animatorComponent;
 
-        /// <summary>基本移動速度（バフ未適用時）</summary>
-        public float BaseMoveSpeed
-        {
-            get => movementComponent != null ? movementComponent.BaseMoveSpeed : 6f;
-            set
-            {
-                if (movementComponent != null) movementComponent.BaseMoveSpeed = value;
-            }
-        }
+        /// <summary>プレイヤー所持金・ポイント管理コンポーネント</summary>
+        public PlayerWallet Wallet => walletComponent;
 
-        /// <summary>移動速度（バフ適用中の場合は強化後の実効速度）</summary>
+        /// <summary>プレイヤー歩数・移動距離計測コンポーネント</summary>
+        public PlayerStepTracker StepTracker => stepTrackerComponent;
+
+        /// <summary>アイテム吸引コンポーネント</summary>
+        public PlayerMagnet Magnet => magnetComponent;
+
+        /// <summary>バフ管理コンポーネント</summary>
+        public CharacterBuffHandler Buffs => buffHandlerComponent;
+
+        /// <summary>死亡状態かどうか</summary>
+        public bool IsDead => statusComponent != null && statusComponent.IsDead;
+
+        /// <summary>移動速度（Movement.MoveSpeed への委譲）</summary>
         public float MoveSpeed
         {
             get => movementComponent != null ? movementComponent.MoveSpeed : 6f;
@@ -74,48 +92,13 @@ namespace Runner
             }
         }
 
-        /// <summary>現在移動速度バフが適用中かどうか</summary>
-        public bool HasSpeedBuff => currentSpeedBuff != null && currentSpeedBuff.IsActive;
-
-        /// <summary>移動速度バフの残り持続時間（秒）</summary>
-        public float SpeedBuffRemainingDuration => currentSpeedBuff != null ? currentSpeedBuff.RemainingDuration : 0f;
-
-        /// <summary>移動速度バフの倍率</summary>
-        public float SpeedBuffMultiplier => currentSpeedBuff is SpeedBuff speedBuff ? speedBuff.Multiplier : 1.0f;
-
-        /// <summary>現在の移動入力ベクトル</summary>
+        /// <summary>現在の移動入力ベクトル（Movement.MoveInput への委譲）</summary>
         public Vector2 MoveInput => movementComponent != null ? movementComponent.MoveInput : Vector2.zero;
 
-        /// <summary>現在の向きベクトル</summary>
+        /// <summary>現在向いている水平方向ベクトル（Movement.FacingDirection への委譲）</summary>
         public Vector2 FacingDirection => movementComponent != null ? movementComponent.FacingDirection : Vector2.right;
 
-        /// <summary>基本攻撃力</summary>
-        public int AttackPower
-        {
-            get => attackerComponent != null ? attackerComponent.AttackPower : 10;
-            set
-            {
-                if (attackerComponent != null) attackerComponent.AttackPower = value;
-            }
-        }
-
-        /// <summary>攻撃間隔（秒）</summary>
-        public float AttackInterval
-        {
-            get => attackerComponent != null ? attackerComponent.AttackInterval : 1f;
-            set
-            {
-                if (attackerComponent != null) attackerComponent.AttackInterval = value;
-            }
-        }
-
-        /// <summary>現在攻撃可能かどうか</summary>
-        public bool CanAttack => attackerComponent != null && attackerComponent.CanAttack;
-
-        /// <summary>死亡状態かどうか</summary>
-        public bool IsDead => statusComponent != null && statusComponent.IsDead;
-
-        /// <summary>アイテム吸引半径(m)</summary>
+        /// <summary>アイテム吸引半径(m)（Magnet.MagnetRadius への委譲）</summary>
         public float MagnetRadius
         {
             get => magnetComponent != null ? magnetComponent.MagnetRadius : 0f;
@@ -125,20 +108,23 @@ namespace Runner
             }
         }
 
-        /// <summary>現在の累積総歩数</summary>
+        /// <summary>現在の累積総歩数（StepTracker.CurrentSteps への委譲）</summary>
         public int CurrentSteps => stepTrackerComponent != null ? stepTrackerComponent.CurrentSteps : 0;
 
-        /// <summary>現在の累積総移動距離(m)</summary>
-        public float TotalDistanceMoved => stepTrackerComponent != null ? stepTrackerComponent.TotalDistanceMoved : 0f;
-
-        /// <summary>現在の所持ポイント/お金</summary>
+        /// <summary>現在の所持ポイント/お金（Wallet.CurrentMoney への委譲）</summary>
         public long CurrentMoney => walletComponent != null ? walletComponent.CurrentMoney : 0;
 
-        /// <summary>ゲーム開始からの累積獲得ポイント/お金</summary>
+        /// <summary>ゲーム開始からの累積獲得ポイント/お金（Wallet.TotalEarnedMoney への委譲）</summary>
         public long TotalEarnedMoney => walletComponent != null ? walletComponent.TotalEarnedMoney : 0;
 
-        /// <summary>攻撃実行時イベント</summary>
-        public event Action OnAttack;
+        /// <summary>現在移動速度バフが適用中かどうか</summary>
+        public bool HasSpeedBuff => buffHandlerComponent != null && buffHandlerComponent.HasBuff<SpeedBuff>();
+
+        /// <summary>移動速度バフの残り持続時間（秒）</summary>
+        public float SpeedBuffRemainingDuration => buffHandlerComponent?.GetBuff<SpeedBuff>()?.RemainingDuration ?? 0f;
+
+        /// <summary>移動速度バフの倍率</summary>
+        public float SpeedBuffMultiplier => buffHandlerComponent?.GetBuff<SpeedBuff>()?.Multiplier ?? 1.0f;
 
         /// <summary>被ダメージ時イベント</summary>
         public event Action<int> OnTakeDamage;
@@ -146,20 +132,14 @@ namespace Runner
         /// <summary>死亡時イベント</summary>
         public event Action OnDead;
 
-        /// <summary>回復時イベント</summary>
-        public event Action<int> OnHeal;
-
         /// <summary>歩数変更時イベント</summary>
         public event Action<int> OnStepsChanged;
-
-        /// <summary>移動距離発生時イベント</summary>
-        public event Action<float> OnDistanceMoved;
 
         /// <summary>お金・ポイント獲得時イベント</summary>
         public event Action<long> OnMoneyCollected;
 
         /// <summary>
-        /// シングルトンの初期化、サブコンポーネントの参照取得・バインド、データロードを行う。
+        /// シングルトンの初期化、サブコンポーネントの参照取得・初期化を行う。
         /// </summary>
         private void Awake()
         {
@@ -171,7 +151,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// InputController のバインドを行う。
+        /// 初回フレームで入力コントローラーの自動バインドを試みる。
         /// </summary>
         private void Start()
         {
@@ -182,11 +162,11 @@ namespace Runner
         }
 
         /// <summary>
-        /// 固定フレームごとに移動距離を算出し、歩数トラッカーおよびHUDへ通知する。
+        /// 固定フレームごとに移動距離を算出し、歩数トラッカーへ通知する。
         /// </summary>
         private void FixedUpdate()
         {
-            if (IsDead) return;
+            if (statusComponent != null && statusComponent.IsDead) return;
 
             float distance = Vector3.Distance(transform.position, lastPosition);
             lastPosition = transform.position;
@@ -203,7 +183,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// 毎フレームの更新処理（攻撃タイマー、怒りゲージ、アイテム吸引、外観、アニメーション）を実行する。
+        /// 毎フレームの協調更新（ポーズ判定、死亡判定、外観・アニメーション同期）を実行する。
         /// </summary>
         private void Update()
         {
@@ -216,7 +196,7 @@ namespace Runner
                 return;
             }
 
-            if (IsDead)
+            if (statusComponent != null && statusComponent.IsDead)
             {
                 movementComponent?.Stop();
                 return;
@@ -228,7 +208,6 @@ namespace Runner
 
             UpdateVisuals(deltaTime);
             UpdateAnimation();
-            currentSpeedBuff?.Tick(deltaTime);
         }
 
         /// <summary>
@@ -251,7 +230,7 @@ namespace Runner
         /// <returns>プレイヤー情報文字列</returns>
         public override string ToString()
         {
-            return $"PlayerController (Steps: {CurrentSteps}, Money: {CurrentMoney}, Speed: {MoveSpeed}, Magnet: {MagnetRadius}m)";
+            return $"PlayerController (Steps: {CurrentSteps}, Money: {CurrentMoney})";
         }
 
         /// <summary>
@@ -260,7 +239,7 @@ namespace Runner
         /// <param name="direction">移動入力ベクトル</param>
         public void Move(Vector2 direction)
         {
-            if (IsDead)
+            if (statusComponent != null && statusComponent.IsDead)
             {
                 movementComponent?.Stop();
                 return;
@@ -283,15 +262,6 @@ namespace Runner
         public void Attack()
         {
             attackerComponent?.Attack();
-        }
-
-        /// <summary>
-        /// 指定された方向に向けて攻撃を実行する。
-        /// </summary>
-        /// <param name="direction">攻撃方向ベクトル</param>
-        public void Attack(Vector2 direction)
-        {
-            attackerComponent?.Attack(direction);
         }
 
         /// <summary>
@@ -404,11 +374,10 @@ namespace Runner
         /// <param name="duration">効果持続時間（秒、デフォルト: 5.0f秒）</param>
         public void ApplySpeedBuff(float multiplier = 1.5f, float duration = 5.0f)
         {
-            if (movementComponent == null) return;
+            if (movementComponent == null || buffHandlerComponent == null) return;
 
-            currentSpeedBuff?.Remove();
-            currentSpeedBuff = new SpeedBuff(movementComponent, multiplier, duration);
-            currentSpeedBuff.Apply();
+            buffHandlerComponent.RemoveBuffsOfType<SpeedBuff>();
+            buffHandlerComponent.AddBuff(new SpeedBuff(movementComponent, multiplier, duration));
         }
 
         /// <summary>
@@ -416,8 +385,7 @@ namespace Runner
         /// </summary>
         public void ClearSpeedBuff()
         {
-            currentSpeedBuff?.Remove();
-            currentSpeedBuff = null;
+            buffHandlerComponent?.RemoveBuffsOfType<SpeedBuff>();
         }
 
         /// <summary>
@@ -434,6 +402,7 @@ namespace Runner
             walletComponent = EnsureSubComponent<PlayerWallet>();
             stepTrackerComponent = EnsureSubComponent<PlayerStepTracker>();
             magnetComponent = EnsureSubComponent<PlayerMagnet>();
+            buffHandlerComponent = EnsureSubComponent<CharacterBuffHandler>();
 
             SubscribeSubComponentEvents();
         }
@@ -454,42 +423,46 @@ namespace Runner
         }
 
         /// <summary>
-        /// サブコンポーネント群のイベントを購読し、外部公開イベントへ中継する。
+        /// サブコンポーネントのイベントを購読する。
         /// </summary>
         private void SubscribeSubComponentEvents()
         {
-            if (attackerComponent != null) attackerComponent.OnAttack += HandleAttack;
             if (statusComponent != null)
             {
                 statusComponent.OnTakeDamage += HandleTakeDamage;
-                statusComponent.OnHeal += HandleHeal;
                 statusComponent.OnDead += HandleDead;
             }
-            if (walletComponent != null) walletComponent.OnMoneyCollected += HandleMoneyCollected;
+
             if (stepTrackerComponent != null)
             {
                 stepTrackerComponent.OnStepsChanged += HandleStepsChanged;
-                stepTrackerComponent.OnDistanceMoved += HandleDistanceMoved;
+            }
+
+            if (walletComponent != null)
+            {
+                walletComponent.OnMoneyCollected += HandleMoneyCollected;
             }
         }
 
         /// <summary>
-        /// サブコンポーネント群のイベント購読を解除する。
+        /// サブコンポーネントのイベント購読を解除する。
         /// </summary>
         private void UnsubscribeSubComponentEvents()
         {
-            if (attackerComponent != null) attackerComponent.OnAttack -= HandleAttack;
             if (statusComponent != null)
             {
                 statusComponent.OnTakeDamage -= HandleTakeDamage;
-                statusComponent.OnHeal -= HandleHeal;
                 statusComponent.OnDead -= HandleDead;
             }
-            if (walletComponent != null) walletComponent.OnMoneyCollected -= HandleMoneyCollected;
+
             if (stepTrackerComponent != null)
             {
                 stepTrackerComponent.OnStepsChanged -= HandleStepsChanged;
-                stepTrackerComponent.OnDistanceMoved -= HandleDistanceMoved;
+            }
+
+            if (walletComponent != null)
+            {
+                walletComponent.OnMoneyCollected -= HandleMoneyCollected;
             }
         }
 
@@ -521,26 +494,19 @@ namespace Runner
             }
         }
 
-        private void HandleAttack() => OnAttack?.Invoke();
-
         /// <summary>
-        /// 被ダメージ時に被弾フラッシュおよびアニメーションを再生し、イベントを通知する。
+        /// 被ダメージ時に被弾フラッシュおよびアニメーションを再生する。
         /// </summary>
         /// <param name="damage">受けたダメージ量</param>
         private void HandleTakeDamage(int damage)
         {
             visualComponent?.PlayHitFlash();
-            if (!IsDead)
+            if (statusComponent != null && !statusComponent.IsDead)
             {
                 animatorComponent?.TriggerHit();
             }
             OnTakeDamage?.Invoke(damage);
         }
-
-        private void HandleHeal(int healAmount) => OnHeal?.Invoke(healAmount);
-        private void HandleStepsChanged(int steps) => OnStepsChanged?.Invoke(steps);
-        private void HandleDistanceMoved(float dist) => OnDistanceMoved?.Invoke(dist);
-        private void HandleMoneyCollected(long amount) => OnMoneyCollected?.Invoke(amount);
 
         /// <summary>
         /// 死亡時に移動停止および死亡アニメーションを再生する。
@@ -552,5 +518,8 @@ namespace Runner
             OnDead?.Invoke();
             DebugLogger.Log("[PlayerController] プレイヤーが力尽きました。");
         }
+
+        private void HandleStepsChanged(int steps) => OnStepsChanged?.Invoke(steps);
+        private void HandleMoneyCollected(long amount) => OnMoneyCollected?.Invoke(amount);
     }
 }
