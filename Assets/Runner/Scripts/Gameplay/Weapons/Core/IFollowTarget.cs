@@ -19,6 +19,9 @@ namespace Runner
         /// <summary>ターゲットを基準とした基本追従オフセット位置</summary>
         Vector3 FollowOffset { get; set; }
 
+        /// <summary>向き反転時にオフセットのX座標を反転させるか</summary>
+        bool FlipOffsetWithFacing { get; set; }
+
         /// <summary>
         /// 追従対象の Transform を設定する。
         /// </summary>
@@ -26,4 +29,3 @@ namespace Runner
         void SetTarget(Transform newTarget);
     }
 }
-

@@ -31,6 +31,9 @@ namespace Runner
         [Tooltip("位置補間の追従時間（秒）")]
         [SerializeField] private float smoothTime = DefaultSmoothTime;
 
+        [Tooltip("向き反転時にオフセットのX座標を反転させるか")]
+        [SerializeField] private bool flipOffsetWithFacing = true;
+
         [Header("Hover Settings")]
         [Tooltip("上下浮遊ボビングの速度（周波数）")]
         [SerializeField] private float hoverFrequency = DefaultHoverFrequency;
@@ -50,6 +53,13 @@ namespace Runner
         {
             get => followOffset;
             set => followOffset = value;
+        }
+
+        /// <summary>向き反転時にオフセットのX座標を反転させるか</summary>
+        public bool FlipOffsetWithFacing
+        {
+            get => flipOffsetWithFacing;
+            set => flipOffsetWithFacing = value;
         }
 
         /// <summary>
@@ -110,7 +120,7 @@ namespace Runner
             }
 
             var adjustedOffset = followOffset;
-            if (isFacingLeft)
+            if (flipOffsetWithFacing && isFacingLeft)
             {
                 adjustedOffset.x = -adjustedOffset.x;
             }
