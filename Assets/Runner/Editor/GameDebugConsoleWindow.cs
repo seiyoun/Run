@@ -172,7 +172,9 @@ namespace Runner.Editor
 
                 EditorGUILayout.LabelField("座標 (Pos)", $"({pos.x:F2}, {pos.y:F2})");
                 EditorGUILayout.LabelField("入力 (Input)", $"({input.x:F2}, {input.y:F2})");
-                EditorGUILayout.LabelField("移動速度 (Speed)", $"{speed:F1}");
+
+                string speedBuffTag = player.HasSpeedBuff ? $" [バフ中: x{player.SpeedBuffMultiplier:F1} ({player.SpeedBuffRemainingDuration:F1}s)]" : "";
+                EditorGUILayout.LabelField("移動速度 (Speed)", $"{speed:F1}{speedBuffTag}");
 
                 if (status != null)
                 {
@@ -220,6 +222,11 @@ namespace Runner.Editor
                     bool isInvincible = charStatus != null && charStatus.IsInvincible;
                     string invincibleText = isInvincible ? "無敵: ON" : "無敵: OFF";
                     DrawButtonPair(invincibleText, () => OnToggleInvincibleClicked(player), "ドローン生成", () => OnSpawnDroneClicked(player));
+
+                    string buffBtnText = player != null && player.HasSpeedBuff
+                        ? $"速度バフ (+50% {player.SpeedBuffRemainingDuration:F1}s)"
+                        : "速度バフ (+50% 5s)";
+                    DrawButtonPair(buffBtnText, () => OnApplySpeedBuffClicked(player), "速度バフ 解除", () => OnClearSpeedBuffClicked(player));
                 }
 
                 EditorGUILayout.Space(8);
@@ -412,6 +419,28 @@ namespace Runner.Editor
             {
                 await WeaponSpawner.Instance.SpawnWeaponAsync(WeaponType.Drone, player.transform.position, CancellationToken.None);
             }
+        }
+
+        /// <summary>
+        /// 移動速度バフ付与ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
+        /// <param name="player">対象の PlayerController</param>
+        private void OnApplySpeedBuffClicked(PlayerController player)
+        {
+            if (player == null) return;
+            player.ApplySpeedBuff(1.5f, 5.0f);
+            DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーに移動速度バフ (+50%, 5秒) を付与しました。");
+        }
+
+        /// <summary>
+        /// 移動速度バフ解除ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
+        /// <param name="player">対象の PlayerController</param>
+        private void OnClearSpeedBuffClicked(PlayerController player)
+        {
+            if (player == null) return;
+            player.ClearSpeedBuff();
+            DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーの移動速度バフを解除しました。");
         }
     }
 }

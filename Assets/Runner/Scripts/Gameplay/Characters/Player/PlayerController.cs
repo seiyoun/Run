@@ -40,6 +40,7 @@ namespace Runner
         private InputController boundInputController;
         private PlayerMasterData currentPlayerData;
         private Vector3 lastPosition;
+        private IBuff currentSpeedBuff;
 
         /// <summary>現在のプレイヤー設定マスターデータ</summary>
         public PlayerMasterData CurrentData => currentPlayerData;
@@ -53,7 +54,17 @@ namespace Runner
         /// <summary>キャラクターステータスコンポーネント</summary>
         public ICharacterStatus Status => statusComponent;
 
-        /// <summary>移動速度</summary>
+        /// <summary>基本移動速度（バフ未適用時）</summary>
+        public float BaseMoveSpeed
+        {
+            get => movementComponent != null ? movementComponent.BaseMoveSpeed : 6f;
+            set
+            {
+                if (movementComponent != null) movementComponent.BaseMoveSpeed = value;
+            }
+        }
+
+        /// <summary>移動速度（バフ適用中の場合は強化後の実効速度）</summary>
         public float MoveSpeed
         {
             get => movementComponent != null ? movementComponent.MoveSpeed : 6f;
@@ -62,6 +73,15 @@ namespace Runner
                 if (movementComponent != null) movementComponent.MoveSpeed = value;
             }
         }
+
+        /// <summary>現在移動速度バフが適用中かどうか</summary>
+        public bool HasSpeedBuff => currentSpeedBuff != null && currentSpeedBuff.IsActive;
+
+        /// <summary>移動速度バフの残り持続時間（秒）</summary>
+        public float SpeedBuffRemainingDuration => currentSpeedBuff != null ? currentSpeedBuff.RemainingDuration : 0f;
+
+        /// <summary>移動速度バフの倍率</summary>
+        public float SpeedBuffMultiplier => currentSpeedBuff is SpeedBuff speedBuff ? speedBuff.Multiplier : 1.0f;
 
         /// <summary>現在の移動入力ベクトル</summary>
         public Vector2 MoveInput => movementComponent != null ? movementComponent.MoveInput : Vector2.zero;
@@ -208,6 +228,7 @@ namespace Runner
 
             UpdateVisuals(deltaTime);
             UpdateAnimation();
+            currentSpeedBuff?.Tick(deltaTime);
         }
 
         /// <summary>
@@ -374,6 +395,29 @@ namespace Runner
             if (magnetComponent != null) magnetComponent.MagnetRadius = data.magnetRadius;
 
             DebugLogger.Log($"[PlayerController] PlayerData 適用完了: HP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m");
+        }
+
+        /// <summary>
+        /// プレイヤーに移動速度アップのバフを適用する。
+        /// </summary>
+        /// <param name="multiplier">速度倍率（デフォルト: 1.5f = +50%）</param>
+        /// <param name="duration">効果持続時間（秒、デフォルト: 5.0f秒）</param>
+        public void ApplySpeedBuff(float multiplier = 1.5f, float duration = 5.0f)
+        {
+            if (movementComponent == null) return;
+
+            currentSpeedBuff?.Remove();
+            currentSpeedBuff = new SpeedBuff(movementComponent, multiplier, duration);
+            currentSpeedBuff.Apply();
+        }
+
+        /// <summary>
+        /// プレイヤーの移動速度バフを即座に解除する。
+        /// </summary>
+        public void ClearSpeedBuff()
+        {
+            currentSpeedBuff?.Remove();
+            currentSpeedBuff = null;
         }
 
         /// <summary>

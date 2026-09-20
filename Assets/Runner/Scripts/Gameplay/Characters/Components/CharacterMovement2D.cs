@@ -29,11 +29,26 @@ namespace Runner
         private Rigidbody2D rb;
         private Vector2 moveInput;
         private Vector2 facingDirection = Vector2.right;
+        private float speedMultiplier = 1.0f;
 
-        /// <summary>移動速度</summary>
-        public float MoveSpeed
+        /// <summary>基本移動速度</summary>
+        public float BaseMoveSpeed
         {
             get => moveSpeed;
+            set => moveSpeed = Mathf.Max(0.1f, value);
+        }
+
+        /// <summary>現在の速度倍率（バフ等による補正倍率）</summary>
+        public float SpeedMultiplier
+        {
+            get => speedMultiplier;
+            set => speedMultiplier = Mathf.Max(0f, value);
+        }
+
+        /// <summary>移動速度（基本速度に速度倍率を乗算した実効速度）</summary>
+        public float MoveSpeed
+        {
+            get => moveSpeed * speedMultiplier;
             set => moveSpeed = Mathf.Max(0.1f, value);
         }
 
@@ -69,7 +84,8 @@ namespace Runner
         {
             if (rb == null) return;
 
-            var delta = moveInput * (moveSpeed * Time.fixedDeltaTime);
+            float currentSpeed = MoveSpeed;
+            var delta = moveInput * (currentSpeed * Time.fixedDeltaTime);
             var targetPos = rb.position + delta;
 
             if (clampToStageBounds && ArenaBackground.Instance != null && ArenaBackground.Instance.BoundaryCollider != null)
@@ -81,7 +97,7 @@ namespace Runner
             }
 
             rb.MovePosition(targetPos);
-            rb.linearVelocity = moveInput * moveSpeed;
+            rb.linearVelocity = moveInput * currentSpeed;
         }
 
         /// <summary>
