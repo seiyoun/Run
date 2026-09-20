@@ -410,7 +410,7 @@ namespace Runner.Editor
 
             if (WeaponSpawner.Instance != null)
             {
-                await WeaponSpawner.Instance.SpawnWeaponAsync(WeaponType.Drone, player.transform, CancellationToken.None);
+                await WeaponSpawner.Instance.SpawnWeaponAsync(WeaponType.Drone, player.transform.position, CancellationToken.None);
             }
         }
     }

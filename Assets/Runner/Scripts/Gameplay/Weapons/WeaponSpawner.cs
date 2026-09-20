@@ -65,18 +65,15 @@ namespace Runner
         }
 
         /// <summary>
-        /// 指定した種別の武器を非同期生成し、指定したターゲットに関連付けます。
+        /// 指定した種別の武器を非同期生成する。
         /// </summary>
         /// <param name="weaponType">生成する武器の種別（デフォルト: Drone）</param>
-        /// <param name="target">追従対象の Transform（null の場合は PlayerController.Instance を使用）</param>
+        /// <param name="position">生成位置（null の場合は PlayerController.Instance の座標または原点を使用）</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>生成された武器 GameObject（失敗時は null）</returns>
-        public async Task<GameObject> SpawnWeaponAsync(WeaponType weaponType = WeaponType.Drone, Transform target = null, CancellationToken cancellationToken = default)
+        public async Task<GameObject> SpawnWeaponAsync(WeaponType weaponType = WeaponType.Drone, Vector3? position = null, CancellationToken cancellationToken = default)
         {
-            if (target == null && PlayerController.Instance != null)
-            {
-                target = PlayerController.Instance.transform;
-            }
+            var spawnPos = position ?? (PlayerController.Instance != null ? PlayerController.Instance.transform.position : Vector3.zero);
 
             string address = GetAddressForWeaponType(weaponType);
             if (string.IsNullOrEmpty(address))
@@ -84,8 +81,6 @@ namespace Runner
                 DebugLogger.Error($"[WeaponSpawner] 未対応の武器種別です: {weaponType}");
                 return null;
             }
-
-            var spawnPos = target != null ? target.position : Vector3.zero;
 
             try
             {

@@ -578,7 +578,7 @@ namespace Runner
 
             if (WeaponSpawner.Instance != null)
             {
-                await WeaponSpawner.Instance.SpawnWeaponAsync(WeaponType.Drone, player.transform, destroyCancellationToken);
+                await WeaponSpawner.Instance.SpawnWeaponAsync(WeaponType.Drone, player.transform.position, destroyCancellationToken);
             }
         }
     }
