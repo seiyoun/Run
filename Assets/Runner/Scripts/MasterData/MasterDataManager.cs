@@ -19,6 +19,7 @@ namespace Runner
     public static class MasterDataManager
     {
         private static readonly Dictionary<EnemyType, EnemyMasterData> EnemyDataCache = new Dictionary<EnemyType, EnemyMasterData>();
+        private static readonly Dictionary<int, StageMasterData> StageDataCache = new Dictionary<int, StageMasterData>();
         private static readonly List<ShopItemData> ShopItemDataCache = new List<ShopItemData>();
         private static PlayerMasterData cachedPlayerData;
         private static bool isInitialized;
@@ -71,7 +72,28 @@ namespace Runner
         }
 
         /// <summary>
-        /// 全マスターデータ（EnemyMasterData, PlayerMasterData, ShopItemData）を同期的にロードしてキャッシュする。
+        /// 指定されたステージ番号に対応する StageMasterData を取得する。
+        /// </summary>
+        /// <param name="stageId">ステージ識別番号</param>
+        /// <returns>キャッシュされた StageMasterData（未登録時はデフォルトデータ）</returns>
+        public static StageMasterData GetStageMasterData(int stageId)
+        {
+            if (StageDataCache.TryGetValue(stageId, out var data))
+            {
+                return data;
+            }
+
+            DebugLogger.Warning($"[MasterDataManager] StageId '{stageId}' のデータが見つかりません。デフォルトステージデータを返します。");
+            if (StageDataCache.TryGetValue(1, out var defaultStage))
+            {
+                return defaultStage;
+            }
+
+            return new StageMasterData();
+        }
+
+        /// <summary>
+        /// 全マスターデータ（EnemyMasterData, PlayerMasterData, ShopItemData, StageMasterData）を同期的にロードしてキャッシュする。
         /// </summary>
         private static void Initialize()
         {
@@ -85,6 +107,12 @@ namespace Runner
 
             ShopItemDataCache.Clear();
             ShopItemDataCache.AddRange(ShopItemData.LoadAllFromResources());
+
+            StageDataCache.Clear();
+            foreach (var stage in StageMasterData.LoadAllFromResources())
+            {
+                StageDataCache[stage.StageId] = stage;
+            }
 
             isInitialized = true;
         }

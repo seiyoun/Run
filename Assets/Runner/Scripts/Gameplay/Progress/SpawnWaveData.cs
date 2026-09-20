@@ -157,6 +157,34 @@ namespace Runner
         }
 
         /// <summary>
+        /// 指定された waveId リストに合致するウェーブ設定データを Resources から非同期ロードして抽出する。
+        /// </summary>
+        /// <param name="waveIds">抽出対象の waveId リスト</param>
+        /// <param name="path">リソースパス（デフォルト: Data/WaveData）</param>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>合致した SpawnWaveData のリスト</returns>
+        public static async Task<List<SpawnWaveData>> LoadByIdsAsync(IReadOnlyList<int> waveIds, string path = DefaultResourcePath, CancellationToken cancellationToken = default)
+        {
+            var allWaves = await LoadAllFromResourcesAsync(path, cancellationToken);
+            if (waveIds == null || waveIds.Count == 0)
+            {
+                return allWaves;
+            }
+
+            var idSet = new HashSet<int>(waveIds);
+            var filtered = new List<SpawnWaveData>();
+            foreach (var wave in allWaves)
+            {
+                if (idSet.Contains(wave.WaveId))
+                {
+                    filtered.Add(wave);
+                }
+            }
+
+            return filtered;
+        }
+
+        /// <summary>
         /// WaveData.json のリスト形式を JsonUtility でデシリアライズするための内部コンテナクラス。
         /// </summary>
         [Serializable]

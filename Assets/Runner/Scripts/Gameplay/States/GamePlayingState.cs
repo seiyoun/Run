@@ -52,7 +52,9 @@ namespace Runner
         {
             DebugLogger.Log("[GamePlayingState] ゲームプレイ開始！プレイヤー入力を有効化し、脱出タイマーを開始します。");
 
-            remainingEscapeTime = DefaultEscapeDurationSeconds;
+            remainingEscapeTime = GameProgressManager.HasInstance && GameProgressManager.Instance != null
+                ? GameProgressManager.Instance.EscapeDuration
+                : DefaultEscapeDurationSeconds;
             isExitUnlocked = false;
             nextSaleTriggerPoint = SaleTriggerPointInterval;
 

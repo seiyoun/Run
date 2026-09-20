@@ -40,7 +40,11 @@ namespace Runner
         {
             DebugLogger.Log("[GameLoadingState] ゲームプレイのロードを開始します...");
 
-            var bgObj = await LoadBackgroundAsync(cancellationToken);
+            int targetStageId = parameter is int stageId ? stageId : 1;
+            var stageData = MasterDataManager.GetStageMasterData(targetStageId);
+            DebugLogger.Log($"[GameLoadingState] ステージ {targetStageId} のマスターデータをロードしました: Background={stageData.BackgroundId}, EscapeTime={stageData.EscapeTime}s, WaveIds=[{string.Join(", ", stageData.WaveIds)}]");
+
+            var bgObj = await LoadBackgroundAsync(stageData.BackgroundId, cancellationToken);
 
             Transform playerSpawnPoint = null;
             if (bgObj != null)
@@ -55,7 +59,7 @@ namespace Runner
 
             await LoadPlayerAsync(playerSpawnPoint, cancellationToken);
             await LoadResultModalAsync(cancellationToken);
-            await LoadWaveDataAsync(cancellationToken);
+            await LoadStageProgressAsync(stageData, cancellationToken);
             SetupGameHUD();
 
 #if SANDBOX || UNITY_EDITOR
@@ -98,16 +102,17 @@ namespace Runner
         /// <summary>
         /// BackgroundSpawner を通じて背景プレハブをロード・生成する。
         /// </summary>
+        /// <param name="backgroundId">背景プレハブのアドレス/ID</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>生成された背景 GameObject インスタンス</returns>
-        private async Task<GameObject> LoadBackgroundAsync(CancellationToken cancellationToken)
+        private async Task<GameObject> LoadBackgroundAsync(string backgroundId, CancellationToken cancellationToken)
         {
-            DebugLogger.Log("[GameLoadingState] BackgroundSpawner を呼び出して背景プレハブ生成を開始します...");
+            DebugLogger.Log($"[GameLoadingState] BackgroundSpawner を呼び出して背景プレハブ ({backgroundId}) の生成を開始します...");
 
             var spawner = BackgroundSpawner.Instance;
             if (spawner != null)
             {
-                var bg = await spawner.SpawnBackgroundAsync(cancellationToken);
+                var bg = await spawner.SpawnBackgroundAsync(backgroundId, cancellationToken);
                 if (bg != null)
                 {
                     DebugLogger.Log("[GameLoadingState] BackgroundSpawner による背景プレハブ生成が完了しました。");
@@ -188,17 +193,22 @@ namespace Runner
         }
 
         /// <summary>
-        /// Resources からウェーブ設定データを非同期ロードし、GameProgressManager へ設定する。
+        /// ステージデータに基づき、指定された Wave 設定および脱出制限時間を GameProgressManager へ反映する。
         /// </summary>
+        /// <param name="stageData">ステージマスターデータ</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
-        private async Task LoadWaveDataAsync(CancellationToken cancellationToken)
+        private async Task LoadStageProgressAsync(StageMasterData stageData, CancellationToken cancellationToken)
         {
-            DebugLogger.Log("[GameLoadingState] ウェーブ設定データのロードを開始します...");
-            var waves = await SpawnWaveData.LoadAllFromResourcesAsync(cancellationToken: cancellationToken);
+            if (stageData == null) return;
+
+            DebugLogger.Log($"[GameLoadingState] ステージ {stageData.StageId} の進行データ（Wave, 脱出時間）のロードを開始します...");
+
+            var waves = await SpawnWaveData.LoadByIdsAsync(stageData.WaveIds, cancellationToken: cancellationToken);
             if (GameProgressManager.Instance != null)
             {
+                GameProgressManager.Instance.SetEscapeDuration(stageData.EscapeTime);
                 GameProgressManager.Instance.SetWaveData(waves);
-                DebugLogger.Log($"[GameLoadingState] GameProgressManager に {waves.Count} 件のウェーブ設定を反映しました。");
+                DebugLogger.Log($"[GameLoadingState] GameProgressManager に ステージ {stageData.StageId} の設定（脱出時間: {stageData.EscapeTime}s, ウェーブ数: {waves.Count}）を反映しました。");
             }
         }
 

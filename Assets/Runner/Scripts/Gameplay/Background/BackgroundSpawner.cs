@@ -80,27 +80,29 @@ namespace Runner
         /// <summary>
         /// Addressables から背景アセットをロードし、シーン上に生成する。
         /// </summary>
+        /// <param name="backgroundAddress">背景プレハブのアドレス/ID（省略時はデフォルト）</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>生成された背景 GameObject インスタンス</returns>
-        public async Task<GameObject> SpawnBackgroundAsync(CancellationToken cancellationToken = default)
+        public async Task<GameObject> SpawnBackgroundAsync(string backgroundAddress = BackgroundAddress, CancellationToken cancellationToken = default)
         {
+            string targetAddress = string.IsNullOrEmpty(backgroundAddress) ? BackgroundAddress : backgroundAddress;
             try
             {
-                var bgObj = await addressableLoader.LoadAsync(BackgroundAddress, cancellationToken);
+                var bgObj = await addressableLoader.LoadAsync(targetAddress, cancellationToken);
                 if (bgObj != null)
                 {
-                    DebugLogger.Log("[BackgroundSpawner] Addressables から背景のロード・生成が完了しました。");
+                    DebugLogger.Log($"[BackgroundSpawner] Addressables ({targetAddress}) から背景のロード・生成が完了しました。");
                     return bgObj;
                 }
                 else
                 {
-                    DebugLogger.Error($"[BackgroundSpawner] Addressables ({BackgroundAddress}) から生成された GameObject が null です。");
+                    DebugLogger.Error($"[BackgroundSpawner] Addressables ({targetAddress}) から生成された GameObject が null です。");
                     return null;
                 }
             }
             catch (Exception ex)
             {
-                DebugLogger.Error($"[BackgroundSpawner] Addressables ({BackgroundAddress}) のロードに失敗しました: {ex.Message}");
+                DebugLogger.Error($"[BackgroundSpawner] Addressables ({targetAddress}) のロードに失敗しました: {ex.Message}");
                 throw;
             }
         }

@@ -22,6 +22,7 @@ namespace Runner
         [SerializeField] private List<SpawnWaveData> waveDataList = new List<SpawnWaveData>();
 
         private float elapsedTime;
+        private float escapeDuration = 180f;
         private bool isProgressing;
         private SpawnWaveData currentWave;
 
@@ -48,6 +49,9 @@ namespace Runner
 
         /// <summary>ゲーム開始からの累計経過時間（秒）</summary>
         public float ElapsedTime => elapsedTime;
+
+        /// <summary>ステージで設定された脱出までの制限時間（秒）</summary>
+        public float EscapeDuration => escapeDuration;
 
         /// <summary>ゲーム進行が現在アクティブ（計測中）であるか</summary>
         public bool IsProgressing => isProgressing;
@@ -83,6 +87,15 @@ namespace Runner
 
         /// <summary>Game シーン破棄時に一緒に破棄させる</summary>
         protected override bool ShouldDontDestroyOnLoad => false;
+
+        /// <summary>
+        /// ステージ設定の脱出制限時間を反映する。
+        /// </summary>
+        /// <param name="duration">脱出制限時間（秒）</param>
+        public void SetEscapeDuration(float duration)
+        {
+            escapeDuration = Mathf.Max(1f, duration);
+        }
 
         /// <summary>
         /// GameLoadingState 等からロードされたウェーブ設定データを反映する。

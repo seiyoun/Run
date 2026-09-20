@@ -1,0 +1,11 @@
+{
+  "stages": [
+    {
+      "stageId": 1,
+      "escapeTime": 180.0,
+      "backgroundId": "ArenaBackground",
+      "waveIds": [1, 2, 3]
+    }
+  ]
+}
+
