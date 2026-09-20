@@ -3,6 +3,7 @@
     "rootNamespace": "Runner.Editor",
     "references": [
         "Runner.Gameplay",
+        "Runner.MasterData",
         "Runner.Input",
         "Runner.Camera",
         "Runner.UI",

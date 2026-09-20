@@ -55,11 +55,15 @@ namespace Runner
         private float currentFps;
         private AddressablePrefabLoader addressableLoader;
 
+        /// <summary>GameDebugHUD のシングルトンインスタンス</summary>
+        public static GameDebugHUD Instance { get; private set; }
+
         /// <summary>
-        /// AddressablePrefabLoader のインスタンスを初期化する。
+        /// シングルトン参照の設定および AddressablePrefabLoader のインスタンスを初期化する。
         /// </summary>
         private void Awake()
         {
+            Instance = this;
             addressableLoader = new AddressablePrefabLoader();
         }
 
@@ -103,10 +107,15 @@ namespace Runner
         }
 
         /// <summary>
-        /// オブジェクト破棄時に AddressablePrefabLoader を Dispose してリソースを解放する。
+        /// オブジェクト破棄時にシングルトン参照をクリアし、AddressablePrefabLoader を Dispose してリソースを解放する。
         /// </summary>
         private void OnDestroy()
         {
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+
             if (addressableLoader != null)
             {
                 addressableLoader.Dispose();
