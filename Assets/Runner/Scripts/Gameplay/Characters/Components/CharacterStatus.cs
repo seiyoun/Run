@@ -12,7 +12,7 @@ namespace Runner
 {
     /// <summary>
     /// キャラクターのHP・ダメージ・回復・死亡処理を管理するコンポーネント。
-    /// 同一 GameObject 内の ICharacterVisual / ICharacterAnimator と自動連携して被弾演出を再生します。
+    /// 体力の変動および被ダメージ・回復・死亡イベントの通知を担当します。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CharacterStatus : MonoBehaviour, ICharacterStatus, IDamageable, IHealable
@@ -34,14 +34,16 @@ namespace Runner
         [SerializeField]
         private bool isInvincible = false;
 
-        private ICharacterVisual characterVisual;
-        private ICharacterAnimator characterAnimator;
-
-        #region ICharacterStatus Implementation
-
+        /// <summary>現在のHP</summary>
         public int CurrentHp => currentHp;
+
+        /// <summary>最大HP</summary>
         public int MaxHp => maxHp;
+
+        /// <summary>正規化されたHP割合（0.0 〜 1.0）</summary>
         public float NormalizedHp => maxHp > 0 ? Mathf.Clamp01((float)currentHp / maxHp) : 0f;
+
+        /// <summary>死亡状態であるかどうか</summary>
         public bool IsDead => currentHp <= 0;
 
         /// <summary>無敵状態かどうか（被ダメージを無効化する）</summary>
@@ -51,13 +53,36 @@ namespace Runner
             set => isInvincible = value;
         }
 
+        /// <summary>HPが変動した際に発火するイベント (現在のHP, 最大HP)</summary>
         public event Action<int, int> OnHpChanged;
+
+        /// <summary>ダメージを受けた際に発火するイベント (実際のダメージ量)</summary>
         public event Action<int> OnTakeDamage;
+
+        /// <summary>HPが回復した際に発火するイベント (実際の回復量)</summary>
         public event Action<int> OnHeal;
+
+        /// <summary>HPが0になり死亡した際に発火するイベント</summary>
         public event Action OnDead;
 
         /// <summary>
-        /// ダメージを受ける。
+        /// コンポーネントの初期化と初期HPの設定を行う。
+        /// </summary>
+        private void Awake()
+        {
+            currentHp = maxHp;
+        }
+
+        /// <summary>
+        /// 初回フレームで初期ステータスをイベント通知する。
+        /// </summary>
+        private void Start()
+        {
+            OnHpChanged?.Invoke(currentHp, maxHp);
+        }
+
+        /// <summary>
+        /// ダメージを受け、HPを減少させてイベントを通知する。
         /// </summary>
         /// <param name="amount">ダメージ量</param>
         public void TakeDamage(int amount)
@@ -72,21 +97,14 @@ namespace Runner
             OnTakeDamage?.Invoke(actualDamage);
             OnHpChanged?.Invoke(currentHp, maxHp);
 
-            // 被弾エフェクト・アニメーション再生
-            characterVisual?.PlayHitFlash();
-
             if (currentHp <= 0)
             {
                 Die();
             }
-            else
-            {
-                characterAnimator?.TriggerHit();
-            }
         }
 
         /// <summary>
-        /// HPを回復する。
+        /// HPを回復し、イベントを通知する。
         /// </summary>
         /// <param name="amount">回復量</param>
         public void Heal(int amount)
@@ -108,6 +126,8 @@ namespace Runner
         /// <summary>
         /// 最大HPを設定する。
         /// </summary>
+        /// <param name="newMaxHp">設定する最大HP</param>
+        /// <param name="restoreCurrent">現在HPも全快にするか</param>
         public void SetMaxHp(int newMaxHp, bool restoreCurrent = false)
         {
             maxHp = Mathf.Max(1, newMaxHp);
@@ -123,28 +143,12 @@ namespace Runner
             OnHpChanged?.Invoke(currentHp, maxHp);
         }
 
-        #endregion
-
-        private void Awake()
-        {
-            currentHp = maxHp;
-            characterVisual = GetComponent<ICharacterVisual>() ?? GetComponentInChildren<ICharacterVisual>();
-            characterAnimator = GetComponent<ICharacterAnimator>() ?? GetComponentInChildren<ICharacterAnimator>();
-        }
-
-        private void Start()
-        {
-            // 初期状態をイベント通知
-            OnHpChanged?.Invoke(currentHp, maxHp);
-        }
-
         /// <summary>
-        /// 死亡時の処理。
+        /// 死亡時の処理を実行し、イベントを通知する。
         /// </summary>
         private void Die()
         {
             DebugLogger.Log($"[{gameObject.name}] が力尽きました。");
-            characterAnimator?.PlayDie();
             OnDead?.Invoke();
 
             if (destroyOnDead)

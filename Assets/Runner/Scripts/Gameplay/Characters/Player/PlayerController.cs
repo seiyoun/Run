@@ -559,7 +559,21 @@ namespace Runner
         }
 
         private void HandleAttack() => OnAttack?.Invoke();
-        private void HandleTakeDamage(int damage) => OnTakeDamage?.Invoke(damage);
+
+        /// <summary>
+        /// 被ダメージ時に被弾フラッシュおよびアニメーションを再生し、イベントを通知する。
+        /// </summary>
+        /// <param name="damage">受けたダメージ量</param>
+        private void HandleTakeDamage(int damage)
+        {
+            visualComponent?.PlayHitFlash();
+            if (!IsDead)
+            {
+                animatorComponent?.TriggerHit();
+            }
+            OnTakeDamage?.Invoke(damage);
+        }
+
         private void HandleHeal(int healAmount) => OnHeal?.Invoke(healAmount);
         private void HandleStepsChanged(int steps) => OnStepsChanged?.Invoke(steps);
         private void HandleDistanceMoved(float dist) => OnDistanceMoved?.Invoke(dist);

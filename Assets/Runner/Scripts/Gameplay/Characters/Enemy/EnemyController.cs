@@ -46,6 +46,7 @@ namespace Runner
         private BehaviorGraphAgent behaviorAgent;
         private SpriteRenderer spriteRenderer;
         private ICharacterVisual visualComponent;
+        private ICharacterAnimator animatorComponent;
         private EnemyMasterData currentEnemyData;
         private bool isDeathHandled;
 
@@ -117,6 +118,12 @@ namespace Runner
             behaviorAgent = GetComponent<BehaviorGraphAgent>();
             spriteRenderer = GetComponent<SpriteRenderer>();
             visualComponent = GetComponent<ICharacterVisual>();
+            animatorComponent = GetComponent<ICharacterAnimator>() ?? GetComponentInChildren<ICharacterAnimator>();
+
+            if (statusComponent != null)
+            {
+                statusComponent.OnTakeDamage += HandleTakeDamage;
+            }
 
             LoadEnemyData();
         }
@@ -157,10 +164,15 @@ namespace Runner
         }
 
         /// <summary>
-        /// オブジェクト破棄時の参照解放を行う。
+        /// オブジェクト破棄時の参照解放とイベント購読解除を行う。
         /// </summary>
         private void OnDestroy()
         {
+            if (statusComponent != null)
+            {
+                statusComponent.OnTakeDamage -= HandleTakeDamage;
+            }
+
             behaviorAgent = null;
         }
 
@@ -315,6 +327,18 @@ namespace Runner
             behaviorAgent.SetVariableValue(AttackPowerVariableName, AttackPower);
             behaviorAgent.SetVariableValue(AttackIntervalVariableName, AttackInterval);
             behaviorAgent.SetVariableValue(AttackRangeVariableName, AttackRange);
+        }
+
+        /// <summary>
+        /// 被ダメージ時にアニメーションを再生する。
+        /// </summary>
+        /// <param name="damage">受けたダメージ量</param>
+        private void HandleTakeDamage(int damage)
+        {
+            if (!IsDead)
+            {
+                animatorComponent?.TriggerHit();
+            }
         }
     }
 }
