@@ -25,16 +25,16 @@ namespace Runner
     [Serializable]
     public class WeaponLevelData
     {
-        [Tooltip("武器レベル")]
+        // 武器レベル
         public int level;
 
-        [Tooltip("威力（攻撃力）")]
+        // 威力（攻撃力）
         public int attackPower;
 
-        [Tooltip("攻撃間隔（秒）")]
+        // 攻撃間隔（秒）
         public float attackInterval;
 
-        [Tooltip("同時展開数・発射数")]
+        // 同時展開数・発射数
         public int count;
 
         /// <summary>武器レベル</summary>
@@ -90,22 +90,22 @@ namespace Runner
         /// <summary>デフォルトのリソース配置パス</summary>
         public const string DefaultResourcePath = "Data/WeaponData";
 
-        [Tooltip("武器識別番号")]
+        // 武器識別番号
         public int weaponId;
 
-        [Tooltip("武器種別数値（0: Drone 等）")]
+        // 武器種別数値（0: Drone 等）
         public int weaponType;
 
-        [Tooltip("武器名")]
+        // 武器名
         public string weaponName;
 
-        [Tooltip("武器説明文")]
+        // 武器説明文
         public string description;
 
-        [Tooltip("スプライト画像名（Characters/ 配下のファイル名、拡張子なし）")]
+        // スプライト画像名（Characters/ 配下のファイル名、拡張子なし）
         public string imageName;
 
-        [Tooltip("レベル別性能パラメータのリスト")]
+        // レベル別性能パラメータのリスト
         public List<WeaponLevelData> levels = new List<WeaponLevelData>();
 
         /// <summary>武器識別番号</summary>
@@ -241,7 +241,7 @@ namespace Runner
         [Serializable]
         private class WeaponMasterDataContainer
         {
-            [Tooltip("武器マスターデータのリスト")]
+            // 武器マスターデータのリスト
             public List<WeaponMasterData> weapons = new List<WeaponMasterData>();
         }
     }

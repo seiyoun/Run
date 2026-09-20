@@ -19,28 +19,28 @@ namespace Runner
         /// <summary>デフォルトのリソース配置パス</summary>
         public const string DefaultResourcePath = "Data/PlayerData";
 
-        [Tooltip("プレイヤーのキャラクター名")]
+        // プレイヤーのキャラクター名
         public string characterName;
 
-        [Tooltip("最大HP")]
+        // 最大HP
         public int maxHp;
 
-        [Tooltip("移動速度")]
+        // 移動速度
         public float moveSpeed;
 
-        [Tooltip("攻撃力")]
+        // 攻撃力
         public int attackPower;
 
-        [Tooltip("攻撃間隔 (秒)")]
+        // 攻撃間隔 (秒)
         public float attackInterval;
 
-        [Tooltip("アイテム吸い込み範囲の半径 (m)")]
+        // アイテム吸い込み範囲の半径 (m)
         public float magnetRadius;
 
-        [Tooltip("1歩と判定する移動距離 (m)")]
+        // 1歩と判定する移動距離 (m)
         public float stepDistanceThreshold;
 
-        [Tooltip("1歩あたりに獲得するポイント額")]
+        // 1歩あたりに獲得するポイント額
         public long pointsPerStep;
 
         /// <summary>

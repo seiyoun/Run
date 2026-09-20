@@ -20,16 +20,16 @@ namespace Runner
         /// <summary>デフォルトのリソース配置パス</summary>
         public const string DefaultResourcePath = "Data/StageData";
 
-        [Tooltip("ステージ識別番号（ステージ数）")]
+        // ステージ識別番号（ステージ数）
         public int stageId = 1;
 
-        [Tooltip("脱出までの制限時間（秒）")]
+        // 脱出までの制限時間（秒）
         public float escapeTime = 180f;
 
-        [Tooltip("生成する背景プレハブのアドレス/ID")]
+        // 生成する背景プレハブのアドレス/ID
         public string backgroundId = "ArenaBackground";
 
-        [Tooltip("このステージで発生する出現ウェーブIDのリスト")]
+        // このステージで発生する出現ウェーブIDのリスト
         public List<int> waveIds = new List<int>();
 
         /// <summary>ステージ識別番号（ステージ数）</summary>

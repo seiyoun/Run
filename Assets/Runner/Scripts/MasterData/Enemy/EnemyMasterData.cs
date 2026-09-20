@@ -20,31 +20,31 @@ namespace Runner
         /// <summary>デフォルトのリソース配置パス</summary>
         public const string DefaultResourcePath = "Data/EnemyData";
 
-        [Tooltip("エネミーの種類数値（0: Salaryman, 1: Granny 等）")]
+        // エネミーの種類数値（0: Salaryman, 1: Granny 等）
         public int enemyType;
 
-        [Tooltip("エネミーの表示名・識別名")]
+        // エネミーの表示名・識別名
         public string enemyName;
 
-        [Tooltip("エネミーのスプライト画像名（Resources/Sprites/Characters/ 配下のファイル名、拡張子なし）")]
+        // エネミーのスプライト画像名（Resources/Sprites/Characters/ 配下のファイル名、拡張子なし）
         public string imageName;
 
-        [Tooltip("最大HP")]
+        // 最大HP
         public int maxHp;
 
-        [Tooltip("移動速度")]
+        // 移動速度
         public float moveSpeed;
 
-        [Tooltip("当たり判定（CircleCollider2D）の半径 (m)")]
+        // 当たり判定（CircleCollider2D）の半径 (m)
         public float colliderRadius;
 
-        [Tooltip("攻撃力")]
+        // 攻撃力
         public int attackPower;
 
-        [Tooltip("攻撃間隔（秒）")]
+        // 攻撃間隔（秒）
         public float attackInterval;
 
-        [Tooltip("攻撃射程（m）")]
+        // 攻撃射程（m）
         public float attackRange;
 
         /// <summary>
@@ -132,7 +132,7 @@ namespace Runner
         [Serializable]
         private class EnemyMasterDataContainer
         {
-            [Tooltip("エネミーマスターデータのリスト")]
+            // エネミーマスターデータのリスト
             public List<EnemyMasterData> enemies = new List<EnemyMasterData>();
         }
     }

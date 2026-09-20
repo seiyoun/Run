@@ -105,7 +105,7 @@ namespace Runner
         [Serializable]
         private class ShopMasterDataContainer
         {
-            [Tooltip("ショップアイテムマスターデータのリスト")]
+            // ショップアイテムマスターデータのリスト
             public List<ShopItemData> items = new List<ShopItemData>();
         }
     }

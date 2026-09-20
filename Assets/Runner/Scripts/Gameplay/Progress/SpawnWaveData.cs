@@ -190,7 +190,7 @@ namespace Runner
         [Serializable]
         private class SpawnWaveDataContainer
         {
-            [Tooltip("ウェーブデータのリスト")]
+            // ウェーブデータのリスト
             public List<SpawnWaveData> waves = new List<SpawnWaveData>();
         }
     }
