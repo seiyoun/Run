@@ -27,7 +27,6 @@ namespace Runner
     public sealed class GameDebugHUD : MonoBehaviour
     {
         private const string MoneyItemAddress = "MoneyItem";
-        private const string DroneAddress = "Drone";
         private static readonly Color NormalButtonColor = new Color(0.2f, 0.2f, 0.24f, 1f);
         private static readonly Color ActiveButtonColor = new Color(0.35f, 0.35f, 0.42f, 1f);
         private static readonly Color PanelBackgroundColor = new Color(0.08f, 0.08f, 0.1f, 0.96f);
@@ -577,24 +576,9 @@ namespace Runner
                 return;
             }
 
-            try
+            if (WeaponSpawner.Instance != null)
             {
-                var spawnPos = player.transform.position + new Vector3(-0.45f, 0.55f, 0f);
-                var handle = UnityEngine.AddressableAssets.Addressables.InstantiateAsync(DroneAddress, spawnPos, Quaternion.identity);
-                var droneObj = await handle.Task;
-                if (droneObj != null)
-                {
-                    var follower = droneObj.GetComponent<DroneFollower>();
-                    if (follower != null)
-                    {
-                        follower.SetTarget(player.transform);
-                    }
-                    DebugLogger.Log($"[GameDebugHUD] デバッグ操作: プレイヤー付近にドローンを生成しました。座標: {droneObj.transform.position}");
-                }
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.Error($"[GameDebugHUD] ドローンの生成に失敗しました: {ex.Message}");
+                await WeaponSpawner.Instance.SpawnWeaponAsync(WeaponType.Drone, player.transform, destroyCancellationToken);
             }
         }
     }

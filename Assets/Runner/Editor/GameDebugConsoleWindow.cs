@@ -23,7 +23,6 @@ namespace Runner.Editor
         private const string WindowTitle = "Game Debug Console";
         private const float MinWindowWidth = 360f;
         private const float MinWindowHeight = 480f;
-        private const string DroneAddress = "Drone";
 
         private Vector2 scrollPosition;
 
@@ -409,24 +408,9 @@ namespace Runner.Editor
         {
             if (player == null) return;
 
-            try
+            if (WeaponSpawner.Instance != null)
             {
-                var spawnPos = player.transform.position + new Vector3(-0.45f, 0.55f, 0f);
-                var handle = Addressables.InstantiateAsync(DroneAddress, spawnPos, Quaternion.identity);
-                var droneObj = await handle.Task;
-                if (droneObj != null)
-                {
-                    var follower = droneObj.GetComponent<DroneFollower>();
-                    if (follower != null)
-                    {
-                        follower.SetTarget(player.transform);
-                    }
-                    DebugLogger.Log($"[GameDebugConsoleWindow] デバッグ操作: プレイヤー付近にドローンを生成しました。座標: {droneObj.transform.position}");
-                }
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.Error($"[GameDebugConsoleWindow] ドローンの生成に失敗しました: {ex.Message}");
+                await WeaponSpawner.Instance.SpawnWeaponAsync(WeaponType.Drone, player.transform, CancellationToken.None);
             }
         }
     }
