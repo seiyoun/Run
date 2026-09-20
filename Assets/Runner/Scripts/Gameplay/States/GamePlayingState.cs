@@ -87,6 +87,16 @@ namespace Runner
                 GameHUDView.Instance.UpdateRestockProgress(initialRemaining, initialProgress, true);
             }
 
+            if (GameProgressManager.Instance != null)
+            {
+                GameProgressManager.Instance.StartProgress();
+            }
+
+            if (EnemySpawnDirector.Instance != null)
+            {
+                EnemySpawnDirector.Instance.StartSpawning();
+            }
+
             DebugLogger.Log("[GamePlayingState] ゲームプレイ準備が完了しました。");
         }
 
@@ -153,6 +163,11 @@ namespace Runner
                     GameHUDView.Instance.EscapeTimerHUD.SetRemainingTime(remainingEscapeTime);
                 }
             }
+
+            if (GameProgressManager.Instance != null)
+            {
+                GameProgressManager.Instance.Tick(actualDeltaTime);
+            }
         }
 
         /// <summary>
@@ -164,6 +179,16 @@ namespace Runner
             if (player != null && player.Status != null)
             {
                 player.Status.OnDead -= HandlePlayerDead;
+            }
+
+            if (EnemySpawnDirector.HasInstance && EnemySpawnDirector.Instance != null)
+            {
+                EnemySpawnDirector.Instance.StopSpawning();
+            }
+
+            if (GameProgressManager.HasInstance && GameProgressManager.Instance != null)
+            {
+                GameProgressManager.Instance.StopProgress();
             }
 
             if (GameAssetLoader.HasInstance)

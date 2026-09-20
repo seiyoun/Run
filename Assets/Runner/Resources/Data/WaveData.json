@@ -1,0 +1,52 @@
+{
+  "waves": [
+    {
+      "waveId": 1,
+      "startTime": 0.0,
+      "endTime": 60.0,
+      "spawnInterval": 3.0,
+      "maxAliveCount": 6,
+      "enemyWeights": [
+        {
+          "enemyType": 0,
+          "weight": 100
+        }
+      ]
+    },
+    {
+      "waveId": 2,
+      "startTime": 60.0,
+      "endTime": 120.0,
+      "spawnInterval": 2.0,
+      "maxAliveCount": 12,
+      "enemyWeights": [
+        {
+          "enemyType": 0,
+          "weight": 70
+        },
+        {
+          "enemyType": 1,
+          "weight": 30
+        }
+      ]
+    },
+    {
+      "waveId": 3,
+      "startTime": 120.0,
+      "endTime": 9999.0,
+      "spawnInterval": 1.0,
+      "maxAliveCount": 20,
+      "enemyWeights": [
+        {
+          "enemyType": 0,
+          "weight": 40
+        },
+        {
+          "enemyType": 1,
+          "weight": 60
+        }
+      ]
+    }
+  ]
+}
+

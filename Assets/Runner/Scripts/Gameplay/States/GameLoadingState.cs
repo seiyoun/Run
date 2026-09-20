@@ -55,6 +55,7 @@ namespace Runner
 
             await LoadPlayerAsync(playerSpawnPoint, cancellationToken);
             await LoadResultModalAsync(cancellationToken);
+            await LoadWaveDataAsync(cancellationToken);
             SetupGameHUD();
 
 #if SANDBOX || UNITY_EDITOR
@@ -183,6 +184,21 @@ namespace Runner
             catch (Exception ex)
             {
                 DebugLogger.Error($"[GameLoadingState] GameResultModalView のロードに失敗しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Resources からウェーブ設定データを非同期ロードし、GameProgressManager へ設定する。
+        /// </summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        private async Task LoadWaveDataAsync(CancellationToken cancellationToken)
+        {
+            DebugLogger.Log("[GameLoadingState] ウェーブ設定データのロードを開始します...");
+            var waves = await SpawnWaveData.LoadAllFromResourcesAsync(cancellationToken: cancellationToken);
+            if (GameProgressManager.Instance != null)
+            {
+                GameProgressManager.Instance.SetWaveData(waves);
+                DebugLogger.Log($"[GameLoadingState] GameProgressManager に {waves.Count} 件のウェーブ設定を反映しました。");
             }
         }
 

@@ -50,6 +50,9 @@ namespace Runner
         /// <summary>インスタンスが既に存在するかどうか</summary>
         public static bool HasInstance => SingletonMonoBehaviour<EnemySpawner>.Instance != null;
 
+        /// <summary>現在アクティブな生存エネミー数</summary>
+        public int ActiveEnemyCount => enemyPool != null ? enemyPool.CountActive : 0;
+
         /// <summary>
         /// EnemySpawner の正規インスタンスを取得する。シーン上に存在しない場合は動的に生成します。
         /// </summary>
