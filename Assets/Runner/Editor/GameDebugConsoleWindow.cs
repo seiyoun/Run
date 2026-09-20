@@ -176,7 +176,9 @@ namespace Runner.Editor
                 if (status != null)
                 {
                     float hpRatio = status.MaxHp > 0 ? (float)status.CurrentHp / status.MaxHp : 0f;
-                    EditorGUI.ProgressBar(EditorGUILayout.GetControlRect(false, 18), hpRatio, $"HP: {status.CurrentHp} / {status.MaxHp} {(status.IsDead ? "(Dead)" : "")}");
+                    var charStatus = status as CharacterStatus;
+                    string invincibleTag = charStatus != null && charStatus.IsInvincible ? " [無敵]" : "";
+                    EditorGUI.ProgressBar(EditorGUILayout.GetControlRect(false, 18), hpRatio, $"HP: {status.CurrentHp} / {status.MaxHp}{invincibleTag} {(status.IsDead ? "(Dead)" : "")}");
                 }
                 else
                 {
@@ -209,77 +211,51 @@ namespace Runner.Editor
 
                 using (new EditorGUI.DisabledScope(player == null))
                 {
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        if (GUILayout.Button("攻撃", GUILayout.Height(28)))
-                        {
-                            OnAttackClicked(player);
-                        }
+                    DrawButtonPair("攻撃", () => OnAttackClicked(player), "-10 HP", () => OnDamageClicked(player));
+                    DrawButtonPair("+20 HP", () => OnHealClicked(player), "+500 pt", () => OnAddPointClicked(player));
 
-                        if (GUILayout.Button("-10 HP", GUILayout.Height(28)))
-                        {
-                            OnDamageClicked(player);
-                        }
+                    bool magnetVisible = player != null && PlayerDebugRangeVisualizer.IsRangeVisible(player.transform);
+                    string magnetText = magnetVisible ? "吸込範囲: ON" : "吸込範囲: OFF";
+                    DrawButtonPair("コイン x5 生成", () => OnSpawnMoneyItemsClicked(player), magnetText, () => OnToggleMagnetRangeClicked(player));
 
-                        if (GUILayout.Button("+20 HP", GUILayout.Height(28)))
-                        {
-                            OnHealClicked(player);
-                        }
-
-                        if (GUILayout.Button("+500 pt", GUILayout.Height(28)))
-                        {
-                            OnAddPointClicked(player);
-                        }
-                    }
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        if (GUILayout.Button("コイン x5 生成", GUILayout.Height(28)))
-                        {
-                            OnSpawnMoneyItemsClicked(player);
-                        }
-
-                        bool magnetVisible = player != null && PlayerDebugRangeVisualizer.IsRangeVisible(player.transform);
-                        if (GUILayout.Button(magnetVisible ? "吸込範囲: ON" : "吸込範囲: OFF", GUILayout.Height(28)))
-                        {
-                            OnToggleMagnetRangeClicked(player);
-                        }
-
-                        if (GUILayout.Button("怒り覚醒 (10s)", GUILayout.Height(28)))
-                        {
-                            OnTriggerAwakeningClicked(player);
-                        }
-                    }
+                    var charStatus = player != null ? player.Status as CharacterStatus : null;
+                    bool isInvincible = charStatus != null && charStatus.IsInvincible;
+                    string invincibleText = isInvincible ? "無敵: ON" : "無敵: OFF";
+                    DrawButtonPair(invincibleText, () => OnToggleInvincibleClicked(player), "怒り覚醒 (10s)", () => OnTriggerAwakeningClicked(player));
                 }
 
                 EditorGUILayout.Space(8);
                 EditorGUILayout.LabelField("Game & Event Actions", EditorStyles.boldLabel);
 
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    if (GUILayout.Button("セール通知 発火", GUILayout.Height(28)))
-                    {
-                        OnTriggerSaleClicked();
-                    }
+                DrawButtonPair("セール通知 発火", OnTriggerSaleClicked, "ジャスト回避 演出", OnJustDodgeClicked);
+                DrawButtonPair("非常口 即時開放", OnOpenExitClicked, "敵スポーン x1", OnSpawnEnemyClicked);
+            }
+        }
 
-                    if (GUILayout.Button("ジャスト回避 演出", GUILayout.Height(28)))
-                    {
-                        OnJustDodgeClicked();
-                    }
-                }
+        /// <summary>
+        /// 1行に2つのボタンを左右均等（50% / 50%）に配置して描画する。
+        /// </summary>
+        /// <param name="leftText">左側ボタンの表示テキスト</param>
+        /// <param name="onLeftClick">左側ボタン押下時のコールバック</param>
+        /// <param name="rightText">右側ボタンの表示テキスト</param>
+        /// <param name="onRightClick">右側ボタン押下時のコールバック</param>
+        private void DrawButtonPair(string leftText, Action onLeftClick, string rightText, Action onRightClick)
+        {
+            var rect = EditorGUILayout.GetControlRect(false, 28f);
+            const float spacing = 4f;
+            float width = (rect.width - spacing) * 0.5f;
 
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    if (GUILayout.Button("非常口 即時開放", GUILayout.Height(28)))
-                    {
-                        OnOpenExitClicked();
-                    }
+            var leftRect = new Rect(rect.x, rect.y, width, rect.height);
+            var rightRect = new Rect(rect.x + width + spacing, rect.y, width, rect.height);
 
-                    if (GUILayout.Button("敵スポーン x1", GUILayout.Height(28)))
-                    {
-                        OnSpawnEnemyClicked();
-                    }
-                }
+            if (GUI.Button(leftRect, leftText))
+            {
+                onLeftClick?.Invoke();
+            }
+
+            if (GUI.Button(rightRect, rightText))
+            {
+                onRightClick?.Invoke();
             }
         }
 
@@ -341,6 +317,21 @@ namespace Runner.Editor
         {
             if (player == null) return;
             PlayerDebugRangeVisualizer.ToggleRangeVisible(player.transform, player.MagnetRadius);
+        }
+
+        /// <summary>
+        /// 無敵状態トグルボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
+        /// <param name="player">対象の PlayerController</param>
+        private void OnToggleInvincibleClicked(PlayerController player)
+        {
+            var charStatus = player != null ? player.Status as CharacterStatus : null;
+            if (charStatus != null)
+            {
+                charStatus.IsInvincible = !charStatus.IsInvincible;
+                Repaint();
+                DebugLogger.Log($"[GameDebugConsoleWindow] デバッグ操作: プレイヤーの無敵状態を {(charStatus.IsInvincible ? "ON" : "OFF")} に切り替えました。");
+            }
         }
 
         /// <summary>

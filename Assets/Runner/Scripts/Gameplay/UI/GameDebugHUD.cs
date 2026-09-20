@@ -48,6 +48,8 @@ namespace Runner
         private Button pointButton;
         private TextMeshProUGUI magnetRangeBtnText;
         private Image magnetRangeBtnImage;
+        private TextMeshProUGUI invincibleBtnText;
+        private Image invincibleBtnImage;
 
         private float nextUpdateTime;
         private float fpsTimer;
@@ -270,9 +272,15 @@ namespace Runner
             var exitBtn = exitObj.GetComponent<Button>();
             exitBtn.onClick.AddListener(OnOpenExitClicked);
 
-            var spawnEnemyObj = CreateButton("EnemySpawnButton", parent, new Vector2(0, 365), new Vector2(445, 75), NormalButtonColor, "敵スポーン x1", font, 26);
+            var spawnEnemyObj = CreateButton("EnemySpawnButton", parent, new Vector2(-230, 365), new Vector2(445, 75), NormalButtonColor, "敵スポーン x1", font, 26);
             var spawnEnemyBtn = spawnEnemyObj.GetComponent<Button>();
             spawnEnemyBtn.onClick.AddListener(OnSpawnEnemyClicked);
+
+            var invincibleObj = CreateButton("InvincibleButton", parent, new Vector2(230, 365), new Vector2(445, 75), NormalButtonColor, "無敵: OFF", font, 26);
+            invincibleBtnImage = invincibleObj.GetComponent<Image>();
+            invincibleBtnText = invincibleObj.GetComponentInChildren<TextMeshProUGUI>();
+            var invincibleBtn = invincibleObj.GetComponent<Button>();
+            invincibleBtn.onClick.AddListener(OnToggleInvincibleClicked);
         }
 
         /// <summary>
@@ -344,9 +352,21 @@ namespace Runner
             var status = player.Status;
             var animator = player.CharacterAnimator;
 
+            var charStatus = status as CharacterStatus;
+            var isInvincible = charStatus != null && charStatus.IsInvincible;
+
             var hpText = status != null 
-                ? $"{status.CurrentHp} / {status.MaxHp} (Dead: {status.IsDead})" 
+                ? $"{status.CurrentHp} / {status.MaxHp} (Dead: {status.IsDead}){(isInvincible ? " <color=#FFFF00>[無敵]</color>" : "")}" 
                 : "N/A";
+
+            if (invincibleBtnText != null && charStatus != null)
+            {
+                invincibleBtnText.text = isInvincible ? "無敵: ON" : "無敵: OFF";
+            }
+            if (invincibleBtnImage != null && charStatus != null)
+            {
+                invincibleBtnImage.color = isInvincible ? ActiveButtonColor : NormalButtonColor;
+            }
 
             var pointInfoText = $"¥{player.CurrentMoney:N0} pt  |  {player.CurrentSteps} 歩";
             var rageInfoText = $"{(player.RageRatio * 100f):F0}%  (Awakened: {player.IsAwakened})";
@@ -445,6 +465,33 @@ namespace Runner
             }
 
             DebugLogger.Log($"[GameDebugHUD] デバッグ操作: アイテム吸引範囲の表示を {(nextState ? "ON" : "OFF")} に切り替えました。");
+        }
+
+        /// <summary>
+        /// 無敵状態トグルボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
+        private void OnToggleInvincibleClicked()
+        {
+            var player = PlayerController.Instance;
+            if (player == null) return;
+
+            var charStatus = player.Status as CharacterStatus;
+            if (charStatus == null) return;
+
+            charStatus.IsInvincible = !charStatus.IsInvincible;
+            bool isInvincible = charStatus.IsInvincible;
+
+            if (invincibleBtnText != null)
+            {
+                invincibleBtnText.text = isInvincible ? "無敵: ON" : "無敵: OFF";
+            }
+
+            if (invincibleBtnImage != null)
+            {
+                invincibleBtnImage.color = isInvincible ? ActiveButtonColor : NormalButtonColor;
+            }
+
+            DebugLogger.Log($"[GameDebugHUD] デバッグ操作: プレイヤーの無敵状態を {(isInvincible ? "ON" : "OFF")} に切り替えました。");
         }
 
         /// <summary>

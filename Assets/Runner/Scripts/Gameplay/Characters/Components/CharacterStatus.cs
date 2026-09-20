@@ -30,6 +30,10 @@ namespace Runner
         [SerializeField]
         private bool destroyOnDead = false;
 
+        [Tooltip("無敵状態かどうか（被ダメージを無効化する）")]
+        [SerializeField]
+        private bool isInvincible = false;
+
         private ICharacterVisual characterVisual;
         private ICharacterAnimator characterAnimator;
 
@@ -39,6 +43,13 @@ namespace Runner
         public int MaxHp => maxHp;
         public float NormalizedHp => maxHp > 0 ? Mathf.Clamp01((float)currentHp / maxHp) : 0f;
         public bool IsDead => currentHp <= 0;
+
+        /// <summary>無敵状態かどうか（被ダメージを無効化する）</summary>
+        public bool IsInvincible
+        {
+            get => isInvincible;
+            set => isInvincible = value;
+        }
 
         public event Action<int, int> OnHpChanged;
         public event Action<int> OnTakeDamage;
@@ -51,7 +62,7 @@ namespace Runner
         /// <param name="amount">ダメージ量</param>
         public void TakeDamage(int amount)
         {
-            if (IsDead || amount <= 0) return;
+            if (IsDead || isInvincible || amount <= 0) return;
 
             var actualDamage = Mathf.Min(amount, currentHp);
             currentHp -= actualDamage;
