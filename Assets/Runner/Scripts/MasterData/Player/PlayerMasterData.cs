@@ -43,15 +43,6 @@ namespace Runner
         [Tooltip("1歩あたりに獲得するポイント額")]
         public long pointsPerStep;
 
-        [Tooltip("最大怒りゲージ値")]
-        public float maxRage;
-
-        [Tooltip("怒りゲージの溜まる速度（1秒あたり）")]
-        public float rageGainRate;
-
-        [Tooltip("怒りMAX時の覚醒持続時間（秒）")]
-        public float awakeningDuration;
-
         /// <summary>
         /// JSON 文字列から PlayerMasterData を生成する。
         /// </summary>

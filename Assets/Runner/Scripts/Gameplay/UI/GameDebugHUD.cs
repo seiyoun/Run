@@ -260,10 +260,6 @@ namespace Runner
             var saleBtn = saleObj.GetComponent<Button>();
             saleBtn.onClick.AddListener(OnTriggerSaleClicked);
 
-            var rageObj = CreateButton("RageButton", parent, new Vector2(345, 175), new Vector2(215, 75), NormalButtonColor, "怒り覚醒", font, 26);
-            var rageBtn = rageObj.GetComponent<Button>();
-            rageBtn.onClick.AddListener(OnTriggerAwakeningClicked);
-
             var dodgeObj = CreateButton("DodgeButton", parent, new Vector2(-230, 80), new Vector2(445, 75), NormalButtonColor, "ジャスト回避 演出", font, 26);
             var dodgeBtn = dodgeObj.GetComponent<Button>();
             dodgeBtn.onClick.AddListener(OnJustDodgeClicked);
@@ -369,7 +365,6 @@ namespace Runner
             }
 
             var pointInfoText = $"¥{player.CurrentMoney:N0} pt  |  {player.CurrentSteps} 歩";
-            var rageInfoText = $"{(player.RageRatio * 100f):F0}%  (Awakened: {player.IsAwakened})";
 
             var animStateText = animator != null 
                 ? $"{animator.CurrentState}" 
@@ -391,7 +386,6 @@ namespace Runner
                 $"<b>座標:</b> ({pos.x:F2}, {pos.y:F2})    <b>入力:</b> ({input.x:F2}, {input.y:F2})    <b>速度:</b> {speed:F1}\n" +
                 $"<b>体力 (HP):</b> {hpText}\n" +
                 $"<b>ポイ活:</b> {pointInfoText}\n" +
-                $"<b>怒りゲージ:</b> {rageInfoText}\n" +
                 $"<b>アイテム吸引:</b> {magnetInfo}\n" +
                 $"<b>アニメーション:</b> {animStateText}";
         }
@@ -515,19 +509,6 @@ namespace Runner
             {
                 GameHUDView.Instance.TriggerSaleNotification();
                 DebugLogger.Log("[GameDebugHUD] デバッグ操作: タイムセール通知を発火しました。");
-            }
-        }
-
-        /// <summary>
-        /// 怒りMAX覚醒発動ボタンクリック時のデバッグ操作を処理する。
-        /// </summary>
-        private void OnTriggerAwakeningClicked()
-        {
-            var player = PlayerController.Instance;
-            if (player != null)
-            {
-                player.TriggerAwakening(10f);
-                DebugLogger.Log("[GameDebugHUD] デバッグ操作: 怒りMAX・覚醒モードを発動しました(10秒)。");
             }
         }
 

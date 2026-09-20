@@ -19,7 +19,7 @@
     {
       "id": 3,
       "itemName": "メガエナジードリンク",
-      "description": "体力を即座に全快にし、一定時間怒りゲージ上昇UP",
+      "description": "体力を即座に全快にする",
       "iconEmoji": "【薬】",
       "price": 200,
       "itemType": 2

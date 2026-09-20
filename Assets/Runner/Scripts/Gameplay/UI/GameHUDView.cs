@@ -25,9 +25,6 @@ namespace Runner
         [Tooltip("ポイ活・歩数HUDコンポーネント")]
         [SerializeField] private PointStepHUD pointStepHUD;
 
-        [Tooltip("怒りゲージHUDコンポーネント")]
-        [SerializeField] private RageGaugeHUD rageGaugeHUD;
-
         [Tooltip("脱出タイマーHUDコンポーネント")]
         [SerializeField] private EscapeTimerHUD escapeTimerHUD;
 
@@ -42,9 +39,6 @@ namespace Runner
 
         /// <summary>ポイ活・歩数表示HUD</summary>
         public PointStepHUD PointStepHUD => pointStepHUD;
-
-        /// <summary>怒りゲージHUD</summary>
-        public RageGaugeHUD RageGaugeHUD => rageGaugeHUD;
 
         /// <summary>脱出タイマーHUD</summary>
         public EscapeTimerHUD EscapeTimerHUD => escapeTimerHUD;
@@ -158,7 +152,6 @@ namespace Runner
             if (player != null)
             {
                 player.CollectMoney(100);
-                player.AddRage(25f);
             }
 
             if (pointStepHUD != null)
@@ -177,19 +170,11 @@ namespace Runner
 
             player.OnStepsChanged += HandleStepsChanged;
             player.OnMoneyCollected += HandleMoneyCollected;
-            player.OnRageChanged += HandleRageChanged;
-            player.OnAwakeningChanged += HandleAwakeningChanged;
 
             if (pointStepHUD != null)
             {
                 pointStepHUD.SetSteps(player.CurrentSteps);
                 pointStepHUD.SetPoints(player.CurrentMoney, true);
-            }
-
-            if (rageGaugeHUD != null)
-            {
-                rageGaugeHUD.SetRage(player.CurrentRage, player.MaxRage, true);
-                rageGaugeHUD.SetAwakened(player.IsAwakened, player.AwakeningRemainingTime);
             }
         }
 
@@ -203,8 +188,6 @@ namespace Runner
 
             player.OnStepsChanged -= HandleStepsChanged;
             player.OnMoneyCollected -= HandleMoneyCollected;
-            player.OnRageChanged -= HandleRageChanged;
-            player.OnAwakeningChanged -= HandleAwakeningChanged;
         }
 
         /// <summary>
@@ -245,32 +228,6 @@ namespace Runner
             if (player != null && pointStepHUD != null)
             {
                 pointStepHUD.SetPoints(player.CurrentMoney);
-            }
-        }
-
-        /// <summary>
-        /// 怒りゲージ変更時のHUD表示を更新する。
-        /// </summary>
-        /// <param name="current">現在の怒り値</param>
-        /// <param name="max">最大怒り値</param>
-        private void HandleRageChanged(float current, float max)
-        {
-            if (rageGaugeHUD != null)
-            {
-                rageGaugeHUD.SetRage(current, max);
-            }
-        }
-
-        /// <summary>
-        /// 覚醒状態変更時のHUD表示を更新する。
-        /// </summary>
-        /// <param name="isAwakened">覚醒中かどうか</param>
-        /// <param name="remainingTime">残り持続時間(秒)</param>
-        private void HandleAwakeningChanged(bool isAwakened, float remainingTime)
-        {
-            if (rageGaugeHUD != null)
-            {
-                rageGaugeHUD.SetAwakened(isAwakened, remainingTime);
             }
         }
 

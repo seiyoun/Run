@@ -17,7 +17,6 @@ namespace Runner
     public static class ShopItemEffectApplier
     {
         private const int EnergyDrinkHealAmount = 100;
-        private const float EnergyDrinkRageGain = 30f;
         private const float SpeedSneakersMultiplier = 1.25f;
 
         /// <summary>
@@ -41,7 +40,6 @@ namespace Runner
             {
                 case ShopItemType.Recovery:
                     player.Heal(EnergyDrinkHealAmount);
-                    player.AddRage(EnergyDrinkRageGain);
                     break;
 
                 case ShopItemType.Enhancement:

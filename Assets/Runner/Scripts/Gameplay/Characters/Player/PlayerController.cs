@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Runner
 {
     /// <summary>
-    /// プレイヤーの各機能コンポーネント（移動、攻撃、体力、所持金、歩数、怒り、マグネット）を統括するファサードクラス。
+    /// プレイヤーの各機能コンポーネント（移動、攻撃、体力、所持金、歩数、マグネット）を統括するファサードクラス。
     /// 各種インターフェースを実装し、外部呼び出しを内部の特化コンポーネントへ移譲します。
     /// </summary>
     [RequireComponent(typeof(CharacterMovement2D))]
@@ -22,7 +22,6 @@ namespace Runner
     [RequireComponent(typeof(CharacterAnimator2D))]
     [RequireComponent(typeof(PlayerWallet))]
     [RequireComponent(typeof(PlayerStepTracker))]
-    [RequireComponent(typeof(PlayerRage))]
     [RequireComponent(typeof(PlayerMagnet))]
     [RequireComponent(typeof(CircleCollider2D))]
     [DisallowMultipleComponent]
@@ -37,7 +36,6 @@ namespace Runner
         private CharacterAnimator2D animatorComponent;
         private PlayerWallet walletComponent;
         private PlayerStepTracker stepTrackerComponent;
-        private PlayerRage rageComponent;
         private PlayerMagnet magnetComponent;
         private InputController boundInputController;
         private PlayerMasterData currentPlayerData;
@@ -119,24 +117,6 @@ namespace Runner
         /// <summary>ゲーム開始からの累積獲得ポイント/お金</summary>
         public long TotalEarnedMoney => walletComponent != null ? walletComponent.TotalEarnedMoney : 0;
 
-        /// <summary>現在の怒りゲージ値</summary>
-        public float CurrentRage => rageComponent != null ? rageComponent.CurrentRage : 0f;
-
-        /// <summary>最大怒りゲージ値</summary>
-        public float MaxRage => rageComponent != null ? rageComponent.MaxRage : 100f;
-
-        /// <summary>怒りゲージの蓄積割合 (0.0 〜 1.0)</summary>
-        public float RageRatio => rageComponent != null ? rageComponent.RageRatio : 0f;
-
-        /// <summary>怒りゲージの溜まる速度（1秒あたり）</summary>
-        public float RageGainRate => rageComponent != null ? rageComponent.RageGainRate : 0f;
-
-        /// <summary>現在覚醒（無敵）状態かどうか</summary>
-        public bool IsAwakened => rageComponent != null && rageComponent.IsAwakened;
-
-        /// <summary>覚醒残り持続時間(秒)</summary>
-        public float AwakeningRemainingTime => rageComponent != null ? rageComponent.AwakeningRemainingTime : 0f;
-
         /// <summary>攻撃実行時イベント</summary>
         public event Action OnAttack;
 
@@ -157,12 +137,6 @@ namespace Runner
 
         /// <summary>お金・ポイント獲得時イベント</summary>
         public event Action<long> OnMoneyCollected;
-
-        /// <summary>怒り値変更時イベント</summary>
-        public event Action<float, float> OnRageChanged;
-
-        /// <summary>覚醒状態変更時イベント</summary>
-        public event Action<bool, float> OnAwakeningChanged;
 
         /// <summary>
         /// シングルトンの初期化、サブコンポーネントの参照取得・バインド、データロードを行う。
@@ -230,7 +204,6 @@ namespace Runner
 
             float deltaTime = Time.deltaTime;
             attackerComponent?.OnUpdate(deltaTime);
-            rageComponent?.OnUpdate(deltaTime, MoveInput.sqrMagnitude > 0.01f);
             magnetComponent?.OnUpdate(deltaTime);
 
             UpdateVisuals(deltaTime);
@@ -338,42 +311,6 @@ namespace Runner
         }
 
         /// <summary>
-        /// 怒りゲージを加算する。
-        /// </summary>
-        /// <param name="amount">加算量</param>
-        public void AddRage(float amount)
-        {
-            rageComponent?.AddRage(amount);
-        }
-
-
-        /// <summary>
-        /// 怒りゲージ値を設定する。
-        /// </summary>
-        /// <param name="value">設定値</param>
-        public void SetRage(float value)
-        {
-            rageComponent?.SetRage(value);
-        }
-
-        /// <summary>
-        /// 覚醒（無敵）モードを発動する。
-        /// </summary>
-        /// <param name="duration">持続時間(秒)</param>
-        public void TriggerAwakening(float duration = 10f)
-        {
-            rageComponent?.TriggerAwakening(duration);
-        }
-
-        /// <summary>
-        /// 覚醒モードを終了する。
-        /// </summary>
-        public void EndAwakening()
-        {
-            rageComponent?.EndAwakening();
-        }
-
-        /// <summary>
         /// InputController の移動入力をバインドする。
         /// </summary>
         /// <param name="inputController">バインド対象</param>
@@ -434,16 +371,9 @@ namespace Runner
                 stepTrackerComponent.StepDistanceThreshold = data.stepDistanceThreshold;
                 stepTrackerComponent.PointsPerStep = data.pointsPerStep;
             }
-            if (rageComponent != null)
-            {
-                rageComponent.MaxRage = data.maxRage;
-                rageComponent.RageGainRate = data.rageGainRate;
-                rageComponent.AwakeningDuration = data.awakeningDuration;
-                rageComponent.SetRage(0f);
-            }
             if (magnetComponent != null) magnetComponent.MagnetRadius = data.magnetRadius;
 
-            DebugLogger.Log($"[PlayerController] PlayerData 適用完了: HP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m, Rage(Max={data.maxRage}, Gain={data.rageGainRate}/s)");
+            DebugLogger.Log($"[PlayerController] PlayerData 適用完了: HP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m");
         }
 
         /// <summary>
@@ -459,7 +389,6 @@ namespace Runner
             animatorComponent = EnsureSubComponent<CharacterAnimator2D>();
             walletComponent = EnsureSubComponent<PlayerWallet>();
             stepTrackerComponent = EnsureSubComponent<PlayerStepTracker>();
-            rageComponent = EnsureSubComponent<PlayerRage>();
             magnetComponent = EnsureSubComponent<PlayerMagnet>();
 
             SubscribeSubComponentEvents();
@@ -498,11 +427,6 @@ namespace Runner
                 stepTrackerComponent.OnStepsChanged += HandleStepsChanged;
                 stepTrackerComponent.OnDistanceMoved += HandleDistanceMoved;
             }
-            if (rageComponent != null)
-            {
-                rageComponent.OnRageChanged += HandleRageChanged;
-                rageComponent.OnAwakeningChanged += HandleAwakeningChanged;
-            }
         }
 
         /// <summary>
@@ -522,11 +446,6 @@ namespace Runner
             {
                 stepTrackerComponent.OnStepsChanged -= HandleStepsChanged;
                 stepTrackerComponent.OnDistanceMoved -= HandleDistanceMoved;
-            }
-            if (rageComponent != null)
-            {
-                rageComponent.OnRageChanged -= HandleRageChanged;
-                rageComponent.OnAwakeningChanged -= HandleAwakeningChanged;
             }
         }
 
@@ -578,8 +497,6 @@ namespace Runner
         private void HandleStepsChanged(int steps) => OnStepsChanged?.Invoke(steps);
         private void HandleDistanceMoved(float dist) => OnDistanceMoved?.Invoke(dist);
         private void HandleMoneyCollected(long amount) => OnMoneyCollected?.Invoke(amount);
-        private void HandleRageChanged(float cur, float max) => OnRageChanged?.Invoke(cur, max);
-        private void HandleAwakeningChanged(bool awakened, float time) => OnAwakeningChanged?.Invoke(awakened, time);
 
         /// <summary>
         /// 死亡時に移動停止および死亡アニメーションを再生する。

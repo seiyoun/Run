@@ -188,9 +188,6 @@ namespace Runner.Editor
                 EditorGUILayout.Space(2);
                 EditorGUILayout.LabelField("ポイ活", $"¥{player.CurrentMoney:N0} pt  |  {player.CurrentSteps} 歩");
 
-                float rageRatio = Mathf.Clamp01(player.RageRatio);
-                EditorGUI.ProgressBar(EditorGUILayout.GetControlRect(false, 18), rageRatio, $"怒りゲージ: {rageRatio * 100f:F0}% {(player.IsAwakened ? "[覚醒中]" : "")}");
-
                 bool magnetVisible = PlayerDebugRangeVisualizer.IsRangeVisible(player.transform);
                 EditorGUILayout.LabelField("アイテム吸引範囲", $"{player.MagnetRadius:F1}m (表示: {(magnetVisible ? "ON" : "OFF")})");
 
@@ -221,7 +218,10 @@ namespace Runner.Editor
                     var charStatus = player != null ? player.Status as CharacterStatus : null;
                     bool isInvincible = charStatus != null && charStatus.IsInvincible;
                     string invincibleText = isInvincible ? "無敵: ON" : "無敵: OFF";
-                    DrawButtonPair(invincibleText, () => OnToggleInvincibleClicked(player), "怒り覚醒 (10s)", () => OnTriggerAwakeningClicked(player));
+                    if (GUILayout.Button(invincibleText, GUILayout.Height(28f)))
+                    {
+                        OnToggleInvincibleClicked(player);
+                    }
                 }
 
                 EditorGUILayout.Space(8);
@@ -332,17 +332,6 @@ namespace Runner.Editor
                 Repaint();
                 DebugLogger.Log($"[GameDebugConsoleWindow] デバッグ操作: プレイヤーの無敵状態を {(charStatus.IsInvincible ? "ON" : "OFF")} に切り替えました。");
             }
-        }
-
-        /// <summary>
-        /// 怒りMAX覚醒発動ボタンクリック時のデバッグ操作を処理する。
-        /// </summary>
-        /// <param name="player">対象の PlayerController</param>
-        private void OnTriggerAwakeningClicked(PlayerController player)
-        {
-            if (player == null) return;
-            player.TriggerAwakening(10f);
-            DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: 怒りMAX・覚醒モードを発動しました(10秒)。");
         }
 
         /// <summary>

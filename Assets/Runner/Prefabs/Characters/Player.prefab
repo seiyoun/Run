@@ -21,7 +21,6 @@ GameObject:
   - component: {fileID: 1635527524482775250}
   - component: {fileID: 1477867593546240293}
   - component: {fileID: 5054612787983339807}
-  - component: {fileID: 1479203858271233172}
   - component: {fileID: 1677949863913120229}
   m_Layer: 0
   m_Name: Player
@@ -303,21 +302,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Runner.Gameplay::Runner.PlayerStepTracker
   stepDistanceThreshold: 0.65
   pointsPerStep: 2
---- !u!114 &1479203858271233172
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c75a6d908cfe94060b0c21527e83e0d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Runner.Gameplay::Runner.PlayerRage
-  maxRage: 100
-  rageGainRate: 10
-  awakeningDuration: 10
 --- !u!114 &1677949863913120229
 MonoBehaviour:
   m_ObjectHideFlags: 0
