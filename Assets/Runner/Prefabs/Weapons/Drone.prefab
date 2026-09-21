@@ -43,6 +43,7 @@ GameObject:
   - component: {fileID: 5079655456663328890}
   - component: {fileID: 6392869085670453088}
   - component: {fileID: 3819284756102938475}
+  - component: {fileID: 6133444709742925809}
   m_Layer: 0
   m_Name: Drone
   m_TagString: Untagged
@@ -140,6 +141,7 @@ MonoBehaviour:
   target: {fileID: 0}
   followOffset: {x: -0.45, y: 0.55, z: 0}
   smoothTime: 0.05
+  flipOffsetWithFacing: 1
   hoverFrequency: 3
   hoverAmplitude: 0.08
 --- !u!114 &3819284756102938475
@@ -154,3 +156,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6823751afa17344718539ffcc6f0456c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Runner.Gameplay::Runner.DroneFollower
+  droneIndex: 0
+--- !u!114 &6133444709742925809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8770988059580968626}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 706a51f2d6f2240aba937abc62127f89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Runner.Gameplay::Runner.DroneAttacker2D
+  bulletPrefab: {fileID: 1330960424982996431, guid: 631831241dae142acbf6f2622d035e2b, type: 3}
+  firePoint: {fileID: 2407268096149322011}
+  searchRadius: 8
+  attackPower: 10
+  attackInterval: 1.5

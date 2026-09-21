@@ -37,6 +37,7 @@ namespace Runner
         [SerializeField] private int droneIndex = 0;
 
         private IFollowTarget followTarget;
+        private DroneAttacker2D attacker;
         private int currentLevel = 1;
         private int attackPower = 10;
         private float attackInterval = 1.5f;
@@ -48,10 +49,10 @@ namespace Runner
         public int CurrentLevel => currentLevel;
 
         /// <summary>ドローンの攻撃力</summary>
-        public int AttackPower => attackPower;
+        public int AttackPower => attacker != null ? attacker.AttackPower : attackPower;
 
         /// <summary>ドローンの攻撃間隔（秒）</summary>
-        public float AttackInterval => attackInterval;
+        public float AttackInterval => attacker != null ? attacker.AttackInterval : attackInterval;
 
         /// <summary>現在アタッチされている追従インターフェース</summary>
         public IFollowTarget FollowTarget => followTarget;
@@ -64,6 +65,7 @@ namespace Runner
         /// </summary>
         private void Awake()
         {
+            attacker = GetComponent<DroneAttacker2D>();
             EnsureFollowTarget();
             ApplyOffsetByIndex(droneIndex);
         }
@@ -105,6 +107,18 @@ namespace Runner
             currentLevel = data.Level;
             attackPower = data.AttackPower;
             attackInterval = data.AttackInterval;
+
+            if (attacker == null)
+            {
+                attacker = GetComponent<DroneAttacker2D>();
+            }
+
+            if (attacker != null)
+            {
+                attacker.AttackPower = data.AttackPower;
+                attacker.AttackInterval = data.AttackInterval;
+            }
+
             DebugLogger.Log($"[DroneFollower] ドローン #{droneIndex} に Lv.{currentLevel} を適用しました。(Power: {attackPower}, Interval: {attackInterval:F1}s)");
         }
 
