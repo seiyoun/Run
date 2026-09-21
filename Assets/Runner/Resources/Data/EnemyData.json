@@ -6,7 +6,7 @@
       "imageName": "Enemy",
       "maxHp": 20,
       "moveSpeed": 2.0,
-      "colliderRadius": 0.4,
+      "colliderRadius": 0.3,
       "attackPower": 10,
       "attackInterval": 1.0,
       "attackRange": 1.0
