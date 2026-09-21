@@ -22,11 +22,13 @@ namespace Runner
     public sealed class SceneManager : SceneManagerBase<SceneType>
     {
         private const string LoadingViewAddress = "LoadingView";
+        private const int TargetFrameRate = 60;
 
         public new static SceneManager Instance => (SceneManager)SceneManagerBase<SceneType>.Instance;
         private AddressablePrefabLoader loadingViewLoader;
         protected override bool ShouldDontDestroyOnLoad => true;
         protected override SceneType StartScene => SceneType.Boot;
+
         /// <summary>
         /// アプリ起動前（シーンロード前）に Addressables 静的キャッシュを初期化する。
         /// </summary>
@@ -37,13 +39,15 @@ namespace Runner
         }
 
         /// <summary>
-        /// シングルトンの初期化を行い、プライマリインスタンスであれば AddressablePrefabLoader を生成する。
+        /// シングルトンの初期化を行い、プライマリインスタンスであればフレームレート設定および AddressablePrefabLoader を生成する。
         /// </summary>
         protected override void Awake()
         {
             base.Awake();
             if (IsPrimaryInstance)
             {
+                QualitySettings.vSyncCount = 0;
+                Application.targetFrameRate = TargetFrameRate;
                 loadingViewLoader = new AddressablePrefabLoader();
             }
         }

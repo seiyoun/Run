@@ -183,7 +183,11 @@ namespace Runner
         {
             var defaultFont = TMP_Settings.defaultFontAsset;
 
-            var toggleObj = CreateUIObject("ToggleButton", root, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-120, 80), new Vector2(200, 75));
+            var safeAreaObj = CreateUIObject("SafeAreaContainer", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            safeAreaObj.AddComponent<SafeArea>();
+            var uiRoot = safeAreaObj.transform;
+
+            var toggleObj = CreateUIObject("ToggleButton", uiRoot, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-120, 80), new Vector2(200, 75));
             var toggleImg = toggleObj.AddComponent<Image>();
             toggleImg.color = NormalButtonColor;
             toggleButton = toggleObj.AddComponent<Button>();
@@ -198,7 +202,7 @@ namespace Runner
             toggleTMP.alignment = TextAlignmentOptions.Center;
             toggleTMP.color = Color.white;
 
-            debugPanel = CreateUIObject("DebugPanel", root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1000, 1450));
+            debugPanel = CreateUIObject("DebugPanel", uiRoot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1000, 1450));
             var panelImg = debugPanel.AddComponent<Image>();
             panelImg.color = PanelBackgroundColor;
 
