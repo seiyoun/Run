@@ -84,9 +84,24 @@ namespace Runner
             }
 
             var touchscreen = Touchscreen.current;
-            if (touchscreen != null && touchscreen.touches.Count >= 3)
+            if (touchscreen != null)
             {
-                if (touchscreen.touches[0].press.wasPressedThisFrame)
+                int activeTouchCount = 0;
+                bool anyTouchPressed = false;
+                for (int i = 0; i < touchscreen.touches.Count; i++)
+                {
+                    var touch = touchscreen.touches[i];
+                    if (touch.isInProgress)
+                    {
+                        activeTouchCount++;
+                        if (touch.press.wasPressedThisFrame)
+                        {
+                            anyTouchPressed = true;
+                        }
+                    }
+                }
+
+                if (activeTouchCount >= 3 && anyTouchPressed)
                 {
                     TogglePanel();
                 }
@@ -140,7 +155,7 @@ namespace Runner
             var scaler = canvasObj.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1080, 1920);
-            scaler.matchWidthOrHeight = 1f;
+            scaler.matchWidthOrHeight = 0f;
 
             canvasObj.AddComponent<GraphicRaycaster>();
             var hud = canvasObj.AddComponent<GameDebugHUD>();
