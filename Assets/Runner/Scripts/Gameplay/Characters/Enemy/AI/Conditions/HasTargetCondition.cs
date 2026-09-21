@@ -19,7 +19,7 @@ namespace Runner
     [Condition(
         name: "Has Target",
         category: "Conditions",
-        story: "[Target] is set",
+        story: "[Target] が設定されている",
         id: "d8e2a3c5f6704b12a9e874561234abcd")]
     public partial class HasTargetCondition : Condition
     {

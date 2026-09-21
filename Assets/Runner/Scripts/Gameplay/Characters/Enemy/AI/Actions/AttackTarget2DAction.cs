@@ -15,15 +15,14 @@ using Status = Unity.Behavior.Node.Status;
 namespace Runner
 {
     /// <summary>
-    /// 移動コンポーネントを停止させることなく、ターゲットへ接近してダメージを与え、クールダウンを待機するカスタムアクションノード。
-    /// Run In Parallel ノードと組み合わせることで、移動・追尾を行いながらの近接接触攻撃を実現します。
+    /// ターゲットへ近接ダメージを与え、クールダウンを待機するカスタムアクションノード。
     /// ターゲットが未バインドの場合は PlayerController.Instance から自動取得を試みます。
     /// </summary>
     [Serializable, GeneratePropertyBag]
     [NodeDescription(
         name: "Attack Target 2D",
-        description: "Attacks target without stopping movement and waits for cooldown.",
-        story: "[Agent] attacks [Target] with [Damage] damage cooldown [Cooldown]s in range [AttackRange]m",
+        description: "ターゲットへ近接攻撃を行い、クールダウンを待機します。",
+        story: "[Agent] が [AttackRange] m 以内の [Target] に [Damage] ダメージで攻撃 (CT: [Cooldown] 秒)",
         category: "Action/Combat",
         id: "b4c8d2e6a19047358e7a65431234abcd")]
     public partial class AttackTarget2DAction : Action

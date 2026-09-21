@@ -15,14 +15,13 @@ using Status = Unity.Behavior.Node.Status;
 namespace Runner
 {
     /// <summary>
-    /// 指定されたタグと索敵範囲（半径）に基づいて最も近いターゲットを検索し、Blackboard 変数（Target）に代入するアクションノード。
-    /// ターゲットが見つかった場合は Success、見つからなかった場合は Failure を返します。
+    /// 指定されたタグと索敵範囲に基づいて最も近いターゲットを検索するアクションノード。
     /// </summary>
     [Serializable, GeneratePropertyBag]
     [NodeDescription(
         name: "Find Target 2D",
-        description: "Finds the nearest target by tag within detection range and assigns it to Target.",
-        story: "[Agent] finds [Target] with tag [TargetTag] in range [DetectionRange]m",
+        description: "索敵範囲内で指定タグの最も近いターゲットを検索します。",
+        story: "[Agent] が範囲 [DetectionRange] m 内のタグ [TargetTag] から [Target] を索敵",
         category: "Action/Perception",
         id: "e7b1a2c3d4e5f6789012345678abcdef")]
     public partial class FindTarget2DAction : Action

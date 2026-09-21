@@ -14,14 +14,13 @@ using Status = Unity.Behavior.Node.Status;
 namespace Runner
 {
     /// <summary>
-    /// CharacterMovement2D による移動を停止させ、待機状態を維持するアクションノード。
-    /// Behavior Graph 上でターゲット未検出時のフォールバック待機行動等に使用します。
+    /// その場で待機状態を維持するアクションノード。
     /// </summary>
     [Serializable, GeneratePropertyBag]
     [NodeDescription(
         name: "Idle 2D",
-        description: "Stops movement and idles using CharacterMovement2D.",
-        story: "[Agent] idles",
+        description: "待機状態を維持します。",
+        story: "[Agent] が待機",
         category: "Action/Movement",
         id: "c9f3b2e1a8044d728b9c6543210fedcb")]
     public partial class Idle2DAction : Action

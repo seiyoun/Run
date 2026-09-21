@@ -140,7 +140,7 @@ MonoBehaviour:
         BlackboardGroupReferences: []
         Root:
           rid: 889362453703688994
-        m_VersionTimestamp: 639256181279466330
+        m_VersionTimestamp: 639256189038233270
     - rid: 889362453703688876
       type: {class: BlackboardReference, ns: Unity.Behavior, asm: Unity.Behavior}
       data:
@@ -640,7 +640,7 @@ MonoBehaviour:
   - rid: 889362323872415995
   - rid: 889362453703688536
   - rid: 889362453703688647
-  m_VersionTimestamp: 639256181279466330
+  m_VersionTimestamp: 639256189038233270
   m_SerializedVersion: 3
   m_DebugInfo: {fileID: -5399611317939732456}
   m_RuntimeGraph: {fileID: -4537089256033195326}
@@ -673,7 +673,8 @@ MonoBehaviour:
     NamedChildren: []
     IsPlaceholder: 0
   - Name: Chase Target 2D
-    Story: '[Agent] chases [Target] stopping at [StoppingDistance]m'
+    Story: "[Agent] \u304C\u505C\u6B62\u8DDD\u96E2 [StoppingDistance] m \u3067 [Target]
+      \u3092\u8FFD\u5C3E"
     RuntimeTypeString: Runner.ChaseTarget2DAction, Runner.Gameplay, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     RuntimeTypeID:
@@ -698,7 +699,7 @@ MonoBehaviour:
     NamedChildren: []
     IsPlaceholder: 0
   - Name: Idle 2D
-    Story: '[Agent] idles'
+    Story: "[Agent] \u304C\u5F85\u6A5F"
     RuntimeTypeString: Runner.Idle2DAction, Runner.Gameplay, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
     RuntimeTypeID:
@@ -723,8 +724,8 @@ MonoBehaviour:
     NamedChildren: []
     IsPlaceholder: 0
   - Name: Attack Target 2D
-    Story: '[Agent] attacks [Target] with [Damage] damage cooldown [Cooldown]s in
-      range [AttackRange]m'
+    Story: "[Agent] \u304C [AttackRange] m \u4EE5\u5185\u306E [Target] \u306B [Damage]
+      \u30C0\u30E1\u30FC\u30B8\u3067\u653B\u6483 (CT: [Cooldown] \u79D2)"
     RuntimeTypeString: Runner.AttackTarget2DAction, Runner.Gameplay, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     RuntimeTypeID:
@@ -779,7 +780,7 @@ MonoBehaviour:
     NamedChildren: []
     IsPlaceholder: 0
   - Name: Die 2D
-    Story: '[Agent] dies with delay [DestroyDelay]s'
+    Story: "[Agent] \u304C\u9045\u5EF6 [DestroyDelay] \u79D2\u3067\u6B7B\u4EA1\u30FB\u7834\u68C4"
     RuntimeTypeString: Runner.Die2DAction, Runner.Gameplay, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
     RuntimeTypeID:
@@ -804,7 +805,8 @@ MonoBehaviour:
     NamedChildren: []
     IsPlaceholder: 0
   - Name: Find Target 2D
-    Story: '[Agent] finds [Target] with tag [TargetTag] in range [DetectionRange]m'
+    Story: "[Agent] \u304C\u7BC4\u56F2 [DetectionRange] m \u5185\u306E\u30BF\u30B0
+      [TargetTag] \u304B\u3089 [Target] \u3092\u7D22\u6575"
     RuntimeTypeString: Runner.FindTarget2DAction, Runner.Gameplay, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     RuntimeTypeID:
@@ -834,8 +836,8 @@ MonoBehaviour:
     NamedChildren: []
     IsPlaceholder: 0
   - Name: Knockback 2D
-    Story: '[Agent] is knocked back direction [Direction] force [Force] duration
-      [Duration]s'
+    Story: "[Agent] \u304C\u65B9\u5411 [Direction] \u3001\u5F37\u3055 [Force] \u3001\u6642\u9593
+      [Duration] \u79D2\u3067\u30CE\u30C3\u30AF\u30D0\u30C3\u30AF"
     RuntimeTypeString: Runner.Knockback2DAction, Runner.Gameplay, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     RuntimeTypeID:
@@ -916,7 +918,7 @@ MonoBehaviour:
     - rid: 889362273349927295
       type: {class: ConditionalGuardNodeModel, ns: Unity.Behavior, asm: Unity.Behavior.Authoring}
       data:
-        Position: {x: 180.82182, y: 557.9253}
+        Position: {x: 188.75212, y: 573.7859}
         ID:
           m_Value0: 5879052296177943030
           m_Value1: 16439622395627302431

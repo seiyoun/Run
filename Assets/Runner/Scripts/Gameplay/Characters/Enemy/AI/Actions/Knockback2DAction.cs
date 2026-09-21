@@ -14,14 +14,13 @@ using Status = Unity.Behavior.Node.Status;
 namespace Runner
 {
     /// <summary>
-    /// Blackboard 変数（Direction, Force, IsKnockedBack）を用いてノックバック物理移動を実行するアクションノード。
-    /// 指定持続時間をかけて速度をイージング減衰させ、完了時に IsKnockedBack を false にリセットします。
+    /// 方向と力に基づいてノックバック移動と減衰を行うアクションノード。
     /// </summary>
     [Serializable, GeneratePropertyBag]
     [NodeDescription(
         name: "Knockback 2D",
-        description: "Applies knockback physics using Blackboard variables and clears knockback state on completion.",
-        story: "[Agent] is knocked back direction [Direction] force [Force] duration [Duration]s",
+        description: "外力を受けてノックバック移動を行います。",
+        story: "[Agent] が方向 [Direction] 、強さ [Force] 、時間 [Duration] 秒でノックバック",
         category: "Action/Movement",
         id: "d3c2b1a09847128e7a65431234abcdknock")]
     public partial class Knockback2DAction : Action

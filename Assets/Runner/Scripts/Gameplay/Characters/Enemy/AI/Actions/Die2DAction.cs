@@ -15,14 +15,13 @@ using Status = Unity.Behavior.Node.Status;
 namespace Runner
 {
     /// <summary>
-    /// エージェントの移動を停止させ、コライダーを無効化し、死亡アニメーションを再生した後にオブジェクトを破棄するアクションノード。
-    /// 条件ノード（IsDeadCondition）と連携、または単体で HP がゼロ以下になった際の死亡シークエンスとして機能します。
+    /// 死亡アニメーションを再生し、一定遅延後にオブジェクトを破棄するアクションノード。
     /// </summary>
     [Serializable, GeneratePropertyBag]
     [NodeDescription(
         name: "Die 2D",
-        description: "Stops movement, disables collisions, plays death animation, and destroys the character after a delay.",
-        story: "[Agent] dies with delay [DestroyDelay]s",
+        description: "死亡アニメーションを再生し、一定時間後に自身を破棄します。",
+        story: "[Agent] が遅延 [DestroyDelay] 秒で死亡・破棄",
         category: "Action/Combat",
         id: "f3a7c8e9b0124d568e7a65431234dead")]
     public partial class Die2DAction : Action

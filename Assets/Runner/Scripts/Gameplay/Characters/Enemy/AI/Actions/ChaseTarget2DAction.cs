@@ -14,14 +14,13 @@ using Status = Unity.Behavior.Node.Status;
 namespace Runner
 {
     /// <summary>
-    /// Unity Behavior Graph 上でターゲット（プレイヤー等）に向かって 2D 追尾移動を行うカスタムアクションノード。
-    /// CharacterMovement2D コンポーネントを介して方向ベクトルを適用します。
+    /// ターゲット（プレイヤー等）に向かって追尾移動を行うアクションノード。
     /// </summary>
     [Serializable, GeneratePropertyBag]
     [NodeDescription(
         name: "Chase Target 2D",
-        description: "Moves towards a 2D target using CharacterMovement2D.",
-        story: "[Agent] chases [Target] stopping at [StoppingDistance]m",
+        description: "ターゲットへ接近・追尾します。",
+        story: "[Agent] が停止距離 [StoppingDistance] m で [Target] を追尾",
         category: "Action/Movement",
         id: "a2b4f9c1e78044279b9a67e91234abcd")]
     public partial class ChaseTarget2DAction : Action

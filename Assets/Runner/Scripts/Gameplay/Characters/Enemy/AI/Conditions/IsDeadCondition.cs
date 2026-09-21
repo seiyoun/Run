@@ -19,7 +19,7 @@ namespace Runner
     [Condition(
         name: "Is Dead",
         category: "Conditions",
-        story: "[Agent] HP is zero or below",
+        story: "[Agent] の HP が 0 以下",
         id: "e4d3c2b1a09847128e7a65431234dead")]
     public partial class IsDeadCondition : Condition
     {

@@ -19,7 +19,7 @@ namespace Runner
     [Condition(
         name: "Is Knocked Back",
         category: "Conditions",
-        story: "[IsKnockedBack] is true",
+        story: "[IsKnockedBack] が true",
         id: "f5e4d3c2b1a047128e7a65431234knock")]
     public partial class IsKnockedBackCondition : Condition
     {
