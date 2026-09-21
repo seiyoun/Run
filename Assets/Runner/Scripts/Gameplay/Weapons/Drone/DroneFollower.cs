@@ -117,9 +117,10 @@ namespace Runner
             {
                 attacker.AttackPower = data.AttackPower;
                 attacker.AttackInterval = data.AttackInterval;
+                attacker.SearchRadius = data.SearchRadius;
             }
 
-            DebugLogger.Log($"[DroneFollower] ドローン #{droneIndex} に Lv.{currentLevel} を適用しました。(Power: {attackPower}, Interval: {attackInterval:F1}s)");
+            DebugLogger.Log($"[DroneFollower] ドローン #{droneIndex} に Lv.{currentLevel} を適用しました。(Power: {attackPower}, Interval: {attackInterval:F1}s, Radius: {data.SearchRadius:F1}m)");
         }
 
         /// <summary>

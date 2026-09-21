@@ -19,7 +19,7 @@ namespace Runner
     {
         private const int DefaultPower = 10;
         private const float DefaultInterval = 1.5f;
-        private const float DefaultSearchRadius = 8.0f;
+        private const float DefaultSearchRadius = 4.0f;
         private const float DefaultRotationSpeed = 720f;
 
         [Header("Attack Settings")]

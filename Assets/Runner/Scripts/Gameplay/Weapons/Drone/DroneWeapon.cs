@@ -81,7 +81,7 @@ namespace Runner
                 ? master.GetLevelData(currentLevel)
                 : new WeaponLevelData(currentLevel, 10 * currentLevel, 1.5f, currentLevel);
 
-            DebugLogger.Log($"[DroneWeapon] ドローンを Lv.{currentLevel} にアップグレードします。(目標数: {levelData.Count}, Power: {levelData.AttackPower}, Interval: {levelData.AttackInterval:F1}s)");
+            DebugLogger.Log($"[DroneWeapon] ドローンを Lv.{currentLevel} にアップグレードします。(目標数: {levelData.Count}, Power: {levelData.AttackPower}, Interval: {levelData.AttackInterval:F1}s, Radius: {levelData.SearchRadius:F1}m)");
 
             await SyncDronesAsync(levelData, cancellationToken);
             return true;

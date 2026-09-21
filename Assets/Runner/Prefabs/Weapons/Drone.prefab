@@ -171,6 +171,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Runner.Gameplay::Runner.DroneAttacker2D
   bulletPrefab: {fileID: 1330960424982996431, guid: 631831241dae142acbf6f2622d035e2b, type: 3}
   firePoint: {fileID: 2407268096149322011}
-  searchRadius: 8
+  searchRadius: 4
   attackPower: 10
   attackInterval: 1.5
+  rotationSpeed: 720

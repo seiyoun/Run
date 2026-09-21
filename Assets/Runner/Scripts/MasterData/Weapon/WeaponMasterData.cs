@@ -20,7 +20,7 @@ namespace Runner
     }
 
     /// <summary>
-    /// 武器のレベル別性能パラメータ（威力、攻撃速度、数など）を表すデータクラス。
+    /// 武器のレベル別性能パラメータ（威力、攻撃速度、数、索敵範囲など）を表すデータクラス。
     /// </summary>
     [Serializable]
     public class WeaponLevelData
@@ -34,6 +34,9 @@ namespace Runner
         // 攻撃間隔（秒）
         public float attackInterval;
 
+        // 索敵範囲（m）
+        public float searchRadius;
+
         // 同時展開数・発射数
         public int count;
 
@@ -45,6 +48,9 @@ namespace Runner
 
         /// <summary>攻撃間隔（秒）</summary>
         public float AttackInterval => attackInterval;
+
+        /// <summary>索敵範囲（m）</summary>
+        public float SearchRadius => searchRadius;
 
         /// <summary>同時展開数・発射数</summary>
         public int Count => count;
@@ -63,12 +69,14 @@ namespace Runner
         /// <param name="attackPower">威力（攻撃力）</param>
         /// <param name="attackInterval">攻撃間隔（秒）</param>
         /// <param name="count">同時展開数・発射数</param>
-        public WeaponLevelData(int level, int attackPower, float attackInterval, int count)
+        /// <param name="searchRadius">索敵範囲（m）</param>
+        public WeaponLevelData(int level, int attackPower, float attackInterval, int count, float searchRadius = 4.0f)
         {
             this.level = level;
             this.attackPower = attackPower;
             this.attackInterval = attackInterval;
             this.count = count;
+            this.searchRadius = searchRadius;
         }
 
         /// <summary>
@@ -77,7 +85,7 @@ namespace Runner
         /// <returns>文字列表現</returns>
         public override string ToString()
         {
-            return $"Lv.{level} (Power: {attackPower}, Interval: {attackInterval}s, Count: {count})";
+            return $"Lv.{level} (Power: {attackPower}, Interval: {attackInterval}s, Radius: {searchRadius}m, Count: {count})";
         }
     }
 
@@ -102,9 +110,6 @@ namespace Runner
         // 武器説明文
         public string description;
 
-        // スプライト画像名（Characters/ 配下のファイル名、拡張子なし）
-        public string imageName;
-
         // レベル別性能パラメータのリスト
         public List<WeaponLevelData> levels = new List<WeaponLevelData>();
 
@@ -119,9 +124,6 @@ namespace Runner
 
         /// <summary>武器説明文</summary>
         public string Description => description;
-
-        /// <summary>スプライト画像名</summary>
-        public string ImageName => imageName;
 
         /// <summary>レベル別性能パラメータのコレクション</summary>
         public IReadOnlyList<WeaponLevelData> Levels => levels;
