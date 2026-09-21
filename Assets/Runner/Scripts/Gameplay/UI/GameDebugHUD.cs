@@ -55,6 +55,7 @@ namespace Runner
         private float fpsTimer;
         private int frameCount;
         private float currentFps;
+        private float previousTimeScale = 1f;
         private AddressablePrefabLoader addressableLoader;
 
         /// <summary>GameDebugHUD のシングルトンインスタンス</summary>
@@ -128,6 +129,11 @@ namespace Runner
         /// </summary>
         private void OnDestroy()
         {
+            if (debugPanel != null && debugPanel.activeSelf)
+            {
+                Time.timeScale = previousTimeScale;
+            }
+
             if (Instance == this)
             {
                 Instance = null;
@@ -165,13 +171,23 @@ namespace Runner
         }
 
         /// <summary>
-        /// デバッグパネルの表示・非表示をトグル切り替えする。
+        /// デバッグパネルの表示・非表示をトグル切り替えし、表示時はゲーム時間を停止（ポーズ）する。
         /// </summary>
         public void TogglePanel()
         {
             if (debugPanel != null)
             {
-                debugPanel.SetActive(!debugPanel.activeSelf);
+                bool willOpen = !debugPanel.activeSelf;
+                debugPanel.SetActive(willOpen);
+                if (willOpen)
+                {
+                    previousTimeScale = Time.timeScale;
+                    Time.timeScale = 0f;
+                }
+                else
+                {
+                    Time.timeScale = previousTimeScale;
+                }
             }
         }
 
@@ -240,6 +256,11 @@ namespace Runner
             headerObj.transform.SetAsLastSibling();
 
             debugPanel.SetActive(showOnStart);
+            if (showOnStart)
+            {
+                previousTimeScale = Time.timeScale;
+                Time.timeScale = 0f;
+            }
         }
 
         /// <summary>
