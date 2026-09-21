@@ -6,6 +6,7 @@
 
 using System;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace Runner
 {
@@ -19,6 +20,7 @@ namespace Runner
         private const int DefaultPower = 10;
         private const float DefaultInterval = 1.5f;
         private const float DefaultSearchRadius = 8.0f;
+        private const float DefaultRotationSpeed = 720f;
 
         [Header("Attack Settings")]
         [Tooltip("発射する弾丸プレハブ")]
@@ -36,8 +38,11 @@ namespace Runner
         [Tooltip("攻撃間隔（秒）")]
         [SerializeField] private float attackInterval = DefaultInterval;
 
+        [Tooltip("ターゲット追従の回転速度（度/秒）")]
+        [SerializeField] private float rotationSpeed = DefaultRotationSpeed;
+
         private float attackCooldownTimer;
-        private SpriteRenderer spriteRenderer;
+        private ObjectPool<DroneBullet> bulletPool;
 
         /// <summary>攻撃力</summary>
         public int AttackPower
@@ -67,15 +72,15 @@ namespace Runner
         public event Action OnAttack;
 
         /// <summary>
-        /// コンポーネント参照を取得する。
+        /// 弾丸用オブジェクトプールを初期化する。
         /// </summary>
         private void Awake()
         {
-            spriteRenderer = GetComponent<SpriteRenderer>();
+            InitializePool();
         }
 
         /// <summary>
-        /// 毎フレームのクールダウンタイマー更新および自動索敵攻撃を行う。
+        /// 毎フレームのクールダウンタイマー更新、向きの追従回転、および自動索敵攻撃を行う。
         /// </summary>
         private void Update()
         {
@@ -84,9 +89,23 @@ namespace Runner
                 attackCooldownTimer -= Time.deltaTime;
             }
 
+            UpdateRotation();
+
             if (CanAttack)
             {
                 Attack();
+            }
+        }
+
+        /// <summary>
+        /// オブジェクトプールを破棄する。
+        /// </summary>
+        private void OnDestroy()
+        {
+            if (bulletPool != null)
+            {
+                bulletPool.Dispose();
+                bulletPool = null;
             }
         }
 
@@ -112,16 +131,30 @@ namespace Runner
 
             attackCooldownTimer = attackInterval;
 
-            if (spriteRenderer != null)
-            {
-                spriteRenderer.flipX = direction.x < 0f;
-            }
-
             Vector3 spawnPosition = firePoint != null ? firePoint.position : transform.position;
-            var bullet = Instantiate(bulletPrefab, spawnPosition, Quaternion.identity);
-            bullet.Initialize(direction, attackPower);
+            var bullet = bulletPool != null ? bulletPool.Get() : Instantiate(bulletPrefab, spawnPosition, Quaternion.identity);
+            bullet.transform.position = spawnPosition;
+            bullet.Initialize(direction, attackPower, ReturnBullet);
 
             OnAttack?.Invoke();
+        }
+
+        /// <summary>
+        /// 発射した弾丸をオブジェクトプールに返却する。
+        /// </summary>
+        /// <param name="bullet">返却する弾丸インスタンス</param>
+        public void ReturnBullet(DroneBullet bullet)
+        {
+            if (bullet == null) return;
+
+            if (bulletPool != null)
+            {
+                bulletPool.Release(bullet);
+            }
+            else
+            {
+                Destroy(bullet.gameObject);
+            }
         }
 
         /// <summary>
@@ -150,6 +183,87 @@ namespace Runner
             }
 
             return closestEnemy;
+        }
+
+        /// <summary>
+        /// 最も近いエネミーの方向へスムーズに回転する。エネミーが存在しない場合は正面（0度）に戻る。
+        /// </summary>
+        private void UpdateRotation()
+        {
+            var target = FindTarget(transform.position);
+            float targetAngle = 0f;
+
+            if (target != null)
+            {
+                Vector2 direction = (target.position - transform.position).normalized;
+                if (direction.sqrMagnitude > 0.001f)
+                {
+                    targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+                }
+            }
+
+            float currentAngle = transform.eulerAngles.z;
+            float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.Euler(0f, 0f, newAngle);
+        }
+
+        /// <summary>
+        /// 弾丸インスタンスを再利用するオブジェクトプールを初期化する。
+        /// </summary>
+        private void InitializePool()
+        {
+            bulletPool = new ObjectPool<DroneBullet>(
+                createFunc: CreateBullet,
+                actionOnGet: OnGetBullet,
+                actionOnRelease: OnReleaseBullet,
+                actionOnDestroy: OnDestroyBullet,
+                collectionCheck: false
+            );
+        }
+
+        /// <summary>
+        /// オブジェクトプール用の新しい弾丸インスタンスを生成する。
+        /// </summary>
+        /// <returns>生成された DroneBullet インスタンス</returns>
+        private DroneBullet CreateBullet()
+        {
+            return Instantiate(bulletPrefab);
+        }
+
+        /// <summary>
+        /// プールから取得された弾丸をアクティブ化する。
+        /// </summary>
+        /// <param name="bullet">対象の弾丸インスタンス</param>
+        private void OnGetBullet(DroneBullet bullet)
+        {
+            if (bullet != null)
+            {
+                bullet.gameObject.SetActive(true);
+            }
+        }
+
+        /// <summary>
+        /// プールに返却された弾丸を非アクティブ化する。
+        /// </summary>
+        /// <param name="bullet">対象の弾丸インスタンス</param>
+        private void OnReleaseBullet(DroneBullet bullet)
+        {
+            if (bullet != null)
+            {
+                bullet.gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>
+        /// プール破棄時に弾丸インスタンスを破棄する。
+        /// </summary>
+        /// <param name="bullet">対象の弾丸インスタンス</param>
+        private void OnDestroyBullet(DroneBullet bullet)
+        {
+            if (bullet != null)
+            {
+                Destroy(bullet.gameObject);
+            }
         }
     }
 }

@@ -41,7 +41,6 @@ namespace Runner
         [Tooltip("上下浮遊ボビングの振幅 (m)")]
         [SerializeField] private float hoverAmplitude = DefaultHoverAmplitude;
 
-        private SpriteRenderer spriteRenderer;
         private Vector3 currentVelocity;
         private float hoverTimeOffset;
 
@@ -63,11 +62,10 @@ namespace Runner
         }
 
         /// <summary>
-        /// コンポーネント参照の取得およびランダムな浮遊時間オフセットを初期化する。
+        /// ランダムな浮遊時間オフセットを初期化する。
         /// </summary>
         private void Awake()
         {
-            spriteRenderer = GetComponent<SpriteRenderer>();
             hoverTimeOffset = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
         }
 
@@ -123,11 +121,6 @@ namespace Runner
             if (flipOffsetWithFacing && isFacingLeft)
             {
                 adjustedOffset.x = -adjustedOffset.x;
-            }
-
-            if (spriteRenderer != null)
-            {
-                spriteRenderer.flipX = isFacingLeft;
             }
 
             // サイン波による浮遊（ボビング）演出

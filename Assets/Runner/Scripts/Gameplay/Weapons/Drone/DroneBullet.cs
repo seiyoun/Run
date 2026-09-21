@@ -4,13 +4,14 @@
  * スクリプト説明: ドローンが発射する弾丸の移動およびエネミーへのダメージ判定を制御するコンポーネント。
  */
 
+using System;
 using UnityEngine;
 
 namespace Runner
 {
     /// <summary>
     /// ドローンが発射する弾丸の移動制御および衝突判定コンポーネント。
-    /// 指定された方向へ直進移動し、エネミーに接触した際にダメージを与えて自身を破棄します。
+    /// 指定された方向へ直進移動し、エネミーに接触した際にダメージを与えて自身を破棄またはプールへ返却します。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CircleCollider2D))]
@@ -26,6 +27,8 @@ namespace Runner
         private Vector2 direction;
         private int damage;
         private float elapsedLifeTime;
+        private Action<DroneBullet> returnToPool;
+        private bool isReleased;
 
         /// <summary>
         /// 毎フレームの移動および生存時間の更新を行う。
@@ -37,12 +40,12 @@ namespace Runner
             elapsedLifeTime += Time.deltaTime;
             if (elapsedLifeTime >= lifeTime)
             {
-                Destroy(gameObject);
+                ReleaseSelf();
             }
         }
 
         /// <summary>
-        /// コライダー接触時にプレイヤー以外のダメージ対象へダメージを与えて自身を破棄する。
+        /// コライダー接触時にプレイヤー以外のダメージ対象へダメージを与えて自身を返却する。
         /// </summary>
         /// <param name="other">接触したコライダー</param>
         private void OnTriggerEnter2D(Collider2D other)
@@ -53,20 +56,41 @@ namespace Runner
             if (damageable != null && !damageable.IsDead)
             {
                 damageable.TakeDamage(damage);
-                Destroy(gameObject);
+                ReleaseSelf();
             }
         }
 
         /// <summary>
-        /// 弾丸の進行方向と攻撃力を初期化する。
+        /// 弾丸の進行方向、攻撃力、およびプール返却用コールバックを初期化する。
         /// </summary>
         /// <param name="moveDirection">進行方向ベクトル</param>
         /// <param name="bulletDamage">与えるダメージ量</param>
-        public void Initialize(Vector2 moveDirection, int bulletDamage)
+        /// <param name="onRelease">オブジェクトプール返却時のコールバック（null時はDestroy）</param>
+        public void Initialize(Vector2 moveDirection, int bulletDamage, Action<DroneBullet> onRelease = null)
         {
             direction = moveDirection.normalized;
             damage = bulletDamage;
             elapsedLifeTime = 0f;
+            returnToPool = onRelease;
+            isReleased = false;
+        }
+
+        /// <summary>
+        /// 自身をオブジェクトプールに返却、または破棄する。
+        /// </summary>
+        private void ReleaseSelf()
+        {
+            if (isReleased) return;
+            isReleased = true;
+
+            if (returnToPool != null)
+            {
+                returnToPool(this);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
     }
 }
