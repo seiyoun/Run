@@ -37,9 +37,21 @@ namespace Runner
         [SerializeField] private int droneIndex = 0;
 
         private IFollowTarget followTarget;
+        private int currentLevel = 1;
+        private int attackPower = 10;
+        private float attackInterval = 1.5f;
 
         /// <summary>ドローンのスロット識別番号</summary>
         public int DroneIndex => droneIndex;
+
+        /// <summary>ドローンの現在の武器レベル</summary>
+        public int CurrentLevel => currentLevel;
+
+        /// <summary>ドローンの攻撃力</summary>
+        public int AttackPower => attackPower;
+
+        /// <summary>ドローンの攻撃間隔（秒）</summary>
+        public float AttackInterval => attackInterval;
 
         /// <summary>現在アタッチされている追従インターフェース</summary>
         public IFollowTarget FollowTarget => followTarget;
@@ -79,7 +91,21 @@ namespace Runner
         public override string ToString()
         {
             string targetName = Target != null ? Target.name : "None";
-            return $"DroneFollower (Index: {droneIndex}, Target: {targetName})";
+            return $"DroneFollower (Index: {droneIndex}, Lv.{currentLevel}, Power: {attackPower}, Interval: {attackInterval:F1}s, Target: {targetName})";
+        }
+
+        /// <summary>
+        /// 武器レベルデータを受け取り、性能パラメータ（レベル・攻撃力・攻撃間隔）を設定・更新する。
+        /// </summary>
+        /// <param name="data">設定対象の武器レベルデータ</param>
+        public void ApplyLevelData(WeaponLevelData data)
+        {
+            if (data == null) return;
+
+            currentLevel = data.Level;
+            attackPower = data.AttackPower;
+            attackInterval = data.AttackInterval;
+            DebugLogger.Log($"[DroneFollower] ドローン #{droneIndex} に Lv.{currentLevel} を適用しました。(Power: {attackPower}, Interval: {attackInterval:F1}s)");
         }
 
         /// <summary>

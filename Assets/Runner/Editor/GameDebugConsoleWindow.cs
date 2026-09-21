@@ -232,7 +232,10 @@ namespace Runner.Editor
 
                 using (new EditorGUI.DisabledScope(player == null))
                 {
-                    DrawButtonPair("ドローン生成", () => OnSpawnDroneClicked(player), "全武器 解除", OnReleaseAllWeaponsClicked);
+                    int droneLevel = WeaponManager.HasInstance ? WeaponManager.Instance.GetWeaponLevel(WeaponType.Drone) : 0;
+                    bool isMax = WeaponManager.HasInstance && WeaponManager.Instance.IsMaxLevel(WeaponType.Drone);
+                    string droneBtnText = isMax ? "ドローン (Max Lv.5)" : $"ドローン Lv.UP (Lv.{droneLevel})";
+                    DrawButtonPair(droneBtnText, OnUpgradeDroneClicked, "全武器 解除", OnReleaseAllWeaponsClicked);
                 }
 
                 EditorGUILayout.Space(8);
@@ -425,25 +428,27 @@ namespace Runner.Editor
         }
 
         /// <summary>
-        /// プレイヤー付近へのドローン生成ボタンクリック時のデバッグ操作を処理する。
+        /// ドローン武器のレベルアップボタンクリック時のデバッグ操作を処理する。
         /// </summary>
-        /// <param name="player">対象の PlayerController</param>
-        private async void OnSpawnDroneClicked(PlayerController player)
+        private async void OnUpgradeDroneClicked()
         {
-            if (player == null) return;
-
-            if (WeaponSpawner.Instance != null)
+            if (WeaponManager.Instance != null)
             {
-                await WeaponSpawner.Instance.SpawnWeaponAsync(WeaponType.Drone, player.transform.position, CancellationToken.None);
+                await WeaponManager.Instance.UpgradeWeaponAsync(WeaponType.Drone, CancellationToken.None);
             }
         }
 
         /// <summary>
-        /// すべての武器を解放・クリアするデバッグ操作を処理する。
+        /// すべての武器を解放・クリアし、レベルをリセットするデバッグ操作を処理する。
         /// </summary>
         private void OnReleaseAllWeaponsClicked()
         {
-            if (WeaponSpawner.Instance != null)
+            if (WeaponManager.Instance != null)
+            {
+                WeaponManager.Instance.ResetAllWeapons();
+                DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: すべての武器レベルをリセットし、実体を解放しました。");
+            }
+            else if (WeaponSpawner.Instance != null)
             {
                 WeaponSpawner.Instance.ReleaseAllWeapons();
                 DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: すべての武器を解放しました。");
