@@ -24,6 +24,9 @@ namespace Runner
         [Tooltip("弾の最大生存時間（秒）")]
         [SerializeField] private float lifeTime = 2f;
 
+        [Tooltip("エネミー命中時に与えるノックバック力")]
+        [SerializeField] private float knockbackForce = 5f;
+
         private Vector2 direction;
         private int damage;
         private float elapsedLifeTime;
@@ -56,6 +59,13 @@ namespace Runner
             if (damageable != null && !damageable.IsDead)
             {
                 damageable.TakeDamage(damage);
+
+                var knockbackable = other.GetComponent<IKnockbackable>() ?? other.GetComponentInParent<IKnockbackable>();
+                if (knockbackable != null)
+                {
+                    knockbackable.ApplyKnockback(direction, knockbackForce);
+                }
+
                 ReleaseSelf();
             }
         }

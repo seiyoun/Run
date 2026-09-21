@@ -12,11 +12,11 @@ GameObject:
   - component: {fileID: 1575206666447997853}
   - component: {fileID: 4010877698805496718}
   - component: {fileID: 5615147026605085051}
+  - component: {fileID: 6266484430374443275}
   - component: {fileID: 1238795094022293040}
   - component: {fileID: 4461160251545292691}
-  - component: {fileID: 6266484430374443275}
-  - component: {fileID: 3039347634334950352}
   - component: {fileID: 7080154026156085524}
+  - component: {fileID: 3039347634334950352}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -161,6 +161,35 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.4
+--- !u!114 &6266484430374443275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6755883909957094918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0038c16c34866b4f9e25c9c0dc0f7e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Behavior::Unity.Behavior.BehaviorGraphAgent
+  m_Graph: {fileID: -4537089256033195326, guid: 26b9d9b66c9a14ff391b0eb312eef27d, type: 2}
+  m_BlackboardVariableOverridesList:
+  - rid: 889362273349927150
+  m_OriginalGraph: {fileID: -4537089256033195326, guid: 26b9d9b66c9a14ff391b0eb312eef27d, type: 2}
+  m_IsInitialised: 0
+  m_IsStarted: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 889362273349927150
+      type: {class: 'BlackboardVariable`1[[UnityEngine.GameObject, UnityEngine.CoreModule]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 1
+          m_Value1: 0
+        Name: Self
+        m_Value: {fileID: 6755883909957094918}
 --- !u!114 &1238795094022293040
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -174,6 +203,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Runner.Gameplay::Runner.CharacterMovement2D
   moveSpeed: 6
+  clampToStageBounds: 0
 --- !u!114 &4461160251545292691
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -189,7 +219,8 @@ MonoBehaviour:
   maxHp: 20
   currentHp: 20
   destroyOnDead: 0
---- !u!114 &6266484430374443275
+  isInvincible: 0
+--- !u!114 &7080154026156085524
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -198,26 +229,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 6755883909957094918}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0038c16c34866b4f9e25c9c0dc0f7e6, type: 3}
+  m_Script: {fileID: 11500000, guid: d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.Behavior::Unity.Behavior.BehaviorGraphAgent
-  m_Graph: {fileID: 666476912672222298, guid: 26b9d9b66c9a14ff391b0eb312eef27d, type: 2}
-  m_BlackboardVariableOverridesList:
-  - rid: 889362273349927150
-  m_OriginalGraph: {fileID: 666476912672222298, guid: 26b9d9b66c9a14ff391b0eb312eef27d, type: 2}
-  m_IsInitialised: 0
-  m_IsStarted: 0
-  references:
-    version: 2
-    RefIds:
-    - rid: 889362273349927150
-      type: {class: 'BlackboardVariable`1[[UnityEngine.GameObject, UnityEngine.CoreModule]]', ns: Unity.Behavior, asm: Unity.Behavior}
-      data:
-        GUID:
-          m_Value0: 1
-          m_Value1: 0
-        Name: Self
-        m_Value: {fileID: 6755883909957094918}
+  m_EditorClassIdentifier: Runner.Gameplay::Runner.CharacterVisual2D
+  spriteRenderer: {fileID: 1575206666447997853}
 --- !u!114 &3039347634334950352
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -232,16 +247,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: Runner.Gameplay::Runner.EnemyController
   targetBlackboardKey: Target
   agentBlackboardKey: Self
---- !u!114 &7080154026156085524
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6755883909957094918}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Runner.Gameplay::Runner.CharacterVisual2D
-  spriteRenderer: {fileID: 1575206666447997853}

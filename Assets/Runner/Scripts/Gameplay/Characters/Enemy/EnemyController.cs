@@ -22,7 +22,7 @@ namespace Runner
     [RequireComponent(typeof(CircleCollider2D))]
     [RequireComponent(typeof(BehaviorGraphAgent))]
     [DisallowMultipleComponent]
-    public sealed class EnemyController : MonoBehaviour
+    public sealed class EnemyController : MonoBehaviour, IKnockbackable
     {
         private const float DefaultMoveSpeed = 3.0f;
         private const string TargetVariableName = "Target";
@@ -30,6 +30,9 @@ namespace Runner
         private const string AttackPowerVariableName = "AttackPower";
         private const string AttackIntervalVariableName = "AttackInterval";
         private const string AttackRangeVariableName = "AttackRange";
+        private const string IsKnockedBackVariableName = "IsKnockedBack";
+        private const string KnockbackDirectionVariableName = "KnockbackDirection";
+        private const string KnockbackForceVariableName = "KnockbackForce";
 
         [Header("AI Settings")]
         [Tooltip("Blackboard に登録するターゲット変数名")]
@@ -298,17 +301,36 @@ namespace Runner
 
             if (movementComponent != null)
             {
+                movementComponent.enabled = true;
                 movementComponent.Stop();
             }
 
             if (behaviorAgent != null)
             {
+                behaviorAgent.SetVariableValue(IsKnockedBackVariableName, false);
                 behaviorAgent.Restart();
             }
         }
 
         /// <summary>
-        /// BehaviorGraphAgent の Blackboard 変数（Self, Target, 攻撃設定等）へ最新の参照を同期する。
+        /// 指定された方向と力でノックバック外力を Blackboard 変数に同期し、ノックバック状態を開始する。
+        /// </summary>
+        /// <param name="direction">ノックバック方向ベクトル</param>
+        /// <param name="force">ノックバックの強さ</param>
+        public void ApplyKnockback(Vector2 direction, float force)
+        {
+            if (IsDead || force <= 0f) return;
+
+            if (behaviorAgent != null)
+            {
+                behaviorAgent.SetVariableValue(KnockbackDirectionVariableName, direction.normalized);
+                behaviorAgent.SetVariableValue(KnockbackForceVariableName, force);
+                behaviorAgent.SetVariableValue(IsKnockedBackVariableName, true);
+            }
+        }
+
+        /// <summary>
+        /// BehaviorGraphAgent の Blackboard 変数（Self, Target, 攻撃設定, ノックバック設定等）へ最新の参照を同期する。
         /// </summary>
         private void SyncBlackboardVariables()
         {
@@ -327,6 +349,9 @@ namespace Runner
             behaviorAgent.SetVariableValue(AttackPowerVariableName, AttackPower);
             behaviorAgent.SetVariableValue(AttackIntervalVariableName, AttackInterval);
             behaviorAgent.SetVariableValue(AttackRangeVariableName, AttackRange);
+            behaviorAgent.SetVariableValue(IsKnockedBackVariableName, false);
+            behaviorAgent.SetVariableValue(KnockbackDirectionVariableName, Vector2.zero);
+            behaviorAgent.SetVariableValue(KnockbackForceVariableName, 0f);
         }
 
         /// <summary>
