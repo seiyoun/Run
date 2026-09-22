@@ -116,6 +116,9 @@ namespace Runner
             player.transform.position = spawnPos;
             SetupPlayerCamera(player);
 
+            var playerData = MasterDataManager.GetPlayerMasterData();
+            player.ApplyData(playerData);
+
             DebugLogger.Log($"[PlayerSpawner] Addressables からプレイヤーのロード・生成が完了しました。Pos: {spawnPos}");
             return player;
         }

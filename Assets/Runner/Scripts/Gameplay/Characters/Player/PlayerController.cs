@@ -101,7 +101,6 @@ namespace Runner
             lastPosition = transform.position;
 
             InitializeSubComponents();
-            LoadPlayerData();
         }
 
         /// <summary>
@@ -264,34 +263,10 @@ namespace Runner
         }
 
         /// <summary>
-        /// 指定された方向へ移動入力を適用する。
-        /// </summary>
-        /// <param name="direction">移動入力ベクトル</param>
-        private void Move(Vector2 direction)
-        {
-            if (statusComponent != null && statusComponent.IsDead)
-            {
-                movementComponent?.Stop();
-                return;
-            }
-
-            movementComponent?.Move(direction);
-        }
-
-        /// <summary>
-        /// MasterDataManager のキャッシュから PlayerMasterData を取得して全コンポーネントへ適用する。
-        /// </summary>
-        private void LoadPlayerData()
-        {
-            var data = MasterDataManager.GetPlayerMasterData();
-            ApplyData(data);
-        }
-
-        /// <summary>
         /// PlayerMasterData の各設定値を対応するサブコンポーネントへ分配・適用する。
         /// </summary>
         /// <param name="data">適用するマスターデータ</param>
-        private void ApplyData(PlayerMasterData data)
+        public void ApplyData(PlayerMasterData data)
         {
             if (data == null) return;
 
@@ -314,6 +289,21 @@ namespace Runner
             if (magnetComponent != null) magnetComponent.MagnetRadius = data.magnetRadius;
 
             DebugLogger.Log($"[PlayerController] PlayerData 適用完了: HP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m");
+        }
+
+        /// <summary>
+        /// 指定された方向へ移動入力を適用する。
+        /// </summary>
+        /// <param name="direction">移動入力ベクトル</param>
+        private void Move(Vector2 direction)
+        {
+            if (statusComponent != null && statusComponent.IsDead)
+            {
+                movementComponent?.Stop();
+                return;
+            }
+
+            movementComponent?.Move(direction);
         }
 
         /// <summary>
