@@ -49,17 +49,17 @@ namespace Runner
 
         /// <summary>
         /// バフを付与し、効果を適用して管理リストへ追加する。
-        /// 同一型のバフが既に存在する場合は解除して新しいバフで上書きする。
+        /// 同一バフ識別番号（BuffId）のバフが既に存在する場合は解除して新しいバフで上書きする。
         /// </summary>
         /// <param name="buff">付与する IBuff インスタンス</param>
         public void AddBuff(IBuff buff)
         {
             if (buff == null) return;
 
-            var buffType = buff.GetType();
+            int targetBuffId = buff.BuffId;
             for (int i = activeBuffs.Count - 1; i >= 0; i--)
             {
-                if (activeBuffs[i].GetType() == buffType)
+                if (activeBuffs[i].BuffId == targetBuffId)
                 {
                     activeBuffs[i].Remove();
                     activeBuffs.RemoveAt(i);
@@ -68,6 +68,19 @@ namespace Runner
 
             buff.Apply();
             activeBuffs.Add(buff);
+        }
+
+        /// <summary>
+        /// バフ種別を指定し、BuffFactory経由でバフを生成して付与・上書きする。
+        /// </summary>
+        /// <param name="type">付与するバフ種別</param>
+        public void AddBuff(BuffType type)
+        {
+            var buff = BuffFactory.Create(type, gameObject);
+            if (buff != null)
+            {
+                AddBuff(buff);
+            }
         }
 
         /// <summary>
@@ -80,6 +93,31 @@ namespace Runner
 
             buff.Remove();
             activeBuffs.Remove(buff);
+        }
+
+        /// <summary>
+        /// 指定したバフ識別番号のバフを解除し、管理リストから除外する。
+        /// </summary>
+        /// <param name="buffId">バフ識別番号</param>
+        public void RemoveBuff(int buffId)
+        {
+            for (int i = activeBuffs.Count - 1; i >= 0; i--)
+            {
+                if (activeBuffs[i].BuffId == buffId)
+                {
+                    activeBuffs[i].Remove();
+                    activeBuffs.RemoveAt(i);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 指定したバフ種別のバフを解除し、管理リストから除外する。
+        /// </summary>
+        /// <param name="type">バフ種別</param>
+        public void RemoveBuff(BuffType type)
+        {
+            RemoveBuff((int)type);
         }
 
         /// <summary>
@@ -96,6 +134,54 @@ namespace Runner
                     activeBuffs.RemoveAt(i);
                 }
             }
+        }
+
+        /// <summary>
+        /// 指定したバフ識別番号の最初のアクティブバフを取得する。
+        /// </summary>
+        /// <param name="buffId">バフ識別番号</param>
+        /// <returns>見つかったバフ（存在しない場合は null）</returns>
+        public IBuff GetBuff(int buffId)
+        {
+            for (int i = 0; i < activeBuffs.Count; i++)
+            {
+                if (activeBuffs[i].BuffId == buffId && activeBuffs[i].IsActive)
+                {
+                    return activeBuffs[i];
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 指定したバフ種別の最初のアクティブバフを取得する。
+        /// </summary>
+        /// <param name="type">バフ種別</param>
+        /// <returns>見つかったバフ（存在しない場合は null）</returns>
+        public IBuff GetBuff(BuffType type)
+        {
+            return GetBuff((int)type);
+        }
+
+        /// <summary>
+        /// 指定したバフ識別番号のバフが現在有効かどうかを判定する。
+        /// </summary>
+        /// <param name="buffId">バフ識別番号</param>
+        /// <returns>バフが有効であれば true</returns>
+        public bool HasBuff(int buffId)
+        {
+            return GetBuff(buffId) != null;
+        }
+
+        /// <summary>
+        /// 指定したバフ種別のバフが現在有効かどうかを判定する。
+        /// </summary>
+        /// <param name="type">バフ種別</param>
+        /// <returns>バフが有効であれば true</returns>
+        public bool HasBuff(BuffType type)
+        {
+            return HasBuff((int)type);
         }
 
         /// <summary>

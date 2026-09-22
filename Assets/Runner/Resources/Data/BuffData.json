@@ -1,0 +1,19 @@
+{
+  "buffs": [
+    {
+      "buffId": 1,
+      "buffName": "移動速度アップ",
+      "description": "一定時間、プレイヤーの移動速度が上昇する",
+      "duration": 5.0,
+      "value": 2.5
+    },
+    {
+      "buffId": 2,
+      "buffName": "HP継続回復",
+      "description": "一定時間、プレイヤーのHPが1秒ごとに回復する",
+      "duration": 10.0,
+      "value": 5.0
+    }
+  ]
+}
+

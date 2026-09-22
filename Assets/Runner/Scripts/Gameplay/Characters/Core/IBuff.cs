@@ -12,6 +12,9 @@ namespace Runner
     /// </summary>
     public interface IBuff
     {
+        /// <summary>バフ固有の識別番号</summary>
+        int BuffId { get; }
+
         /// <summary>現在バフが有効かどうか</summary>
         bool IsActive { get; }
 

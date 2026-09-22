@@ -17,39 +17,20 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class CharacterMovement2D : MonoBehaviour, IMovable
     {
-        private const float DefaultSpeed = 6.0f;
-
         [Header("Movement Settings")]
-        [Tooltip("移動速度")]
-        [SerializeField] private float moveSpeed = DefaultSpeed;
-
         [Tooltip("ステージ枠内への移動制限を有効にするか")]
         [SerializeField] private bool clampToStageBounds = false;
 
         private Rigidbody2D rb;
         private Vector2 moveInput;
         private Vector2 facingDirection = Vector2.right;
-        private float speedMultiplier = 1.0f;
+        private float moveSpeed;
 
-        /// <summary>基本移動速度</summary>
-        public float BaseMoveSpeed
-        {
-            get => moveSpeed;
-            set => moveSpeed = Mathf.Max(0.1f, value);
-        }
-
-        /// <summary>現在の速度倍率（バフ等による補正倍率）</summary>
-        public float SpeedMultiplier
-        {
-            get => speedMultiplier;
-            set => speedMultiplier = Mathf.Max(0f, value);
-        }
-
-        /// <summary>移動速度（基本速度に速度倍率を乗算した実効速度）</summary>
+        /// <summary>移動速度（Controllerから設定される実効移動速度）</summary>
         public float MoveSpeed
         {
-            get => moveSpeed * speedMultiplier;
-            set => moveSpeed = Mathf.Max(0.1f, value);
+            get => moveSpeed;
+            set => moveSpeed = Mathf.Max(0f, value);
         }
 
         /// <summary>ステージ枠内への移動制限を有効にするか</summary>
@@ -84,8 +65,7 @@ namespace Runner
         {
             if (rb == null) return;
 
-            float currentSpeed = MoveSpeed;
-            var delta = moveInput * (currentSpeed * Time.fixedDeltaTime);
+            var delta = moveInput * (moveSpeed * Time.fixedDeltaTime);
             var targetPos = rb.position + delta;
 
             if (clampToStageBounds && ArenaBackground.Instance != null && ArenaBackground.Instance.BoundaryCollider != null)
@@ -97,7 +77,6 @@ namespace Runner
             }
 
             rb.MovePosition(targetPos);
-            rb.linearVelocity = moveInput * currentSpeed;
         }
 
         /// <summary>

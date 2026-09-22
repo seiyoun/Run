@@ -14,14 +14,20 @@ namespace Runner
     /// </summary>
     public sealed class HpRegenBuff : IBuff
     {
+        /// <summary>HP継続回復バフの識別番号</summary>
+        public const int Id = 2;
+
         private const float HealInterval = 1.0f;
 
-        private readonly CharacterStatus status;
+        private readonly ICharacterStatus status;
         private readonly int healAmountPerSecond;
         private readonly float duration;
         private float remainingDuration;
         private float intervalTimer;
         private bool isActive;
+
+        /// <summary>バフ固有の識別番号</summary>
+        public int BuffId => Id;
 
         /// <summary>現在バフが有効かどうか</summary>
         public bool IsActive => isActive;
@@ -38,10 +44,10 @@ namespace Runner
         /// <summary>
         /// HP継続回復バフのインスタンスを生成する。
         /// </summary>
-        /// <param name="status">対象の CharacterStatus コンポーネント</param>
+        /// <param name="status">対象の ICharacterStatus インターフェース</param>
         /// <param name="healAmountPerSecond">1秒あたりの回復量（デフォルト: 5）</param>
         /// <param name="duration">効果持続時間（秒）</param>
-        public HpRegenBuff(CharacterStatus status, int healAmountPerSecond, float duration)
+        public HpRegenBuff(ICharacterStatus status, int healAmountPerSecond, float duration)
         {
             this.status = status;
             this.healAmountPerSecond = healAmountPerSecond;

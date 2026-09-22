@@ -25,6 +25,9 @@ namespace Runner
         /// <summary>死亡・戦闘不能状態かどうか</summary>
         bool IsDead { get; }
 
+        /// <summary>移動速度の上昇値（バフ等による加算速度）</summary>
+        float AdditionalMoveSpeed { get; set; }
+
         /// <summary>HPが変動した際に発火するイベント (現在のHP, 最大HP)</summary>
         event Action<int, int> OnHpChanged;
 

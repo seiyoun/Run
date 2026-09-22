@@ -467,8 +467,8 @@ namespace Runner.Editor
         private void OnApplySpeedBuffClicked(PlayerController player)
         {
             if (player == null) return;
-            player.ApplySpeedBuff(1.5f, 5.0f);
-            DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーに移動速度バフ (+50%, 5秒) を付与しました。");
+            player.ApplySpeedBuff();
+            DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーに移動速度バフを付与しました。");
         }
 
         /// <summary>
@@ -489,8 +489,8 @@ namespace Runner.Editor
         private void OnApplyHpRegenBuffClicked(PlayerController player)
         {
             if (player == null) return;
-            player.ApplyHpRegenBuff(5, 5.0f);
-            DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーにHP継続回復バフ (+5/秒, 5秒) を付与しました。");
+            player.ApplyHpRegenBuff();
+            DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーにHP継続回復バフを付与しました。");
         }
 
         /// <summary>

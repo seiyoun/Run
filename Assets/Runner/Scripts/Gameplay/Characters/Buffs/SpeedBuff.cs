@@ -14,11 +14,17 @@ namespace Runner
     /// </summary>
     public sealed class SpeedBuff : IBuff
     {
-        private readonly CharacterMovement2D movement;
-        private readonly float multiplier;
+        /// <summary>移動速度バフの識別番号</summary>
+        public const int Id = 1;
+
+        private readonly ICharacterStatus status;
+        private readonly float additionalSpeed;
         private readonly float duration;
         private float remainingDuration;
         private bool isActive;
+
+        /// <summary>バフ固有の識別番号</summary>
+        public int BuffId => Id;
 
         /// <summary>現在バフが有効かどうか</summary>
         public bool IsActive => isActive;
@@ -29,45 +35,45 @@ namespace Runner
         /// <summary>バフの総効果持続時間（秒）</summary>
         public float Duration => duration;
 
-        /// <summary>バフによる速度倍率</summary>
-        public float Multiplier => multiplier;
+        /// <summary>バフによる速度上昇値</summary>
+        public float AdditionalSpeed => additionalSpeed;
 
         /// <summary>
         /// 移動速度バフのインスタンスを生成する。
         /// </summary>
-        /// <param name="movement">対象の CharacterMovement2D コンポーネント</param>
-        /// <param name="multiplier">速度倍率（1.0を超える値）</param>
+        /// <param name="status">対象の ICharacterStatus インターフェース</param>
+        /// <param name="additionalSpeed">移動速度の上昇加算値</param>
         /// <param name="duration">効果持続時間（秒）</param>
-        public SpeedBuff(CharacterMovement2D movement, float multiplier, float duration)
+        public SpeedBuff(ICharacterStatus status, float additionalSpeed, float duration)
         {
-            this.movement = movement;
-            this.multiplier = multiplier;
+            this.status = status;
+            this.additionalSpeed = additionalSpeed;
             this.duration = duration;
             this.remainingDuration = duration;
         }
 
         /// <summary>
-        /// バフを付与し、移動速度の補正倍率を適用する。
+        /// バフを付与し、移動速度の上昇値を適用する。
         /// </summary>
         public void Apply()
         {
-            if (movement == null || isActive) return;
+            if (status == null || isActive) return;
 
             isActive = true;
             remainingDuration = duration;
-            movement.SpeedMultiplier = multiplier;
+            status.AdditionalMoveSpeed = additionalSpeed;
         }
 
         /// <summary>
-        /// バフを解除し、移動速度の補正倍率を通常値に戻す。
+        /// バフを解除し、移動速度の上昇値をリセットする。
         /// </summary>
         public void Remove()
         {
-            if (movement == null || !isActive) return;
+            if (status == null || !isActive) return;
 
             isActive = false;
             remainingDuration = 0f;
-            movement.SpeedMultiplier = 1.0f;
+            status.AdditionalMoveSpeed = 0f;
         }
 
         /// <summary>

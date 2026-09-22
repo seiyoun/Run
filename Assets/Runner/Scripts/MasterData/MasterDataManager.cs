@@ -22,6 +22,7 @@ namespace Runner
         private static readonly Dictionary<int, StageMasterData> StageDataCache = new Dictionary<int, StageMasterData>();
         private static readonly List<ShopItemData> ShopItemDataCache = new List<ShopItemData>();
         private static readonly Dictionary<WeaponType, WeaponMasterData> WeaponDataCache = new Dictionary<WeaponType, WeaponMasterData>();
+        private static readonly Dictionary<int, BuffMasterData> BuffDataCache = new Dictionary<int, BuffMasterData>();
         private static PlayerMasterData cachedPlayerData;
         private static bool isInitialized;
 
@@ -103,11 +104,6 @@ namespace Runner
         /// <returns>キャッシュされた WeaponMasterData（未登録時はデフォルトデータ）</returns>
         public static WeaponMasterData GetWeaponMasterData(WeaponType weaponType)
         {
-            if (!isInitialized)
-            {
-                Initialize();
-            }
-
             if (WeaponDataCache.TryGetValue(weaponType, out var data))
             {
                 return data;
@@ -118,7 +114,23 @@ namespace Runner
         }
 
         /// <summary>
-        /// 全マスターデータ（EnemyMasterData, PlayerMasterData, ShopItemData, StageMasterData, WeaponMasterData）を同期的にロードしてキャッシュする。
+        /// 指定されたバフ識別番号に対応する BuffMasterData を取得する。
+        /// </summary>
+        /// <param name="buffId">バフ識別番号</param>
+        /// <returns>キャッシュされた BuffMasterData（未登録時はデフォルトデータ）</returns>
+        public static BuffMasterData GetBuffMasterData(int buffId)
+        {
+            if (BuffDataCache.TryGetValue(buffId, out var data))
+            {
+                return data;
+            }
+
+            DebugLogger.Error($"[MasterDataManager] BuffId '{buffId}' のデータが見つかりません。デフォルト値を返します。");
+            return new BuffMasterData();
+        }
+
+        /// <summary>
+        /// 全マスターデータ（EnemyMasterData, PlayerMasterData, ShopItemData, StageMasterData, WeaponMasterData, BuffMasterData）を同期的にロードしてキャッシュする。
         /// </summary>
         private static void Initialize()
         {
@@ -143,6 +155,12 @@ namespace Runner
             foreach (var weapon in WeaponMasterData.LoadAllFromResources())
             {
                 WeaponDataCache[weapon.Type] = weapon;
+            }
+
+            BuffDataCache.Clear();
+            foreach (var buff in BuffMasterData.LoadAllFromResources())
+            {
+                BuffDataCache[buff.BuffId] = buff;
             }
 
             isInitialized = true;
