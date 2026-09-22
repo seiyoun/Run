@@ -2,38 +2,66 @@
 
 キャラクター等に付与されるバフ・デバフ・状態異常を設計・実装する際は、以下の原則とパターンを厳守してください。
 
-## 1. Architecture & Encapsulation (アーキテクチャとカプセル化)
-- **`IBuff` インターフェースの実装**:
-  - 新規バフは必ず `Runner.IBuff` を実装した独立クラス（例: `SpeedBuff`）として作成する。
-  - 効果の適用（`Apply`）、解除（`Remove`）、時間経過更新（`Tick`）はバフクラス自身で完結させる（カプセル化）。
-  - HUDでの描画・ゲージ計算（進捗率算出）のため、`RemainingDuration`（残り時間）および `Duration`（総効果持続時間）を正しく提供すること。
-- **キャラクター本体の肥大化防止**:
-  - `PlayerController` や `EnemyController` などの本体クラスに、個別のバフタイマー（例: `_speedBuffTimer`, `_attackBuffTimer`）やフラグを直接追加してはならない。
-  - キャラクターは `CharacterBuffHandler` を介してバフを管理し、本体の責務を汚染しないこと。
+## 1. Architecture & Responsibilities (アーキテクチャと責務分離)
+バフシステムは疎結合なイベント駆動アーキテクチャを採用し、各コンポーネントの責務を明確に分離します。
 
-## 2. Lifecycle Management with CharacterBuffHandler (`CharacterBuffHandler` による一元管理)
+```
+[外部呼出元 (Shop/Debug等)]
+      │ ApplyBuff(target, BuffType) / RemoveBuff(target, BuffType)
+      ▼
+[BuffManager] ── (生成) ──> [BuffFactory] ──> [IBuff (SpeedBuff等)]
+      │ AddBuff(buff) / RemoveBuff(type)
+      ▼
+[IBuffTarget (PlayerController等)]
+      │ 委譲
+      ▼
+[CharacterBuffHandler]
+      │
+      ├─ OnBuffApplied (IBuff) ──> [PlayerController] (パラメータ加算 / イベント購読)
+      └─ OnBuffRemoved (IBuff) ──> [PlayerController] (パラメータ減算 / イベント解除)
+```
+
+- **`BuffManager` (静的マネージャー)**:
+  - 外部呼出元（ショップ、デバッグコンソール、アイテム等）からのバフ付与・解除要求の統一エントリポイント。
+  - `BuffManager.ApplyBuff(target, type)`: `BuffFactory.Create(type)` により `IBuff` を生成し、`target.AddBuff(buff)` を呼び出す。
+  - `BuffManager.RemoveBuff(target, type)`: `target.RemoveBuff(type)` を呼び出す。
+- **`IBuffTarget` (バフ受付インターフェース)**:
+  - バフの付与を受け付けるエンティティ（`PlayerController` 等）が実装する。
+  - `AddBuff(IBuff buff)` および `RemoveBuff(BuffType type)` を公開し、具体的なバフ管理コンポーネントへ委譲する。
+- **`IBuff` (データモデル & ライフサイクル)**:
+  - `Runner.IBuff` を実装した独立クラス（例: `SpeedBuff`, `HpRegenBuff`）として作成する。
+  - **特定の対象（`PlayerController`, `ICharacterStatus`, `CharacterMovement2D` 等）への直接参照や依存を一切持たせない**。
+  - 持続時間（`Duration`, `RemainingDuration`）、効果値（`Value`）、およびライフサイクルフラグ（`IsActive`）の管理に専念する。
+  - 周期的な効果（リジェネ等）はイベント（例: `event Action<int> OnHealTick`）を発火し、バフ自身が直接ステータスを変更しない。
+  - HUDでのゲージ描画・進捗率算出のため、`RemainingDuration` および `Duration` を正しく提供すること。
+- **`BuffFactory` (純粋な生成ファクトリ)**:
+  - `BuffFactory.Create(BuffType)` は `MasterDataManager` の設定値に基づき、純粋に `IBuff` インスタンスを生成して返す（ターゲット引数は不要）。
+- **`CharacterBuffHandler` (一元管理 & イベント発火ハブ)**:
+  - キャラクターにアタッチされ、バフリストの保持、毎フレームの `Tick` 更新、持続時間終了時の自動除外を担当する。
+  - バフが有効化された際に `OnBuffApplied(IBuff)`、無効化・除外された際に `OnBuffRemoved(IBuff)` イベントを発火する。
+- **キャラクター本体 (`PlayerController` 等)**:
+  - `CharacterBuffHandler.OnBuffApplied` / `OnBuffRemoved` を購読し、バフ種別に応じたパラメータ増減（例: `movementComponent.MoveSpeed += speedBuff.Value`）やコールバック購読（例: `regenBuff.OnHealTick += HandleRegenTick`）を行う。
+  - 個別のバフタイマー（`_speedBuffTimer` 等）や内部フラグを本体クラスに直接追加してはならない。
+
+## 2. Lifecycle Management with CharacterBuffHandler (`CharacterBuffHandler` による管理)
 - **バフの付与と解除**:
-  - バフの追加は `buffHandler.AddBuff(buff)`、明示的な解除は `buffHandler.RemoveBuff(buff)` または `buffHandler.RemoveBuffsOfType<T>()` で行う。
+  - バフの追加は `buffHandler.AddBuff(buff)`、明示的な解除は `buffHandler.RemoveBuff(type)` または `buffHandler.RemoveBuff(buff)` で行う。
 - **フレーム更新と自動除外**:
-  - `CharacterBuffHandler` の `Update()` 内で登録中の全バフの `Tick(deltaTime)` が呼び出され、持続時間終了（`!buff.IsActive`）となったバフは自動的にリストから除外される。
+  - `CharacterBuffHandler` の `Update()` 内で登録中の全バフの `Tick(deltaTime)` が呼び出され、持続時間終了（`!buff.IsActive`）となったバフは `buff.Remove()` 実行後にリストから除外され、`OnBuffRemoved` イベントが発火する。
 - **破棄時・死亡時のクリーンアップ**:
   - キャラクターの破棄時（`OnDestroy`）および死亡時には、必ず `buffHandler.ClearBuffs()` を呼び出して全バフを安全にロールバック・解除すること。
 
 ## 3. Re-application & Overwrite Policy (重複付与・上書きポリシー)
 - **デフォルトは上書き・時間リセット**:
-  - 同種のバフを重複付与する際の標準動作は「既存の同種バフを解除し、新しいバフを付与する（時間リセット・上書き）」とする。
-  ```csharp
-  buffHandler.RemoveBuffsOfType<SpeedBuff>();
-  buffHandler.AddBuff(new SpeedBuff(movementComponent, multiplier, duration));
-  ```
+  - 同種のバフ（同一 `BuffId`）を重複付与する際の標準動作は「既存の同種バフを解除（`OnBuffRemoved` 発火）し、新しいバフを付与・有効化（`OnBuffApplied` 発火）する」とする（`CharacterBuffHandler.AddBuff` 内で自動制御）。
 - **スタック・加算の取り扱い**:
   - 仕様として効果値のスタックや持続時間の加算延長を要求されている場合を除き、推測で勝手なスタック機構を作らない（YAGNI原則）。
 
 ## 4. Rollback Safety (安全なロールバック保証)
 - **確実な通常値への復元**:
-  - `Remove()` メソッドでは、バフによって変更されたパラメータ（速度倍率、攻撃力補正、コライダー設定等）を確実に元の通常値へ戻すこと。
+  - `OnBuffRemoved` のハンドラ内では、バフによって加算されたパラメータを確実に減算し、下限ガード（`Mathf.Max(0f, ...)`）を行って元の値へ戻すこと。
 - **二重解除の防止**:
-  - すでに解除済みのバフに対して `Remove()` が再度呼ばれた場合でも例外や不整合が起きないよう、`isActive` フラグによる実行ガードを行う。
+  - すでに解除済みのバフに対して `Remove()` が再度呼ばれた場合でも例外や不整合が起きないよう、`IBuff` 側で `isActive` フラグによる実行ガードを行う。
 
 ## 5. HUD & UI Integration Guidelines (HUD・UI連携規約)
 - **純粋なView設計の厳守 (Pure View)**:
@@ -45,5 +73,5 @@
   - 新たなバフを追加し、画面上にアイコンや残り時間を表示する必要がある場合は、`GameHUDView` 側で該当バフの検出と `BuffHUD` への描画伝達ロジックを更新・拡張すること。
 
 ## 6. Coding Conventions & YAGNI
-- バフクラスおよびHUDクラスにおいても `unity-script-conventions`（メンバー記述順序、全関数へのXMLドキュメントコメント、[Tooltip]）を厳守する。
+- バフクラス、ハンドラクラス、UIクラスにおいても `unity-script-conventions`（メンバー記述順序、全関数へのXMLドキュメントコメント、[Tooltip]）を厳守する。
 - ユーザーから明示的な指示がない限り、未要求のバフクラスやUI機能を「念のため」先行作成してはならない（Minimal Viable Change）。
