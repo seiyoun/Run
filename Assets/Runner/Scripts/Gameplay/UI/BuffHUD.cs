@@ -43,11 +43,12 @@ namespace Runner
         }
 
         /// <summary>
-        /// バフの残り時間および総持続時間を設定し、表示を更新する。
+        /// バフのアイコン、残り時間および総持続時間を設定し、表示を更新する。
         /// </summary>
+        /// <param name="icon">バフアイコンスプライト</param>
         /// <param name="remainingDuration">残り効果時間（秒）</param>
         /// <param name="totalDuration">総効果持続時間（秒）</param>
-        public void SetBuff(float remainingDuration, float totalDuration)
+        public void SetBuff(Sprite icon, float remainingDuration, float totalDuration)
         {
             if (remainingDuration <= 0f)
             {
@@ -60,6 +61,11 @@ namespace Runner
                 SetVisible(true);
             }
 
+            if (iconImage != null && icon != null)
+            {
+                iconImage.sprite = icon;
+            }
+
             if (durationText != null)
             {
                 durationText.text = $"{remainingDuration:F1}s";
@@ -69,6 +75,16 @@ namespace Runner
             {
                 cooldownOverlayImage.fillAmount = Mathf.Clamp01(1f - (remainingDuration / totalDuration));
             }
+        }
+
+        /// <summary>
+        /// バフの残り時間および総持続時間を設定し、表示を更新する。
+        /// </summary>
+        /// <param name="remainingDuration">残り効果時間（秒）</param>
+        /// <param name="totalDuration">総効果持続時間（秒）</param>
+        public void SetBuff(float remainingDuration, float totalDuration)
+        {
+            SetBuff(null, remainingDuration, totalDuration);
         }
 
         /// <summary>

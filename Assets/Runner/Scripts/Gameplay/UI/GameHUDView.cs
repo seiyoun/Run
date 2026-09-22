@@ -40,6 +40,13 @@ namespace Runner
         [Tooltip("バフ表示HUDコンポーネント")]
         [SerializeField] private BuffHUD buffHUD;
 
+        [Header("Buff Icons")]
+        [Tooltip("速度バフアイコンスプライト")]
+        [SerializeField] private Sprite speedBuffIcon;
+
+        [Tooltip("HP回復バフアイコンスプライト")]
+        [SerializeField] private Sprite hpRegenBuffIcon;
+
         /// <summary>ポイ活・歩数表示HUD</summary>
         public PointStepHUD PointStepHUD => pointStepHUD;
 
@@ -296,21 +303,47 @@ namespace Runner
             if (buffHUD == null) return;
 
             var player = PlayerController.Instance;
-            if (player == null || !player.HasSpeedBuff)
+            if (player == null)
             {
                 buffHUD.ClearBuff();
                 return;
             }
 
             var speedBuff = player.Buffs?.GetBuff<SpeedBuff>();
-            if (speedBuff == null || !speedBuff.IsActive)
+            var hpRegenBuff = player.Buffs?.GetBuff<HpRegenBuff>();
+
+            bool hasSpeed = speedBuff != null && speedBuff.IsActive;
+            bool hasRegen = hpRegenBuff != null && hpRegenBuff.IsActive;
+
+            if (!hasSpeed && !hasRegen)
             {
                 buffHUD.ClearBuff();
                 return;
             }
 
-            float total = speedBuff.Duration > 0f ? speedBuff.Duration : 5.0f;
-            buffHUD.SetBuff(speedBuff.RemainingDuration, total);
+            if (hasSpeed && hasRegen)
+            {
+                if (speedBuff.RemainingDuration <= hpRegenBuff.RemainingDuration)
+                {
+                    float total = speedBuff.Duration > 0f ? speedBuff.Duration : 5.0f;
+                    buffHUD.SetBuff(speedBuffIcon, speedBuff.RemainingDuration, total);
+                }
+                else
+                {
+                    float total = hpRegenBuff.Duration > 0f ? hpRegenBuff.Duration : 5.0f;
+                    buffHUD.SetBuff(hpRegenBuffIcon, hpRegenBuff.RemainingDuration, total);
+                }
+            }
+            else if (hasSpeed)
+            {
+                float total = speedBuff.Duration > 0f ? speedBuff.Duration : 5.0f;
+                buffHUD.SetBuff(speedBuffIcon, speedBuff.RemainingDuration, total);
+            }
+            else
+            {
+                float total = hpRegenBuff.Duration > 0f ? hpRegenBuff.Duration : 5.0f;
+                buffHUD.SetBuff(hpRegenBuffIcon, hpRegenBuff.RemainingDuration, total);
+            }
         }
     }
 }

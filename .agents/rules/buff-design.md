@@ -6,6 +6,7 @@
 - **`IBuff` インターフェースの実装**:
   - 新規バフは必ず `Runner.IBuff` を実装した独立クラス（例: `SpeedBuff`）として作成する。
   - 効果の適用（`Apply`）、解除（`Remove`）、時間経過更新（`Tick`）はバフクラス自身で完結させる（カプセル化）。
+  - HUDでの描画・ゲージ計算（進捗率算出）のため、`RemainingDuration`（残り時間）および `Duration`（総効果持続時間）を正しく提供すること。
 - **キャラクター本体の肥大化防止**:
   - `PlayerController` や `EnemyController` などの本体クラスに、個別のバフタイマー（例: `_speedBuffTimer`, `_attackBuffTimer`）やフラグを直接追加してはならない。
   - キャラクターは `CharacterBuffHandler` を介してバフを管理し、本体の責務を汚染しないこと。
@@ -34,7 +35,15 @@
 - **二重解除の防止**:
   - すでに解除済みのバフに対して `Remove()` が再度呼ばれた場合でも例外や不整合が起きないよう、`isActive` フラグによる実行ガードを行う。
 
-## 5. Coding Conventions & YAGNI
-- バフクラスにおいても `unity-script-conventions`（メンバー記述順序、全関数へのXMLドキュメントコメント、[Tooltip]）を厳守する。
-- ユーザーから明示的な指示がない限り、未要求のバフクラスを「念のため」先行作成してはならない（Minimal Viable Change）。
+## 5. HUD & UI Integration Guidelines (HUD・UI連携規約)
+- **純粋なView設計の厳守 (Pure View)**:
+  - `BuffHUD` 等のUIコンポーネントは純粋な描画専用ビュー（View）とし、**`PlayerController` などのゲームプレイドメインオブジェクトを直接参照・ポーリング（`Update` 内での直接取得等）してはならない**。
+  - HUDコンポーネントは描画用API（例: `SetBuff(float remainingDuration, float totalDuration)`, `ClearBuff()`）を公開し、外部から渡された数値やパラメータの描画、および表示/非表示の切り替えに専念すること。
+- **総合HUD (`GameHUDView`) による一元中継・統括**:
+  - ドメインオブジェクト（`PlayerController` や `CharacterBuffHandler`）の状態監視、および各サブHUDへの描画指示の伝達は、画面全体を統括する `GameHUDView` が一元的に担当する。
+- **新規バフ追加時のHUD対応**:
+  - 新たなバフを追加し、画面上にアイコンや残り時間を表示する必要がある場合は、`GameHUDView` 側で該当バフの検出と `BuffHUD` への描画伝達ロジックを更新・拡張すること。
 
+## 6. Coding Conventions & YAGNI
+- バフクラスおよびHUDクラスにおいても `unity-script-conventions`（メンバー記述順序、全関数へのXMLドキュメントコメント、[Tooltip]）を厳守する。
+- ユーザーから明示的な指示がない限り、未要求のバフクラスやUI機能を「念のため」先行作成してはならない（Minimal Viable Change）。

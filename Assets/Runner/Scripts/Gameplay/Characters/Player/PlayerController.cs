@@ -126,6 +126,12 @@ namespace Runner
         /// <summary>移動速度バフの倍率</summary>
         public float SpeedBuffMultiplier => buffHandlerComponent?.GetBuff<SpeedBuff>()?.Multiplier ?? 1.0f;
 
+        /// <summary>現在HP継続回復バフが適用中かどうか</summary>
+        public bool HasHpRegenBuff => buffHandlerComponent != null && buffHandlerComponent.HasBuff<HpRegenBuff>();
+
+        /// <summary>HP継続回復バフの残り持続時間（秒）</summary>
+        public float HpRegenBuffRemainingDuration => buffHandlerComponent?.GetBuff<HpRegenBuff>()?.RemainingDuration ?? 0f;
+
         /// <summary>被ダメージ時イベント</summary>
         public event Action<int> OnTakeDamage;
 
@@ -386,6 +392,27 @@ namespace Runner
         public void ClearSpeedBuff()
         {
             buffHandlerComponent?.RemoveBuffsOfType<SpeedBuff>();
+        }
+
+        /// <summary>
+        /// プレイヤーにHP継続回復のバフを適用する。
+        /// </summary>
+        /// <param name="healAmountPerSecond">1秒あたりの回復量（デフォルト: 5）</param>
+        /// <param name="duration">効果持続時間（秒、デフォルト: 5.0f秒）</param>
+        public void ApplyHpRegenBuff(int healAmountPerSecond = 5, float duration = 5.0f)
+        {
+            if (statusComponent == null || buffHandlerComponent == null) return;
+
+            buffHandlerComponent.RemoveBuffsOfType<HpRegenBuff>();
+            buffHandlerComponent.AddBuff(new HpRegenBuff(statusComponent, healAmountPerSecond, duration));
+        }
+
+        /// <summary>
+        /// プレイヤーのHP継続回復バフを即座に解除する。
+        /// </summary>
+        public void ClearHpRegenBuff()
+        {
+            buffHandlerComponent?.RemoveBuffsOfType<HpRegenBuff>();
         }
 
         /// <summary>

@@ -247,6 +247,11 @@ namespace Runner.Editor
                         ? $"速度バフ (+50% {player.SpeedBuffRemainingDuration:F1}s)"
                         : "速度バフ (+50% 5s)";
                     DrawButtonPair(buffBtnText, () => OnApplySpeedBuffClicked(player), "速度バフ 解除", () => OnClearSpeedBuffClicked(player));
+
+                    string regenBtnText = player != null && player.HasHpRegenBuff
+                        ? $"HP回復 (+5/s {player.HpRegenBuffRemainingDuration:F1}s)"
+                        : "HP回復 (+5/s 5s)";
+                    DrawButtonPair(regenBtnText, () => OnApplyHpRegenBuffClicked(player), "HP回復 解除", () => OnClearHpRegenBuffClicked(player));
                 }
 
                 EditorGUILayout.Space(8);
@@ -475,6 +480,28 @@ namespace Runner.Editor
             if (player == null) return;
             player.ClearSpeedBuff();
             DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーの移動速度バフを解除しました。");
+        }
+
+        /// <summary>
+        /// HP継続回復バフ付与ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
+        /// <param name="player">対象の PlayerController</param>
+        private void OnApplyHpRegenBuffClicked(PlayerController player)
+        {
+            if (player == null) return;
+            player.ApplyHpRegenBuff(5, 5.0f);
+            DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーにHP継続回復バフ (+5/秒, 5秒) を付与しました。");
+        }
+
+        /// <summary>
+        /// HP継続回復バフ解除ボタンクリック時のデバッグ操作を処理する。
+        /// </summary>
+        /// <param name="player">対象の PlayerController</param>
+        private void OnClearHpRegenBuffClicked(PlayerController player)
+        {
+            if (player == null) return;
+            player.ClearHpRegenBuff();
+            DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーのHP継続回復バフを解除しました。");
         }
     }
 }
