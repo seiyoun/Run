@@ -305,45 +305,27 @@ namespace Runner
             var player = PlayerController.Instance;
             if (player == null)
             {
-                buffHUD.ClearBuff();
+                buffHUD.ClearBuffs();
                 return;
             }
+
+            buffHUD.BeginUpdate();
 
             var speedBuff = player.Buffs?.GetBuff<SpeedBuff>();
-            var hpRegenBuff = player.Buffs?.GetBuff<HpRegenBuff>();
-
-            bool hasSpeed = speedBuff != null && speedBuff.IsActive;
-            bool hasRegen = hpRegenBuff != null && hpRegenBuff.IsActive;
-
-            if (!hasSpeed && !hasRegen)
-            {
-                buffHUD.ClearBuff();
-                return;
-            }
-
-            if (hasSpeed && hasRegen)
-            {
-                if (speedBuff.RemainingDuration <= hpRegenBuff.RemainingDuration)
-                {
-                    float total = speedBuff.Duration > 0f ? speedBuff.Duration : 5.0f;
-                    buffHUD.SetBuff(speedBuffIcon, speedBuff.RemainingDuration, total);
-                }
-                else
-                {
-                    float total = hpRegenBuff.Duration > 0f ? hpRegenBuff.Duration : 5.0f;
-                    buffHUD.SetBuff(hpRegenBuffIcon, hpRegenBuff.RemainingDuration, total);
-                }
-            }
-            else if (hasSpeed)
+            if (speedBuff != null && speedBuff.IsActive)
             {
                 float total = speedBuff.Duration > 0f ? speedBuff.Duration : 5.0f;
-                buffHUD.SetBuff(speedBuffIcon, speedBuff.RemainingDuration, total);
+                buffHUD.AddBuffDisplay(speedBuffIcon, speedBuff.RemainingDuration, total);
             }
-            else
+
+            var hpRegenBuff = player.Buffs?.GetBuff<HpRegenBuff>();
+            if (hpRegenBuff != null && hpRegenBuff.IsActive)
             {
                 float total = hpRegenBuff.Duration > 0f ? hpRegenBuff.Duration : 5.0f;
-                buffHUD.SetBuff(hpRegenBuffIcon, hpRegenBuff.RemainingDuration, total);
+                buffHUD.AddBuffDisplay(hpRegenBuffIcon, hpRegenBuff.RemainingDuration, total);
             }
+
+            buffHUD.EndUpdate();
         }
     }
 }

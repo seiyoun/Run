@@ -49,11 +49,22 @@ namespace Runner
 
         /// <summary>
         /// バフを付与し、効果を適用して管理リストへ追加する。
+        /// 同一型のバフが既に存在する場合は解除して新しいバフで上書きする。
         /// </summary>
         /// <param name="buff">付与する IBuff インスタンス</param>
         public void AddBuff(IBuff buff)
         {
             if (buff == null) return;
+
+            var buffType = buff.GetType();
+            for (int i = activeBuffs.Count - 1; i >= 0; i--)
+            {
+                if (activeBuffs[i].GetType() == buffType)
+                {
+                    activeBuffs[i].Remove();
+                    activeBuffs.RemoveAt(i);
+                }
+            }
 
             buff.Apply();
             activeBuffs.Add(buff);
