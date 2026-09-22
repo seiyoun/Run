@@ -40,41 +40,7 @@ namespace Runner
         private PlayerMagnet magnetComponent;
         private CharacterBuffHandler buffHandlerComponent;
         private InputController boundInputController;
-        private PlayerMasterData currentPlayerData;
         private Vector3 lastPosition;
-
-        /// <summary>現在のプレイヤー設定マスターデータ</summary>
-        public PlayerMasterData CurrentData => currentPlayerData;
-
-        /// <summary>キャラクター移動コンポーネント</summary>
-        public CharacterMovement2D Movement => movementComponent;
-
-        /// <summary>キャラクター攻撃コンポーネント</summary>
-        public CharacterAttacker2D Attacker => attackerComponent;
-
-        /// <summary>キャラクターステータス（HP・ダメージ・回復）コンポーネント</summary>
-        public CharacterStatus Status => statusComponent;
-
-        /// <summary>キャラクター外観コンポーネント</summary>
-        public CharacterVisual2D CharacterVisual => visualComponent;
-
-        /// <summary>キャラクター外観コンポーネント（エイリアス）</summary>
-        public CharacterVisual2D Visual => visualComponent;
-
-        /// <summary>キャラクターアニメーションコンポーネント</summary>
-        public CharacterAnimator2D CharacterAnimator => animatorComponent;
-
-        /// <summary>キャラクターアニメーションコンポーネント（エイリアス）</summary>
-        public CharacterAnimator2D Animator => animatorComponent;
-
-        /// <summary>所持金・ポイント管理コンポーネント</summary>
-        public PlayerWallet Wallet => walletComponent;
-
-        /// <summary>累積歩数追跡コンポーネント</summary>
-        public PlayerStepTracker StepTracker => stepTrackerComponent;
-
-        /// <summary>アイテム吸引コンポーネント</summary>
-        public PlayerMagnet Magnet => magnetComponent;
 
         /// <summary>対象エンティティの GameObject（IBuffTarget 実装）</summary>
         public GameObject GameObject => gameObject;
@@ -82,8 +48,11 @@ namespace Runner
         /// <summary>バフ管理コンポーネント</summary>
         public CharacterBuffHandler Buffs => buffHandlerComponent;
 
-        /// <summary>死亡状態かどうか</summary>
-        public bool IsDead => statusComponent != null && statusComponent.IsDead;
+        /// <summary>キャラクターアニメーションコンポーネント</summary>
+        public CharacterAnimator2D CharacterAnimator => animatorComponent;
+
+        /// <summary>キャラクターステータス（HP・ダメージ・回復）コンポーネント</summary>
+        public CharacterStatus Status => statusComponent;
 
         /// <summary>移動速度（Movement.MoveSpeed への委譲）</summary>
         public float MoveSpeed
@@ -97,9 +66,6 @@ namespace Runner
 
         /// <summary>現在の移動入力ベクトル（Movement.MoveInput への委譲）</summary>
         public Vector2 MoveInput => movementComponent != null ? movementComponent.MoveInput : Vector2.zero;
-
-        /// <summary>現在向いている水平方向ベクトル（Movement.FacingDirection への委譲）</summary>
-        public Vector2 FacingDirection => movementComponent != null ? movementComponent.FacingDirection : Vector2.right;
 
         /// <summary>アイテム吸引半径(m)（Magnet.MagnetRadius への委譲）</summary>
         public float MagnetRadius
@@ -213,30 +179,6 @@ namespace Runner
         }
 
         /// <summary>
-        /// オブジェクトの文字列表現を返す。
-        /// </summary>
-        /// <returns>プレイヤー情報文字列</returns>
-        public override string ToString()
-        {
-            return $"PlayerController (Steps: {CurrentSteps}, Money: {CurrentMoney})";
-        }
-
-        /// <summary>
-        /// 指定された方向へ移動入力を適用する。
-        /// </summary>
-        /// <param name="direction">移動入力ベクトル</param>
-        public void Move(Vector2 direction)
-        {
-            if (statusComponent != null && statusComponent.IsDead)
-            {
-                movementComponent?.Stop();
-                return;
-            }
-
-            movementComponent?.Move(direction);
-        }
-
-        /// <summary>
         /// 移動入力を停止し、物理速度をゼロにする。
         /// </summary>
         public void Stop()
@@ -251,7 +193,6 @@ namespace Runner
         {
             attackerComponent?.Attack();
         }
-
 
         /// <summary>
         /// お金・ポイントを加算する。
@@ -303,46 +244,6 @@ namespace Runner
         }
 
         /// <summary>
-        /// MasterDataManager のキャッシュから PlayerMasterData を取得して全コンポーネントへ適用する。
-        /// </summary>
-        public void LoadPlayerData()
-        {
-            var data = MasterDataManager.GetPlayerMasterData();
-            ApplyData(data);
-        }
-
-        /// <summary>
-        /// PlayerMasterData の各設定値を対応するサブコンポーネントへ分配・適用する。
-        /// </summary>
-        /// <param name="data">適用するマスターデータ</param>
-        public void ApplyData(PlayerMasterData data)
-        {
-            if (data == null) return;
-
-            currentPlayerData = data;
-
-            if (movementComponent != null)
-            {
-                movementComponent.MoveSpeed = data.moveSpeed;
-            }
-
-            if (attackerComponent != null)
-            {
-                attackerComponent.AttackPower = data.attackPower;
-                attackerComponent.AttackInterval = data.attackInterval;
-            }
-            if (statusComponent != null) statusComponent.SetMaxHp(data.maxHp, true);
-            if (stepTrackerComponent != null)
-            {
-                stepTrackerComponent.StepDistanceThreshold = data.stepDistanceThreshold;
-                stepTrackerComponent.PointsPerStep = data.pointsPerStep;
-            }
-            if (magnetComponent != null) magnetComponent.MagnetRadius = data.magnetRadius;
-
-            DebugLogger.Log($"[PlayerController] PlayerData 適用完了: HP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m");
-        }
-
-        /// <summary>
         /// プレイヤーにバフを付与する（IBuffTarget 実装）。
         /// </summary>
         /// <param name="buff">付与する IBuff インスタンス</param>
@@ -363,12 +264,56 @@ namespace Runner
         }
 
         /// <summary>
-        /// 指定されたバフインスタンスを解除する。
+        /// 指定された方向へ移動入力を適用する。
         /// </summary>
-        /// <param name="buff">解除する IBuff インスタンス</param>
-        public void RemoveBuff(IBuff buff)
+        /// <param name="direction">移動入力ベクトル</param>
+        private void Move(Vector2 direction)
         {
-            buffHandlerComponent?.RemoveBuff(buff);
+            if (statusComponent != null && statusComponent.IsDead)
+            {
+                movementComponent?.Stop();
+                return;
+            }
+
+            movementComponent?.Move(direction);
+        }
+
+        /// <summary>
+        /// MasterDataManager のキャッシュから PlayerMasterData を取得して全コンポーネントへ適用する。
+        /// </summary>
+        private void LoadPlayerData()
+        {
+            var data = MasterDataManager.GetPlayerMasterData();
+            ApplyData(data);
+        }
+
+        /// <summary>
+        /// PlayerMasterData の各設定値を対応するサブコンポーネントへ分配・適用する。
+        /// </summary>
+        /// <param name="data">適用するマスターデータ</param>
+        private void ApplyData(PlayerMasterData data)
+        {
+            if (data == null) return;
+
+            if (movementComponent != null)
+            {
+                movementComponent.MoveSpeed = data.moveSpeed;
+            }
+
+            if (attackerComponent != null)
+            {
+                attackerComponent.AttackPower = data.attackPower;
+                attackerComponent.AttackInterval = data.attackInterval;
+            }
+            if (statusComponent != null) statusComponent.SetMaxHp(data.maxHp, true);
+            if (stepTrackerComponent != null)
+            {
+                stepTrackerComponent.StepDistanceThreshold = data.stepDistanceThreshold;
+                stepTrackerComponent.PointsPerStep = data.pointsPerStep;
+            }
+            if (magnetComponent != null) magnetComponent.MagnetRadius = data.magnetRadius;
+
+            DebugLogger.Log($"[PlayerController] PlayerData 適用完了: HP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m");
         }
 
         /// <summary>
