@@ -160,7 +160,7 @@ namespace Runner
 
             if (damageable == null && PlayerController.Instance != null && PlayerController.Instance.gameObject == targetGo)
             {
-                damageable = PlayerController.Instance;
+                damageable = PlayerController.Instance.Status;
             }
 
             if (damageable != null)

@@ -26,7 +26,7 @@ namespace Runner
     [RequireComponent(typeof(CharacterBuffHandler))]
     [RequireComponent(typeof(CircleCollider2D))]
     [DisallowMultipleComponent]
-    public sealed class PlayerController : MonoBehaviour, IDamageable
+    public sealed class PlayerController : MonoBehaviour
     {
         public static PlayerController Instance { get; private set; }
 
@@ -131,12 +131,6 @@ namespace Runner
 
         /// <summary>HP継続回復バフの残り持続時間（秒）</summary>
         public float HpRegenBuffRemainingDuration => buffHandlerComponent?.GetBuff<HpRegenBuff>()?.RemainingDuration ?? 0f;
-
-        /// <summary>被ダメージ時イベント</summary>
-        public event Action<int> OnTakeDamage;
-
-        /// <summary>死亡時イベント</summary>
-        public event Action OnDead;
 
         /// <summary>歩数変更時イベント</summary>
         public event Action<int> OnStepsChanged;
@@ -270,23 +264,6 @@ namespace Runner
             attackerComponent?.Attack();
         }
 
-        /// <summary>
-        /// ダメージを受ける。
-        /// </summary>
-        /// <param name="amount">ダメージ量</param>
-        public void TakeDamage(int amount)
-        {
-            statusComponent?.TakeDamage(amount);
-        }
-
-        /// <summary>
-        /// HPを回復する。
-        /// </summary>
-        /// <param name="amount">回復量</param>
-        public void Heal(int amount)
-        {
-            statusComponent?.Heal(amount);
-        }
 
         /// <summary>
         /// お金・ポイントを加算する。
@@ -532,7 +509,6 @@ namespace Runner
             {
                 animatorComponent?.TriggerHit();
             }
-            OnTakeDamage?.Invoke(damage);
         }
 
         /// <summary>
@@ -542,7 +518,6 @@ namespace Runner
         {
             movementComponent?.Stop();
             animatorComponent?.PlayDie();
-            OnDead?.Invoke();
             DebugLogger.Log("[PlayerController] プレイヤーが力尽きました。");
         }
 

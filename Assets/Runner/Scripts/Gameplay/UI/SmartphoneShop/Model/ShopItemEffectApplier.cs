@@ -39,7 +39,7 @@ namespace Runner
             switch (item.itemType)
             {
                 case ShopItemType.Recovery:
-                    player.Heal(EnergyDrinkHealAmount);
+                    player.Status?.Heal(EnergyDrinkHealAmount);
                     break;
 
                 case ShopItemType.Enhancement:
