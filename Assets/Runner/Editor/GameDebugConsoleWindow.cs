@@ -173,7 +173,8 @@ namespace Runner.Editor
                 EditorGUILayout.LabelField("座標 (Pos)", $"({pos.x:F2}, {pos.y:F2})");
                 EditorGUILayout.LabelField("入力 (Input)", $"({input.x:F2}, {input.y:F2})");
 
-                string speedBuffTag = player.HasSpeedBuff ? $" [バフ中: x{player.SpeedBuffMultiplier:F1} ({player.SpeedBuffRemainingDuration:F1}s)]" : "";
+                var speedBuff = player.Buffs != null ? player.Buffs.GetBuff<SpeedBuff>() : null;
+                string speedBuffTag = speedBuff != null && speedBuff.IsActive ? $" [バフ中: ({speedBuff.RemainingDuration:F1}s)]" : "";
                 EditorGUILayout.LabelField("移動速度 (Speed)", $"{speed:F1}{speedBuffTag}");
 
                 if (status != null)
@@ -243,14 +244,18 @@ namespace Runner.Editor
 
                 using (new EditorGUI.DisabledScope(player == null))
                 {
-                    string buffBtnText = player != null && player.HasSpeedBuff
-                        ? $"速度バフ (+50% {player.SpeedBuffRemainingDuration:F1}s)"
-                        : "速度バフ (+50% 5s)";
+                    var speedBuff = player?.Buffs?.GetBuff<SpeedBuff>();
+                    bool hasSpeedBuff = speedBuff != null && speedBuff.IsActive;
+                    string buffBtnText = hasSpeedBuff
+                        ? $"速度バフ ({speedBuff.RemainingDuration:F1}s)"
+                        : "速度バフ (+2.5 5s)";
                     DrawButtonPair(buffBtnText, () => OnApplySpeedBuffClicked(player), "速度バフ 解除", () => OnClearSpeedBuffClicked(player));
 
-                    string regenBtnText = player != null && player.HasHpRegenBuff
-                        ? $"HP回復 (+5/s {player.HpRegenBuffRemainingDuration:F1}s)"
-                        : "HP回復 (+5/s 5s)";
+                    var hpBuff = player?.Buffs?.GetBuff<HpRegenBuff>();
+                    bool hasHpBuff = hpBuff != null && hpBuff.IsActive;
+                    string regenBtnText = hasHpBuff
+                        ? $"HP回復 ({hpBuff.RemainingDuration:F1}s)"
+                        : "HP回復 (+5/s 10s)";
                     DrawButtonPair(regenBtnText, () => OnApplyHpRegenBuffClicked(player), "HP回復 解除", () => OnClearHpRegenBuffClicked(player));
                 }
 
@@ -467,7 +472,7 @@ namespace Runner.Editor
         private void OnApplySpeedBuffClicked(PlayerController player)
         {
             if (player == null) return;
-            player.ApplySpeedBuff();
+            BuffManager.ApplyBuff(player, BuffType.Speed);
             DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーに移動速度バフを付与しました。");
         }
 
@@ -478,7 +483,7 @@ namespace Runner.Editor
         private void OnClearSpeedBuffClicked(PlayerController player)
         {
             if (player == null) return;
-            player.ClearSpeedBuff();
+            BuffManager.RemoveBuff(player, BuffType.Speed);
             DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーの移動速度バフを解除しました。");
         }
 
@@ -489,7 +494,7 @@ namespace Runner.Editor
         private void OnApplyHpRegenBuffClicked(PlayerController player)
         {
             if (player == null) return;
-            player.ApplyHpRegenBuff();
+            BuffManager.ApplyBuff(player, BuffType.HpRegen);
             DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーにHP継続回復バフを付与しました。");
         }
 
@@ -500,7 +505,7 @@ namespace Runner.Editor
         private void OnClearHpRegenBuffClicked(PlayerController player)
         {
             if (player == null) return;
-            player.ClearHpRegenBuff();
+            BuffManager.RemoveBuff(player, BuffType.HpRegen);
             DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: プレイヤーのHP継続回復バフを解除しました。");
         }
     }

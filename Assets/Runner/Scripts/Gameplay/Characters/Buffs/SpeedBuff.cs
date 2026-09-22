@@ -1,25 +1,22 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: 移動速度を一定時間向上させる移動速度バフクラス。IBuff を実装し、効果適用・解除・時間更新を自己完結で管理します。
+ * スクリプト説明: 移動速度を一定時間向上させる移動速度バフクラス。IBuff を実装し、効果時間の管理と効果値を提供します。
  */
-
-using UnityEngine;
 
 namespace Runner
 {
     /// <summary>
     /// 移動速度を一時的に向上させる移動速度バフクラス。
-    /// IBuff を実装し、効果時間中の速度乗算および解除時の通常復帰を管理します。
+    /// IBuff を実装し、効果時間のカウントダウンおよび速度上昇値の保持を行います。
     /// </summary>
     public sealed class SpeedBuff : IBuff
     {
         /// <summary>移動速度バフの識別番号</summary>
         public const int Id = 1;
 
-        private readonly ICharacterStatus status;
-        private readonly float additionalSpeed;
         private readonly float duration;
+        private readonly float value;
         private float remainingDuration;
         private bool isActive;
 
@@ -35,45 +32,41 @@ namespace Runner
         /// <summary>バフの総効果持続時間（秒）</summary>
         public float Duration => duration;
 
-        /// <summary>バフによる速度上昇値</summary>
-        public float AdditionalSpeed => additionalSpeed;
+        /// <summary>移動速度の上昇量</summary>
+        public float Value => value;
 
         /// <summary>
         /// 移動速度バフのインスタンスを生成する。
         /// </summary>
-        /// <param name="status">対象の ICharacterStatus インターフェース</param>
-        /// <param name="additionalSpeed">移動速度の上昇加算値</param>
         /// <param name="duration">効果持続時間（秒）</param>
-        public SpeedBuff(ICharacterStatus status, float additionalSpeed, float duration)
+        /// <param name="value">移動速度上昇値</param>
+        public SpeedBuff(float duration, float value)
         {
-            this.status = status;
-            this.additionalSpeed = additionalSpeed;
             this.duration = duration;
             this.remainingDuration = duration;
+            this.value = value;
         }
 
         /// <summary>
-        /// バフを付与し、移動速度の上昇値を適用する。
+        /// バフを有効化し、効果時間を初期化する。
         /// </summary>
         public void Apply()
         {
-            if (status == null || isActive) return;
+            if (isActive) return;
 
             isActive = true;
             remainingDuration = duration;
-            status.AdditionalMoveSpeed = additionalSpeed;
         }
 
         /// <summary>
-        /// バフを解除し、移動速度の上昇値をリセットする。
+        /// バフを無効化する。
         /// </summary>
         public void Remove()
         {
-            if (status == null || !isActive) return;
+            if (!isActive) return;
 
             isActive = false;
             remainingDuration = 0f;
-            status.AdditionalMoveSpeed = 0f;
         }
 
         /// <summary>
@@ -92,4 +85,3 @@ namespace Runner
         }
     }
 }
-

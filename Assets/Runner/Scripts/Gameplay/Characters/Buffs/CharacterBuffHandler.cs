@@ -22,6 +22,12 @@ namespace Runner
         /// <summary>現在アクティブなバフの読み取り専用リスト</summary>
         public IReadOnlyList<IBuff> ActiveBuffs => activeBuffs;
 
+        /// <summary>バフが有効化された際に発火するイベント</summary>
+        public event Action<IBuff> OnBuffApplied;
+
+        /// <summary>バフが無効化された際に発火するイベント</summary>
+        public event Action<IBuff> OnBuffRemoved;
+
         /// <summary>
         /// 毎フレーム登録されたバフの効果時間を更新し、終了したバフを除外する。
         /// </summary>
@@ -34,7 +40,9 @@ namespace Runner
                 buff.Tick(deltaTime);
                 if (!buff.IsActive)
                 {
+                    buff.Remove();
                     activeBuffs.RemoveAt(i);
+                    OnBuffRemoved?.Invoke(buff);
                 }
             }
         }
@@ -61,13 +69,16 @@ namespace Runner
             {
                 if (activeBuffs[i].BuffId == targetBuffId)
                 {
-                    activeBuffs[i].Remove();
+                    var existing = activeBuffs[i];
+                    existing.Remove();
                     activeBuffs.RemoveAt(i);
+                    OnBuffRemoved?.Invoke(existing);
                 }
             }
 
             buff.Apply();
             activeBuffs.Add(buff);
+            OnBuffApplied?.Invoke(buff);
         }
 
         /// <summary>
@@ -76,7 +87,7 @@ namespace Runner
         /// <param name="type">付与するバフ種別</param>
         public void AddBuff(BuffType type)
         {
-            var buff = BuffFactory.Create(type, gameObject);
+            var buff = BuffFactory.Create(type);
             if (buff != null)
             {
                 AddBuff(buff);
@@ -92,7 +103,10 @@ namespace Runner
             if (buff == null) return;
 
             buff.Remove();
-            activeBuffs.Remove(buff);
+            if (activeBuffs.Remove(buff))
+            {
+                OnBuffRemoved?.Invoke(buff);
+            }
         }
 
         /// <summary>
@@ -105,8 +119,10 @@ namespace Runner
             {
                 if (activeBuffs[i].BuffId == buffId)
                 {
-                    activeBuffs[i].Remove();
+                    var buff = activeBuffs[i];
+                    buff.Remove();
                     activeBuffs.RemoveAt(i);
+                    OnBuffRemoved?.Invoke(buff);
                 }
             }
         }
@@ -132,6 +148,7 @@ namespace Runner
                 {
                     typedBuff.Remove();
                     activeBuffs.RemoveAt(i);
+                    OnBuffRemoved?.Invoke(typedBuff);
                 }
             }
         }
@@ -219,7 +236,12 @@ namespace Runner
         {
             for (int i = activeBuffs.Count - 1; i >= 0; i--)
             {
-                activeBuffs[i]?.Remove();
+                var buff = activeBuffs[i];
+                if (buff != null)
+                {
+                    buff.Remove();
+                    OnBuffRemoved?.Invoke(buff);
+                }
             }
 
             activeBuffs.Clear();

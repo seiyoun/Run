@@ -26,7 +26,7 @@ namespace Runner
     [RequireComponent(typeof(CharacterBuffHandler))]
     [RequireComponent(typeof(CircleCollider2D))]
     [DisallowMultipleComponent]
-    public sealed class PlayerController : MonoBehaviour
+    public sealed class PlayerController : MonoBehaviour, IBuffTarget
     {
         public static PlayerController Instance { get; private set; }
 
@@ -42,7 +42,6 @@ namespace Runner
         private InputController boundInputController;
         private PlayerMasterData currentPlayerData;
         private Vector3 lastPosition;
-        private float baseMoveSpeed = 6.0f;
 
         /// <summary>現在のプレイヤー設定マスターデータ</summary>
         public PlayerMasterData CurrentData => currentPlayerData;
@@ -68,14 +67,17 @@ namespace Runner
         /// <summary>キャラクターアニメーションコンポーネント（エイリアス）</summary>
         public CharacterAnimator2D Animator => animatorComponent;
 
-        /// <summary>プレイヤー所持金・ポイント管理コンポーネント</summary>
+        /// <summary>所持金・ポイント管理コンポーネント</summary>
         public PlayerWallet Wallet => walletComponent;
 
-        /// <summary>プレイヤー歩数・移動距離計測コンポーネント</summary>
+        /// <summary>累積歩数追跡コンポーネント</summary>
         public PlayerStepTracker StepTracker => stepTrackerComponent;
 
         /// <summary>アイテム吸引コンポーネント</summary>
         public PlayerMagnet Magnet => magnetComponent;
+
+        /// <summary>対象エンティティの GameObject（IBuffTarget 実装）</summary>
+        public GameObject GameObject => gameObject;
 
         /// <summary>バフ管理コンポーネント</summary>
         public CharacterBuffHandler Buffs => buffHandlerComponent;
@@ -83,17 +85,13 @@ namespace Runner
         /// <summary>死亡状態かどうか</summary>
         public bool IsDead => statusComponent != null && statusComponent.IsDead;
 
-        /// <summary>基本移動速度</summary>
-        public float BaseMoveSpeed => baseMoveSpeed;
-
-        /// <summary>実効移動速度（基本速度にStatusの上昇値を加算した値）</summary>
+        /// <summary>移動速度（Movement.MoveSpeed への委譲）</summary>
         public float MoveSpeed
         {
-            get => baseMoveSpeed + (statusComponent != null ? statusComponent.AdditionalMoveSpeed : 0f);
+            get => movementComponent != null ? movementComponent.MoveSpeed : 0f;
             set
             {
-                baseMoveSpeed = Mathf.Max(0.1f, value);
-                UpdateEffectiveMoveSpeed();
+                if (movementComponent != null) movementComponent.MoveSpeed = value;
             }
         }
 
@@ -121,21 +119,6 @@ namespace Runner
 
         /// <summary>ゲーム開始からの累積獲得ポイント/お金（Wallet.TotalEarnedMoney への委譲）</summary>
         public long TotalEarnedMoney => walletComponent != null ? walletComponent.TotalEarnedMoney : 0;
-
-        /// <summary>現在移動速度バフが適用中かどうか</summary>
-        public bool HasSpeedBuff => buffHandlerComponent != null && buffHandlerComponent.HasBuff<SpeedBuff>();
-
-        /// <summary>移動速度バフの残り持続時間（秒）</summary>
-        public float SpeedBuffRemainingDuration => buffHandlerComponent?.GetBuff<SpeedBuff>()?.RemainingDuration ?? 0f;
-
-        /// <summary>移動速度バフによる実効速度倍率</summary>
-        public float SpeedBuffMultiplier => baseMoveSpeed > 0f ? MoveSpeed / baseMoveSpeed : 1.0f;
-
-        /// <summary>現在HP継続回復バフが適用中かどうか</summary>
-        public bool HasHpRegenBuff => buffHandlerComponent != null && buffHandlerComponent.HasBuff<HpRegenBuff>();
-
-        /// <summary>HP継続回復バフの残り持続時間（秒）</summary>
-        public float HpRegenBuffRemainingDuration => buffHandlerComponent?.GetBuff<HpRegenBuff>()?.RemainingDuration ?? 0f;
 
         /// <summary>歩数変更時イベント</summary>
         public event Action<int> OnStepsChanged;
@@ -211,7 +194,6 @@ namespace Runner
             attackerComponent?.OnUpdate(deltaTime);
             magnetComponent?.OnUpdate(deltaTime);
 
-            UpdateEffectiveMoveSpeed();
             UpdateVisuals(deltaTime);
             UpdateAnimation();
         }
@@ -339,8 +321,10 @@ namespace Runner
 
             currentPlayerData = data;
 
-            baseMoveSpeed = data.moveSpeed;
-            UpdateEffectiveMoveSpeed();
+            if (movementComponent != null)
+            {
+                movementComponent.MoveSpeed = data.moveSpeed;
+            }
 
             if (attackerComponent != null)
             {
@@ -359,55 +343,32 @@ namespace Runner
         }
 
         /// <summary>
-        /// 指定されたバフ種別のバフを BuffFactory 経由で生成してプレイヤーに適用する。
+        /// プレイヤーにバフを付与する（IBuffTarget 実装）。
         /// </summary>
-        /// <param name="type">付与するバフ種別</param>
-        public void ApplyBuff(BuffType type)
+        /// <param name="buff">付与する IBuff インスタンス</param>
+        public void AddBuff(IBuff buff)
         {
-            if (buffHandlerComponent == null) return;
+            if (buff == null || buffHandlerComponent == null) return;
 
-            var buff = BuffFactory.Create(type, gameObject);
-            if (buff != null)
-            {
-                buffHandlerComponent.AddBuff(buff);
-                if (type == BuffType.Speed)
-                {
-                    UpdateEffectiveMoveSpeed();
-                }
-            }
+            buffHandlerComponent.AddBuff(buff);
         }
 
         /// <summary>
-        /// プレイヤーに移動速度アップのバフを適用する。
+        /// 指定された種別のバフを解除する（IBuffTarget 実装）。
         /// </summary>
-        public void ApplySpeedBuff()
+        /// <param name="type">解除するバフ種別</param>
+        public void RemoveBuff(BuffType type)
         {
-            ApplyBuff(BuffType.Speed);
+            buffHandlerComponent?.RemoveBuff(type);
         }
 
         /// <summary>
-        /// プレイヤーの移動速度バフを即座に解除する。
+        /// 指定されたバフインスタンスを解除する。
         /// </summary>
-        public void ClearSpeedBuff()
+        /// <param name="buff">解除する IBuff インスタンス</param>
+        public void RemoveBuff(IBuff buff)
         {
-            buffHandlerComponent?.RemoveBuffsOfType<SpeedBuff>();
-            UpdateEffectiveMoveSpeed();
-        }
-
-        /// <summary>
-        /// プレイヤーにHP継続回復のバフを適用する。
-        /// </summary>
-        public void ApplyHpRegenBuff()
-        {
-            ApplyBuff(BuffType.HpRegen);
-        }
-
-        /// <summary>
-        /// プレイヤーのHP継続回復バフを即座に解除する。
-        /// </summary>
-        public void ClearHpRegenBuff()
-        {
-            buffHandlerComponent?.RemoveBuffsOfType<HpRegenBuff>();
+            buffHandlerComponent?.RemoveBuff(buff);
         }
 
         /// <summary>
@@ -427,7 +388,6 @@ namespace Runner
             buffHandlerComponent = EnsureSubComponent<CharacterBuffHandler>();
 
             SubscribeSubComponentEvents();
-            UpdateEffectiveMoveSpeed();
         }
 
         /// <summary>
@@ -465,6 +425,12 @@ namespace Runner
             {
                 walletComponent.OnMoneyCollected += HandleMoneyCollected;
             }
+
+            if (buffHandlerComponent != null)
+            {
+                buffHandlerComponent.OnBuffApplied += HandleBuffApplied;
+                buffHandlerComponent.OnBuffRemoved += HandleBuffRemoved;
+            }
         }
 
         /// <summary>
@@ -487,6 +453,61 @@ namespace Runner
             {
                 walletComponent.OnMoneyCollected -= HandleMoneyCollected;
             }
+
+            if (buffHandlerComponent != null)
+            {
+                buffHandlerComponent.OnBuffApplied -= HandleBuffApplied;
+                buffHandlerComponent.OnBuffRemoved -= HandleBuffRemoved;
+            }
+        }
+
+        /// <summary>
+        /// バフ有効化時にパラメータの加算・効果登録を行う。
+        /// </summary>
+        /// <param name="buff">有効化された IBuff インスタンス</param>
+        private void HandleBuffApplied(IBuff buff)
+        {
+            switch (buff)
+            {
+                case SpeedBuff speedBuff:
+                    if (movementComponent != null)
+                    {
+                        movementComponent.MoveSpeed += speedBuff.Value;
+                    }
+                    break;
+                case HpRegenBuff regenBuff:
+                    regenBuff.OnHealTick += HandleRegenTick;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// バフ無効化時にパラメータの減算・効果解除を行う。
+        /// </summary>
+        /// <param name="buff">無効化された IBuff インスタンス</param>
+        private void HandleBuffRemoved(IBuff buff)
+        {
+            switch (buff)
+            {
+                case SpeedBuff speedBuff:
+                    if (movementComponent != null)
+                    {
+                        movementComponent.MoveSpeed = Mathf.Max(0f, movementComponent.MoveSpeed - speedBuff.Value);
+                    }
+                    break;
+                case HpRegenBuff regenBuff:
+                    regenBuff.OnHealTick -= HandleRegenTick;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// リジェネバフのTick時にHPを回復する。
+        /// </summary>
+        /// <param name="amount">回復量</param>
+        private void HandleRegenTick(int amount)
+        {
+            statusComponent?.Heal(amount);
         }
 
         /// <summary>
@@ -538,17 +559,6 @@ namespace Runner
             movementComponent?.Stop();
             animatorComponent?.PlayDie();
             DebugLogger.Log("[PlayerController] プレイヤーが力尽きました。");
-        }
-
-        /// <summary>
-        /// 実効移動速度（基本速度 + ステータス上昇値）を算出して Movement コンポーネントへ反映する。
-        /// </summary>
-        private void UpdateEffectiveMoveSpeed()
-        {
-            if (movementComponent != null)
-            {
-                movementComponent.MoveSpeed = MoveSpeed;
-            }
         }
 
         private void HandleStepsChanged(int steps) => OnStepsChanged?.Invoke(steps);

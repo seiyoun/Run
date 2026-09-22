@@ -34,8 +34,6 @@ namespace Runner
         [SerializeField]
         private bool isInvincible = false;
 
-        private float additionalMoveSpeed;
-
         /// <summary>現在のHP</summary>
         public int CurrentHp => currentHp;
 
@@ -53,13 +51,6 @@ namespace Runner
         {
             get => isInvincible;
             set => isInvincible = value;
-        }
-
-        /// <summary>移動速度の上昇値（バフ等による加算速度）</summary>
-        public float AdditionalMoveSpeed
-        {
-            get => additionalMoveSpeed;
-            set => additionalMoveSpeed = Mathf.Max(0f, value);
         }
 
         /// <summary>HPが変動した際に発火するイベント (現在のHP, 最大HP)</summary>
