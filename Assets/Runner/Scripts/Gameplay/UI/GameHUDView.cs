@@ -37,6 +37,9 @@ namespace Runner
         [Tooltip("バーチャルジョイスティックUIコンポーネント")]
         [SerializeField] private VirtualJoystickView virtualJoystickView;
 
+        [Tooltip("バフ表示HUDコンポーネント")]
+        [SerializeField] private BuffHUD buffHUD;
+
         /// <summary>ポイ活・歩数表示HUD</summary>
         public PointStepHUD PointStepHUD => pointStepHUD;
 
@@ -51,6 +54,9 @@ namespace Runner
 
         /// <summary>バーチャルジョイスティックUI</summary>
         public VirtualJoystickView VirtualJoystick => virtualJoystickView;
+
+        /// <summary>バフ表示HUD</summary>
+        public BuffHUD BuffHUD => buffHUD;
 
         /// <summary>
         /// インスタンスの初期化およびバインドを行う。
@@ -68,6 +74,7 @@ namespace Runner
             }
 
             EnsureVirtualJoystick();
+            EnsureBuffHUD();
             SetupBindings();
         }
 
@@ -82,6 +89,14 @@ namespace Runner
             }
 
             BindPlayerEvents();
+        }
+
+        /// <summary>
+        /// 毎フレームのHUD表示更新を行う。
+        /// </summary>
+        private void Update()
+        {
+            UpdateBuffHUD();
         }
 
         /// <summary>
@@ -260,6 +275,42 @@ namespace Runner
             {
                 virtualJoystickView = GetComponentInChildren<VirtualJoystickView>(true);
             }
+        }
+
+        /// <summary>
+        /// バフ表示HUDの参照が未設定の場合に子階層から取得する。
+        /// </summary>
+        private void EnsureBuffHUD()
+        {
+            if (buffHUD == null)
+            {
+                buffHUD = GetComponentInChildren<BuffHUD>(true);
+            }
+        }
+
+        /// <summary>
+        /// プレイヤーのバフ状態を監視し、BuffHUDへ描画指示を伝達する。
+        /// </summary>
+        private void UpdateBuffHUD()
+        {
+            if (buffHUD == null) return;
+
+            var player = PlayerController.Instance;
+            if (player == null || !player.HasSpeedBuff)
+            {
+                buffHUD.ClearBuff();
+                return;
+            }
+
+            var speedBuff = player.Buffs?.GetBuff<SpeedBuff>();
+            if (speedBuff == null || !speedBuff.IsActive)
+            {
+                buffHUD.ClearBuff();
+                return;
+            }
+
+            float total = speedBuff.Duration > 0f ? speedBuff.Duration : 5.0f;
+            buffHUD.SetBuff(speedBuff.RemainingDuration, total);
         }
     }
 }

@@ -26,6 +26,9 @@ namespace Runner
         /// <summary>バフの残り効果時間（秒）</summary>
         public float RemainingDuration => remainingDuration;
 
+        /// <summary>バフの総効果持続時間（秒）</summary>
+        public float Duration => duration;
+
         /// <summary>バフによる速度倍率</summary>
         public float Multiplier => multiplier;
 

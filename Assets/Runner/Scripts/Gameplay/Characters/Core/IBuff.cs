@@ -18,6 +18,9 @@ namespace Runner
         /// <summary>バフの残り効果時間（秒）</summary>
         float RemainingDuration { get; }
 
+        /// <summary>バフの総効果持続時間（秒）</summary>
+        float Duration { get; }
+
         /// <summary>
         /// バフを付与し、効果を適用する。
         /// </summary>
