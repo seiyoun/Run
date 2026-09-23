@@ -18,6 +18,8 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class GameRecordTracker : SingletonMonoBehaviour<GameRecordTracker>
     {
+        private const long PointsPerStep = 2;
+
         private long currentMoney;
         private long earnedMoney;
         private int totalSteps;
@@ -42,6 +44,9 @@ namespace Runner
 
         /// <summary>所持金残高が変動した際に発火するイベント (現在の所持金額)</summary>
         public event Action<long> OnMoneyChanged;
+
+        /// <summary>累計歩数が変動した際に発火するイベント (現在の累計歩数)</summary>
+        public event Action<int> OnStepsChanged;
 
         /// <summary>Game シーン破棄時に一緒に破棄させる</summary>
         protected override bool ShouldDontDestroyOnLoad => false;
@@ -97,6 +102,7 @@ namespace Runner
             totalDefeatedCount = 0;
             defeatedEnemyCounts.Clear();
             OnMoneyChanged?.Invoke(currentMoney);
+            OnStepsChanged?.Invoke(totalSteps);
         }
 
         /// <summary>
@@ -109,8 +115,7 @@ namespace Runner
 
             UnbindPlayer();
             boundPlayer = player;
-            boundPlayer.OnStepsChanged += HandleStepsChanged;
-
+            boundPlayer.OnStepsChanged += HandlePlayerStepsChanged;
             totalSteps = boundPlayer.CurrentSteps;
         }
 
@@ -187,12 +192,18 @@ namespace Runner
         }
 
         /// <summary>
-        /// プレイヤーの歩数変更イベントを受信し、総歩数を更新する。
+        /// プレイヤーの歩数更新イベントを受信し、増加歩数に応じてポイ活マネーを加算・記録する。
         /// </summary>
-        /// <param name="steps">現在の総歩数</param>
-        private void HandleStepsChanged(int steps)
+        /// <param name="steps">現在の累積総歩数</param>
+        private void HandlePlayerStepsChanged(int steps)
         {
-            totalSteps = steps;
+            int deltaSteps = steps - totalSteps;
+            if (deltaSteps > 0)
+            {
+                totalSteps = steps;
+                AddMoney(deltaSteps * PointsPerStep);
+                OnStepsChanged?.Invoke(totalSteps);
+            }
         }
 
         /// <summary>
@@ -202,7 +213,7 @@ namespace Runner
         {
             if (boundPlayer != null)
             {
-                boundPlayer.OnStepsChanged -= HandleStepsChanged;
+                boundPlayer.OnStepsChanged -= HandlePlayerStepsChanged;
                 boundPlayer = null;
             }
         }

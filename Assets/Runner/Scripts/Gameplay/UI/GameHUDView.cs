@@ -119,24 +119,6 @@ namespace Runner
             UnbindPlayerEvents();
         }
 
-        /// <summary>
-        /// 移動による歩数および所持ポイント表示を更新する。
-        /// </summary>
-        /// <param name="distance">移動距離</param>
-        public void OnPlayerMoved(float distance)
-        {
-            if (distance <= 0f) return;
-
-            var player = PlayerController.Instance;
-            if (player != null && pointStepHUD != null)
-            {
-                pointStepHUD.SetSteps(player.CurrentSteps);
-                if (GameRecordTracker.HasInstance)
-                {
-                    pointStepHUD.SetPoints(GameRecordTracker.Instance.CurrentMoney);
-                }
-            }
-        }
 
         /// <summary>
         /// アイテム入荷通知を発火する。
@@ -185,44 +167,34 @@ namespace Runner
         }
 
         /// <summary>
-        /// PlayerController および GameRecordTracker の状態変更イベントを購読する。
+        /// GameRecordTracker の状態変更イベント（歩数・所持金）を購読する。
         /// </summary>
         public void BindPlayerEvents()
         {
-            var player = PlayerController.Instance;
-            if (player != null)
-            {
-                player.OnStepsChanged += HandleStepsChanged;
-                if (pointStepHUD != null)
-                {
-                    pointStepHUD.SetSteps(player.CurrentSteps);
-                }
-            }
-
             if (GameRecordTracker.HasInstance)
             {
-                GameRecordTracker.Instance.OnMoneyChanged += HandleMoneyChanged;
+                var tracker = GameRecordTracker.Instance;
+                tracker.OnStepsChanged += HandleStepsChanged;
+                tracker.OnMoneyChanged += HandleMoneyChanged;
+
                 if (pointStepHUD != null)
                 {
-                    pointStepHUD.SetPoints(GameRecordTracker.Instance.CurrentMoney, true);
+                    pointStepHUD.SetSteps(tracker.TotalSteps);
+                    pointStepHUD.SetPoints(tracker.CurrentMoney, true);
                 }
             }
         }
 
         /// <summary>
-        /// PlayerController および GameRecordTracker の状態変更イベントの購読を解除する。
+        /// GameRecordTracker の状態変更イベント（歩数・所持金）の購読を解除する。
         /// </summary>
         public void UnbindPlayerEvents()
         {
-            var player = PlayerController.Instance;
-            if (player != null)
-            {
-                player.OnStepsChanged -= HandleStepsChanged;
-            }
-
             if (GameRecordTracker.HasInstance)
             {
-                GameRecordTracker.Instance.OnMoneyChanged -= HandleMoneyChanged;
+                var tracker = GameRecordTracker.Instance;
+                tracker.OnStepsChanged -= HandleStepsChanged;
+                tracker.OnMoneyChanged -= HandleMoneyChanged;
             }
         }
 

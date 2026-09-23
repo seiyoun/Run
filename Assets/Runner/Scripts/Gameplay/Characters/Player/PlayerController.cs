@@ -20,7 +20,6 @@ namespace Runner
     [RequireComponent(typeof(CharacterStatus))]
     [RequireComponent(typeof(CharacterVisual2D))]
     [RequireComponent(typeof(CharacterAnimator2D))]
-    [RequireComponent(typeof(PlayerStepTracker))]
     [RequireComponent(typeof(PlayerMagnet))]
     [RequireComponent(typeof(CharacterBuffHandler))]
     [RequireComponent(typeof(CircleCollider2D))]
@@ -29,15 +28,18 @@ namespace Runner
     {
         public static PlayerController Instance { get; private set; }
 
+        private const float StepDistanceThreshold = 0.65f;
+
         private CharacterMovement2D movementComponent;
         private CharacterAttacker2D attackerComponent;
         private CharacterStatus statusComponent;
         private CharacterVisual2D visualComponent;
         private CharacterAnimator2D animatorComponent;
-        private PlayerStepTracker stepTrackerComponent;
         private PlayerMagnet magnetComponent;
         private CharacterBuffHandler buffHandlerComponent;
         private InputController boundInputController;
+        private int currentSteps;
+        private float stepAccumulator;
         private Vector3 lastPosition;
 
         /// <summary>対象エンティティの GameObject（IBuffTarget 実装）</summary>
@@ -75,10 +77,10 @@ namespace Runner
             }
         }
 
-        /// <summary>現在の累積総歩数（StepTracker.CurrentSteps への委譲）</summary>
-        public int CurrentSteps => stepTrackerComponent != null ? stepTrackerComponent.CurrentSteps : 0;
+        /// <summary>プレイヤーの累積移動歩数</summary>
+        public int CurrentSteps => currentSteps;
 
-        /// <summary>歩数変更時イベント</summary>
+        /// <summary>歩数が変更された際に発火するイベント (現在の累積歩数)</summary>
         public event Action<int> OnStepsChanged;
 
         /// <summary>
@@ -104,22 +106,30 @@ namespace Runner
         }
 
         /// <summary>
-        /// 固定フレームごとに移動距離を算出し、歩数トラッカーへ通知する。
+        /// 固定フレームごとに移動距離を蓄積し、歩数をインクリメントしてイベントを発火する。
         /// </summary>
         private void FixedUpdate()
         {
             if (statusComponent != null && statusComponent.IsDead) return;
 
-            float distance = Vector3.Distance(transform.position, lastPosition);
-            lastPosition = transform.position;
+            Vector3 currentPos = transform.position;
+            float distance = Vector3.Distance(currentPos, lastPosition);
+            lastPosition = currentPos;
 
-            if (distance > 0f && stepTrackerComponent != null)
+            if (distance > 0f)
             {
-                stepTrackerComponent.ProcessMovementDistance(distance);
-
-                if (GameHUDView.Instance != null)
+                stepAccumulator += distance;
+                bool stepChanged = false;
+                while (stepAccumulator >= StepDistanceThreshold)
                 {
-                    GameHUDView.Instance.OnPlayerMoved(distance);
+                    stepAccumulator -= StepDistanceThreshold;
+                    currentSteps++;
+                    stepChanged = true;
+                }
+
+                if (stepChanged)
+                {
+                    OnStepsChanged?.Invoke(currentSteps);
                 }
             }
         }
@@ -251,11 +261,6 @@ namespace Runner
                 attackerComponent.AttackInterval = data.attackInterval;
             }
             if (statusComponent != null) statusComponent.SetMaxHp(data.maxHp, true);
-            if (stepTrackerComponent != null)
-            {
-                stepTrackerComponent.StepDistanceThreshold = data.stepDistanceThreshold;
-                stepTrackerComponent.PointsPerStep = data.pointsPerStep;
-            }
             if (magnetComponent != null) magnetComponent.MagnetRadius = data.magnetRadius;
 
             DebugLogger.Log($"[PlayerController] PlayerData 適用完了: HP={data.maxHp}, Speed={data.moveSpeed}, Magnet={data.magnetRadius}m");
@@ -287,7 +292,6 @@ namespace Runner
             statusComponent = EnsureSubComponent<CharacterStatus>();
             visualComponent = EnsureSubComponent<CharacterVisual2D>();
             animatorComponent = EnsureSubComponent<CharacterAnimator2D>();
-            stepTrackerComponent = EnsureSubComponent<PlayerStepTracker>();
             magnetComponent = EnsureSubComponent<PlayerMagnet>();
             buffHandlerComponent = EnsureSubComponent<CharacterBuffHandler>();
 
@@ -320,11 +324,6 @@ namespace Runner
                 statusComponent.OnDead += HandleDead;
             }
 
-            if (stepTrackerComponent != null)
-            {
-                stepTrackerComponent.OnStepsChanged += HandleStepsChanged;
-            }
-
             if (buffHandlerComponent != null)
             {
                 buffHandlerComponent.OnBuffApplied += HandleBuffApplied;
@@ -341,11 +340,6 @@ namespace Runner
             {
                 statusComponent.OnTakeDamage -= HandleTakeDamage;
                 statusComponent.OnDead -= HandleDead;
-            }
-
-            if (stepTrackerComponent != null)
-            {
-                stepTrackerComponent.OnStepsChanged -= HandleStepsChanged;
             }
 
             if (buffHandlerComponent != null)
@@ -454,11 +448,5 @@ namespace Runner
             animatorComponent?.PlayDie();
             DebugLogger.Log("[PlayerController] プレイヤーが力尽きました。");
         }
-
-        /// <summary>
-        /// 歩数変更イベントを受信し、外部へ再通知する。
-        /// </summary>
-        /// <param name="steps">現在の総歩数</param>
-        private void HandleStepsChanged(int steps) => OnStepsChanged?.Invoke(steps);
     }
 }

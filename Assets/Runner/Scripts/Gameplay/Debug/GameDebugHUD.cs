@@ -409,7 +409,8 @@ namespace Runner
             }
 
             long currentMoney = GameRecordTracker.HasInstance ? GameRecordTracker.Instance.CurrentMoney : 0;
-            var pointInfoText = $"¥{currentMoney:N0} pt  |  {player.CurrentSteps} 歩";
+            int totalSteps = GameRecordTracker.HasInstance ? GameRecordTracker.Instance.TotalSteps : 0;
+            var pointInfoText = $"¥{currentMoney:N0} pt  |  {totalSteps} 歩";
 
             var animStateText = animator != null 
                 ? $"{animator.CurrentState}" 

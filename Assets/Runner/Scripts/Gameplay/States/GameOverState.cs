@@ -51,7 +51,7 @@ namespace Runner
             }
 
             var tracker = GameRecordTracker.HasInstance ? GameRecordTracker.Instance : null;
-            int steps = tracker != null ? tracker.TotalSteps : (player != null ? player.CurrentSteps : 0);
+            int steps = tracker != null ? tracker.TotalSteps : 0;
             long money = tracker != null ? tracker.EarnedMoney : 0;
             int totalKills = tracker != null ? tracker.TotalDefeatedCount : 0;
 

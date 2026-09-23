@@ -191,7 +191,8 @@ namespace Runner.Editor
 
                 EditorGUILayout.Space(2);
                 long currentMoney = GameRecordTracker.HasInstance ? GameRecordTracker.Instance.CurrentMoney : 0;
-                EditorGUILayout.LabelField("ポイ活", $"¥{currentMoney:N0} pt  |  {player.CurrentSteps} 歩");
+                int totalSteps = GameRecordTracker.HasInstance ? GameRecordTracker.Instance.TotalSteps : 0;
+                EditorGUILayout.LabelField("ポイ活", $"¥{currentMoney:N0} pt  |  {totalSteps} 歩");
 
                 bool magnetVisible = PlayerDebugRangeVisualizer.IsRangeVisible(player.transform);
                 EditorGUILayout.LabelField("アイテム吸引範囲", $"{player.MagnetRadius:F1}m (表示: {(magnetVisible ? "ON" : "OFF")})");
