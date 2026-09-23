@@ -29,8 +29,8 @@ namespace Runner
         public IReadOnlyList<ShopItemData> OfferedItems => currentOfferedItems;
 
         /// <summary>ユーザーの現在所持ポイント</summary>
-        public long CurrentPoints => PlayerController.Instance != null
-            ? PlayerController.Instance.CurrentMoney
+        public long CurrentPoints => GameRecordTracker.HasInstance
+            ? GameRecordTracker.Instance.CurrentMoney
             : (pointStepHUD != null ? pointStepHUD.CurrentPoint : 0);
 
         /// <summary>開閉状態が変化した際のイベント (isOpen)</summary>
@@ -113,10 +113,9 @@ namespace Runner
                 return;
             }
 
-            var player = PlayerController.Instance;
-            if (player != null)
+            if (GameRecordTracker.HasInstance)
             {
-                if (!player.TryConsumeMoney(item.price))
+                if (!GameRecordTracker.Instance.TryConsumeMoney(item.price))
                 {
                     Debug.LogWarning($"[SmartphoneShopViewModel] ポイント消費に失敗しました: {item.price} pt");
                     return;

@@ -252,6 +252,11 @@ namespace Runner
                 DropManager.Instance.Register(droppable);
             }
 
+            if (GameRecordTracker.HasInstance || GameRecordTracker.Instance != null)
+            {
+                GameRecordTracker.Instance.RegisterEnemy(enemyController);
+            }
+
             DebugLogger.Log($"[EnemySpawner] エネミーを生成しました: {enemyController.name} (Type: {enemyType}, Position: {position})");
             return enemyController;
         }

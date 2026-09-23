@@ -20,7 +20,6 @@ namespace Runner
     [RequireComponent(typeof(CharacterStatus))]
     [RequireComponent(typeof(CharacterVisual2D))]
     [RequireComponent(typeof(CharacterAnimator2D))]
-    [RequireComponent(typeof(PlayerWallet))]
     [RequireComponent(typeof(PlayerStepTracker))]
     [RequireComponent(typeof(PlayerMagnet))]
     [RequireComponent(typeof(CharacterBuffHandler))]
@@ -35,7 +34,6 @@ namespace Runner
         private CharacterStatus statusComponent;
         private CharacterVisual2D visualComponent;
         private CharacterAnimator2D animatorComponent;
-        private PlayerWallet walletComponent;
         private PlayerStepTracker stepTrackerComponent;
         private PlayerMagnet magnetComponent;
         private CharacterBuffHandler buffHandlerComponent;
@@ -80,17 +78,8 @@ namespace Runner
         /// <summary>現在の累積総歩数（StepTracker.CurrentSteps への委譲）</summary>
         public int CurrentSteps => stepTrackerComponent != null ? stepTrackerComponent.CurrentSteps : 0;
 
-        /// <summary>現在の所持ポイント/お金（Wallet.CurrentMoney への委譲）</summary>
-        public long CurrentMoney => walletComponent != null ? walletComponent.CurrentMoney : 0;
-
-        /// <summary>ゲーム開始からの累積獲得ポイント/お金（Wallet.TotalEarnedMoney への委譲）</summary>
-        public long TotalEarnedMoney => walletComponent != null ? walletComponent.TotalEarnedMoney : 0;
-
         /// <summary>歩数変更時イベント</summary>
         public event Action<int> OnStepsChanged;
-
-        /// <summary>お金・ポイント獲得時イベント</summary>
-        public event Action<long> OnMoneyCollected;
 
         /// <summary>
         /// シングルトンの初期化、サブコンポーネントの参照取得・初期化を行う。
@@ -126,7 +115,7 @@ namespace Runner
 
             if (distance > 0f && stepTrackerComponent != null)
             {
-                stepTrackerComponent.ProcessMovementDistance(distance, walletComponent);
+                stepTrackerComponent.ProcessMovementDistance(distance);
 
                 if (GameHUDView.Instance != null)
                 {
@@ -191,25 +180,6 @@ namespace Runner
         public void Attack()
         {
             attackerComponent?.Attack();
-        }
-
-        /// <summary>
-        /// お金・ポイントを加算する。
-        /// </summary>
-        /// <param name="amount">加算額</param>
-        public void CollectMoney(long amount)
-        {
-            walletComponent?.CollectMoney(amount);
-        }
-
-        /// <summary>
-        /// お金・ポイントを消費する。
-        /// </summary>
-        /// <param name="amount">消費額</param>
-        /// <returns>消費に成功したかどうか</returns>
-        public bool TryConsumeMoney(long amount)
-        {
-            return walletComponent != null && walletComponent.TryConsumeMoney(amount);
         }
 
         /// <summary>
@@ -317,7 +287,6 @@ namespace Runner
             statusComponent = EnsureSubComponent<CharacterStatus>();
             visualComponent = EnsureSubComponent<CharacterVisual2D>();
             animatorComponent = EnsureSubComponent<CharacterAnimator2D>();
-            walletComponent = EnsureSubComponent<PlayerWallet>();
             stepTrackerComponent = EnsureSubComponent<PlayerStepTracker>();
             magnetComponent = EnsureSubComponent<PlayerMagnet>();
             buffHandlerComponent = EnsureSubComponent<CharacterBuffHandler>();
@@ -356,11 +325,6 @@ namespace Runner
                 stepTrackerComponent.OnStepsChanged += HandleStepsChanged;
             }
 
-            if (walletComponent != null)
-            {
-                walletComponent.OnMoneyCollected += HandleMoneyCollected;
-            }
-
             if (buffHandlerComponent != null)
             {
                 buffHandlerComponent.OnBuffApplied += HandleBuffApplied;
@@ -382,11 +346,6 @@ namespace Runner
             if (stepTrackerComponent != null)
             {
                 stepTrackerComponent.OnStepsChanged -= HandleStepsChanged;
-            }
-
-            if (walletComponent != null)
-            {
-                walletComponent.OnMoneyCollected -= HandleMoneyCollected;
             }
 
             if (buffHandlerComponent != null)
@@ -496,7 +455,10 @@ namespace Runner
             DebugLogger.Log("[PlayerController] プレイヤーが力尽きました。");
         }
 
+        /// <summary>
+        /// 歩数変更イベントを受信し、外部へ再通知する。
+        /// </summary>
+        /// <param name="steps">現在の総歩数</param>
         private void HandleStepsChanged(int steps) => OnStepsChanged?.Invoke(steps);
-        private void HandleMoneyCollected(long amount) => OnMoneyCollected?.Invoke(amount);
     }
 }

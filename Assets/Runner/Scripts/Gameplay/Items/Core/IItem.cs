@@ -4,6 +4,7 @@
  * スクリプト説明: フィールド上にドロップ・配置される全アイテムの基底インターフェース。
  */
 
+using System;
 using UnityEngine;
 
 namespace Runner
@@ -27,11 +28,8 @@ namespace Runner
         /// <summary>アイテムの種別</summary>
         DropItemType ItemType { get; }
 
-        /// <summary>
-        /// 収集者（プレイヤー等）によってアイテムが回収された際の処理。
-        /// </summary>
-        /// <param name="collector">回収した GameObject</param>
-        void Collect(GameObject collector);
+        /// <summary>アイテムが回収された際に発火するイベント (アイテム自身, 回収者)</summary>
+        event Action<IItem, GameObject> OnCollected;
     }
 }
 

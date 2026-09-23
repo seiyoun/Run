@@ -59,8 +59,7 @@ namespace Runner
         /// フレームごとの移動距離を受け取り、歩数判定とポイント加算を処理する。
         /// </summary>
         /// <param name="distance">フレーム移動距離(m)</param>
-        /// <param name="wallet">ポイント加算対象のウォレット（null時は加算スキップ）</param>
-        public void ProcessMovementDistance(float distance, IMoneyCollector wallet = null)
+        public void ProcessMovementDistance(float distance)
         {
             if (distance <= 0f) return;
 
@@ -71,7 +70,10 @@ namespace Runner
             {
                 stepAccumulator -= stepDistanceThreshold;
                 currentSteps++;
-                wallet?.CollectMoney(pointsPerStep);
+                if (GameRecordTracker.HasInstance || GameRecordTracker.Instance != null)
+                {
+                    GameRecordTracker.Instance.AddMoney(pointsPerStep);
+                }
                 OnStepsChanged?.Invoke(currentSteps);
             }
 

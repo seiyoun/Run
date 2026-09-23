@@ -82,7 +82,7 @@ namespace Runner
                     GameHUDView.Instance.EscapeTimerHUD.SetExitUnlocked(false);
                 }
 
-                long initialEarned = player != null ? player.TotalEarnedMoney : 0;
+                long initialEarned = GameRecordTracker.HasInstance ? GameRecordTracker.Instance.EarnedMoney : 0;
                 long initialCycleEarned = initialEarned % SaleTriggerPointInterval;
                 long initialRemaining = SaleTriggerPointInterval - initialCycleEarned;
                 float initialProgress = (float)initialCycleEarned / SaleTriggerPointInterval;
@@ -100,6 +100,10 @@ namespace Runner
             }
 
             _ = DropManager.Instance;
+            if (GameRecordTracker.HasInstance || GameRecordTracker.Instance != null)
+            {
+                GameRecordTracker.Instance.ResetRecord();
+            }
 
             DebugLogger.Log("[GamePlayingState] ゲームプレイ準備が完了しました。");
         }
@@ -128,7 +132,7 @@ namespace Runner
             var player = PlayerController.Instance;
             if (player != null)
             {
-                long totalEarned = player.TotalEarnedMoney;
+                long totalEarned = GameRecordTracker.HasInstance ? GameRecordTracker.Instance.EarnedMoney : 0;
                 long cycleEarned = totalEarned % SaleTriggerPointInterval;
                 long remainingPoints = SaleTriggerPointInterval - cycleEarned;
                 float progress = (float)cycleEarned / SaleTriggerPointInterval;

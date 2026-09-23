@@ -85,6 +85,9 @@ namespace Runner
         /// <summary>現在適用中のエネミー設定マスターデータ</summary>
         public EnemyMasterData CurrentEnemyData => currentEnemyData;
 
+        /// <summary>現在設定されているエネミー種別</summary>
+        public EnemyType EnemyType => (EnemyType)(currentEnemyData != null ? currentEnemyData.enemyType : 0);
+
         /// <summary>BehaviorGraphAgent コンポーネント</summary>
         public BehaviorGraphAgent BehaviorAgent => behaviorAgent;
 

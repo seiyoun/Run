@@ -408,7 +408,8 @@ namespace Runner
                 invincibleBtnImage.color = isInvincible ? ActiveButtonColor : NormalButtonColor;
             }
 
-            var pointInfoText = $"¥{player.CurrentMoney:N0} pt  |  {player.CurrentSteps} 歩";
+            long currentMoney = GameRecordTracker.HasInstance ? GameRecordTracker.Instance.CurrentMoney : 0;
+            var pointInfoText = $"¥{currentMoney:N0} pt  |  {player.CurrentSteps} 歩";
 
             var animStateText = animator != null 
                 ? $"{animator.CurrentState}" 
@@ -475,10 +476,9 @@ namespace Runner
         /// </summary>
         private void OnAddPointClicked()
         {
-            var player = PlayerController.Instance;
-            if (player != null)
+            if (GameRecordTracker.HasInstance)
             {
-                player.CollectMoney(500);
+                GameRecordTracker.Instance.AddMoney(500);
             }
         }
 

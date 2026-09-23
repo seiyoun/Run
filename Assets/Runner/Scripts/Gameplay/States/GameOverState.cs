@@ -4,6 +4,7 @@
  * スクリプト説明: ゲームオーバーステート。プレイヤーの入力を切断・停止し、リザルト画面を表示してHome画面への遷移を管理する。
  */
 
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Shiyuan.Foundation.Core;
@@ -43,23 +44,40 @@ namespace Runner
             DebugLogger.Log("[GameOverState] ゲームオーバー。プレイヤー入力を切断し、リザルト画面を表示します。");
 
             var player = PlayerController.Instance;
-            int steps = 0;
-            long money = 0;
-
             if (player != null)
             {
                 player.UnbindInput();
                 player.Stop();
-                steps = player.CurrentSteps;
-                money = player.TotalEarnedMoney;
             }
+
+            var tracker = GameRecordTracker.HasInstance ? GameRecordTracker.Instance : null;
+            int steps = tracker != null ? tracker.TotalSteps : (player != null ? player.CurrentSteps : 0);
+            long money = tracker != null ? tracker.EarnedMoney : 0;
+            int totalKills = tracker != null ? tracker.TotalDefeatedCount : 0;
 
             resultModalView = GameResultModalView.Instance ?? Object.FindFirstObjectByType<GameResultModalView>();
 
             if (resultModalView != null)
             {
-                string message = $"力尽きてしまった...\n\n今回の歩数: {steps:N0} 歩\n獲得マネー: {money:N0} pt";
-                resultModalView.Show("GAME OVER", message, HandleOkClicked);
+                var sb = new StringBuilder();
+                sb.AppendLine("力尽きてしまった...");
+                sb.AppendLine();
+                sb.AppendLine($"今回の歩数: {steps:N0} 歩");
+                sb.AppendLine($"獲得マネー: {money:N0} pt");
+                sb.Append($"倒した敵: {totalKills:N0} 体");
+
+                if (tracker != null && tracker.DefeatedEnemyCounts.Count > 0)
+                {
+                    foreach (var kvp in tracker.DefeatedEnemyCounts)
+                    {
+                        var enemyData = MasterDataManager.GetEnemyMasterData(kvp.Key);
+                        string enemyName = !string.IsNullOrEmpty(enemyData?.enemyName) ? enemyData.enemyName : kvp.Key.ToString();
+                        sb.AppendLine();
+                        sb.Append($"  - {enemyName}: {kvp.Value} 体");
+                    }
+                }
+
+                resultModalView.Show("GAME OVER", sb.ToString(), HandleOkClicked);
             }
             else
             {

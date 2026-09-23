@@ -80,6 +80,12 @@ namespace Runner
                     if (moneyItem != null)
                     {
                         moneyItem.Setup(amount);
+
+                        if (GameRecordTracker.HasInstance || GameRecordTracker.Instance != null)
+                        {
+                            GameRecordTracker.Instance.RegisterItem(moneyItem);
+                        }
+
                         return moneyItem;
                     }
                 }

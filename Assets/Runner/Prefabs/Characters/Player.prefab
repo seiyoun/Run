@@ -19,7 +19,6 @@ GameObject:
   - component: {fileID: 100009}
   - component: {fileID: 3942040317139958613}
   - component: {fileID: 1635527524482775250}
-  - component: {fileID: 1477867593546240293}
   - component: {fileID: 5054612787983339807}
   - component: {fileID: 1677949863913120229}
   - component: {fileID: 1158852096249638510}
@@ -277,18 +276,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Runner.Gameplay::Runner.CharacterAttacker2D
   attackPower: 10
   attackInterval: 1
---- !u!114 &1477867593546240293
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ebc8ca7f6b0a4ea68b94b6436855370, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Runner.Gameplay::Runner.PlayerWallet
 --- !u!114 &5054612787983339807
 MonoBehaviour:
   m_ObjectHideFlags: 0

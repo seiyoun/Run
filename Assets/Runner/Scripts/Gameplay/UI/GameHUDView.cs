@@ -131,7 +131,10 @@ namespace Runner
             if (player != null && pointStepHUD != null)
             {
                 pointStepHUD.SetSteps(player.CurrentSteps);
-                pointStepHUD.SetPoints(player.CurrentMoney);
+                if (GameRecordTracker.HasInstance)
+                {
+                    pointStepHUD.SetPoints(GameRecordTracker.Instance.CurrentMoney);
+                }
             }
         }
 
@@ -170,10 +173,9 @@ namespace Runner
         /// </summary>
         public void OnJustDodge()
         {
-            var player = PlayerController.Instance;
-            if (player != null)
+            if (GameRecordTracker.HasInstance)
             {
-                player.CollectMoney(100);
+                GameRecordTracker.Instance.AddMoney(100);
             }
 
             if (pointStepHUD != null)
@@ -183,33 +185,45 @@ namespace Runner
         }
 
         /// <summary>
-        /// PlayerController の状態変更イベントを購読する。
+        /// PlayerController および GameRecordTracker の状態変更イベントを購読する。
         /// </summary>
         public void BindPlayerEvents()
         {
             var player = PlayerController.Instance;
-            if (player == null) return;
-
-            player.OnStepsChanged += HandleStepsChanged;
-            player.OnMoneyCollected += HandleMoneyCollected;
-
-            if (pointStepHUD != null)
+            if (player != null)
             {
-                pointStepHUD.SetSteps(player.CurrentSteps);
-                pointStepHUD.SetPoints(player.CurrentMoney, true);
+                player.OnStepsChanged += HandleStepsChanged;
+                if (pointStepHUD != null)
+                {
+                    pointStepHUD.SetSteps(player.CurrentSteps);
+                }
+            }
+
+            if (GameRecordTracker.HasInstance)
+            {
+                GameRecordTracker.Instance.OnMoneyChanged += HandleMoneyChanged;
+                if (pointStepHUD != null)
+                {
+                    pointStepHUD.SetPoints(GameRecordTracker.Instance.CurrentMoney, true);
+                }
             }
         }
 
         /// <summary>
-        /// PlayerController の状態変更イベントの購読を解除する。
+        /// PlayerController および GameRecordTracker の状態変更イベントの購読を解除する。
         /// </summary>
         public void UnbindPlayerEvents()
         {
             var player = PlayerController.Instance;
-            if (player == null) return;
+            if (player != null)
+            {
+                player.OnStepsChanged -= HandleStepsChanged;
+            }
 
-            player.OnStepsChanged -= HandleStepsChanged;
-            player.OnMoneyCollected -= HandleMoneyCollected;
+            if (GameRecordTracker.HasInstance)
+            {
+                GameRecordTracker.Instance.OnMoneyChanged -= HandleMoneyChanged;
+            }
         }
 
         /// <summary>
@@ -241,15 +255,14 @@ namespace Runner
         }
 
         /// <summary>
-        /// 所持金変更時のHUD表示を更新する。
+        /// 所持金残高変更時のHUD表示を更新する。
         /// </summary>
-        /// <param name="amount">加算額</param>
-        private void HandleMoneyCollected(long amount)
+        /// <param name="currentMoney">現在の所持金残高</param>
+        private void HandleMoneyChanged(long currentMoney)
         {
-            var player = PlayerController.Instance;
-            if (player != null && pointStepHUD != null)
+            if (pointStepHUD != null)
             {
-                pointStepHUD.SetPoints(player.CurrentMoney);
+                pointStepHUD.SetPoints(currentMoney);
             }
         }
 

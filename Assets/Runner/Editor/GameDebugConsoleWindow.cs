@@ -190,7 +190,8 @@ namespace Runner.Editor
                 }
 
                 EditorGUILayout.Space(2);
-                EditorGUILayout.LabelField("ポイ活", $"¥{player.CurrentMoney:N0} pt  |  {player.CurrentSteps} 歩");
+                long currentMoney = GameRecordTracker.HasInstance ? GameRecordTracker.Instance.CurrentMoney : 0;
+                EditorGUILayout.LabelField("ポイ活", $"¥{currentMoney:N0} pt  |  {player.CurrentSteps} 歩");
 
                 bool magnetVisible = PlayerDebugRangeVisualizer.IsRangeVisible(player.transform);
                 EditorGUILayout.LabelField("アイテム吸引範囲", $"{player.MagnetRadius:F1}m (表示: {(magnetVisible ? "ON" : "OFF")})");
@@ -330,8 +331,10 @@ namespace Runner.Editor
         /// <param name="player">対象の PlayerController</param>
         private void OnAddPointClicked(PlayerController player)
         {
-            if (player == null) return;
-            player.CollectMoney(500);
+            if (GameRecordTracker.HasInstance)
+            {
+                GameRecordTracker.Instance.AddMoney(500);
+            }
         }
 
         /// <summary>

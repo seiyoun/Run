@@ -36,7 +36,8 @@ namespace Runner
         public IAttractable Attractable => attractable;
         public bool IsAttracted => attractable != null && attractable.IsAttracted;
 
-        public event Action<MoneyItem, GameObject> OnItemCollected;
+        /// <summary>アイテムが回収された際に発火するイベント (IItem 実装)</summary>
+        public event Action<IItem, GameObject> OnCollected;
         /// <summary>
         /// IAttractable コンポーネントの取得、イベント購読、および初期座標の記録を行う。
         /// </summary>
@@ -87,7 +88,7 @@ namespace Runner
         {
             if (isCollected) return;
 
-            if (other.CompareTag("Player") || other.GetComponent<PlayerController>() != null || other.GetComponent<IMoneyCollector>() != null)
+            if (other.CompareTag("Player") || other.GetComponent<PlayerController>() != null)
             {
                 Collect(other.gameObject);
             }
@@ -104,31 +105,6 @@ namespace Runner
             }
         }
         /// <summary>
-        /// プレイヤーによって回収された際の処理を実行し、GameObject を破棄する。
-        /// </summary>
-        /// <param name="collector">回収したプレイヤー等の GameObject</param>
-        public void Collect(GameObject collector)
-        {
-            if (isCollected) return;
-            isCollected = true;
-
-            var moneyCollector = collector.GetComponent<IMoneyCollector>();
-            if (moneyCollector != null)
-            {
-                moneyCollector.CollectMoney(moneyAmount);
-            }
-            else if (PlayerController.Instance != null)
-            {
-                PlayerController.Instance.CollectMoney(moneyAmount);
-            }
-
-            DebugLogger.Log($"[MoneyItem] コイン獲得！ +¥{moneyAmount} pt");
-
-            OnItemCollected?.Invoke(this, collector);
-            Destroy(gameObject);
-        }
-
-        /// <summary>
         /// アイテム金額を設定する。
         /// </summary>
         /// <param name="amount">獲得金額</param>
@@ -136,6 +112,22 @@ namespace Runner
         {
             moneyAmount = Math.Max(1, amount);
         }
+
+        /// <summary>
+        /// プレイヤーによって回収された際の内部処理を実行し、GameObject を破棄する。
+        /// </summary>
+        /// <param name="collector">回収したプレイヤー等の GameObject</param>
+        private void Collect(GameObject collector)
+        {
+            if (isCollected) return;
+            isCollected = true;
+
+            DebugLogger.Log($"[MoneyItem] コイン獲得！ +¥{moneyAmount} pt");
+
+            OnCollected?.Invoke(this, collector);
+            Destroy(gameObject);
+        }
+
         /// <summary>
         /// Attractable コンポーネントがターゲットへ到達した際のコールバックを処理する。
         /// </summary>
