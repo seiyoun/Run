@@ -315,7 +315,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b13c7eb8ecce42c081cf702dd7b3dd1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Runner.Gameplay::Runner.PlayerMagnet
-  magnetRadius: 3.5
+  magnetRadius: 1.5
   checkInterval: 0.05
 --- !u!114 &1158852096249638510
 MonoBehaviour:

@@ -130,7 +130,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.35
+  m_Radius: 0.2
 --- !u!114 &5678409500740828058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -146,7 +146,7 @@ MonoBehaviour:
   initialAttractSpeed: 6
   attractAcceleration: 18
   maxAttractSpeed: 25
-  arriveDistance: 0.35
+  arriveDistance: 0.2
 --- !u!114 &4778409500740828058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -296,8 +296,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 5.5
-  m_fontSizeBase: 5.5
+  m_fontSize: 2.8
+  m_fontSizeBase: 2.8
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

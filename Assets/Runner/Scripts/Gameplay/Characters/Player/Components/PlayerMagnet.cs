@@ -15,7 +15,7 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class PlayerMagnet : MonoBehaviour
     {
-        private const float DefaultMagnetRadius = 3.5f;
+        private const float DefaultMagnetRadius = 1.5f;
         private const float DefaultCheckInterval = 0.05f;
 
         private static readonly ContactFilter2D ItemContactFilter = CreateDefaultContactFilter();
