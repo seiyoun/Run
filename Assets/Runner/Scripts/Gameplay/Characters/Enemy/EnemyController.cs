@@ -22,7 +22,7 @@ namespace Runner
     [RequireComponent(typeof(CircleCollider2D))]
     [RequireComponent(typeof(BehaviorGraphAgent))]
     [DisallowMultipleComponent]
-    public sealed class EnemyController : MonoBehaviour, IKnockbackable
+    public sealed class EnemyController : MonoBehaviour, IKnockbackable, IDroppable
     {
         private const float DefaultMoveSpeed = 3.0f;
         private const string TargetVariableName = "Target";
@@ -111,6 +111,12 @@ namespace Runner
         public float AttackRange { get; private set; } = 1.0f;
 
         /// <summary>
+        /// 撃破時にアイテムドロップを要求するイベント（引数: ドロップワールド座標）。
+        /// IDroppable インターフェースの実装。
+        /// </summary>
+        public event Action<Vector3> OnDropRequested;
+
+        /// <summary>
         /// 必要なコンポーネントの参照取得と初期データのロードを行う。
         /// </summary>
         private void Awake()
@@ -127,8 +133,6 @@ namespace Runner
             {
                 statusComponent.OnTakeDamage += HandleTakeDamage;
             }
-
-            LoadEnemyData();
         }
 
         /// <summary>
@@ -215,15 +219,6 @@ namespace Runner
         }
 
         /// <summary>
-        /// MasterDataManager のキャッシュから初期エネミーマスターデータを取得して適用する。
-        /// </summary>
-        public void LoadEnemyData()
-        {
-            var data = MasterDataManager.GetEnemyMasterData(EnemyType.Salaryman);
-            ApplyData(data);
-        }
-
-        /// <summary>
         /// EnemyMasterData の各設定値を対応するコンポーネントへ適用する。
         /// スプライトが指定されていない場合はシームレスに非同期ロードして反映します。
         /// </summary>
@@ -277,6 +272,7 @@ namespace Runner
             if (isDeathHandled) return;
             isDeathHandled = true;
             movementComponent?.Stop();
+            OnDropRequested?.Invoke(transform.position);
         }
 
         /// <summary>

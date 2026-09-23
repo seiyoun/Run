@@ -99,6 +99,8 @@ namespace Runner
                 EnemySpawnDirector.Instance.StartSpawning();
             }
 
+            _ = DropManager.Instance;
+
             DebugLogger.Log("[GamePlayingState] ゲームプレイ準備が完了しました。");
         }
 

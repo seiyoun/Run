@@ -172,6 +172,18 @@ namespace Runner
         }
 
         /// <summary>
+        /// MasterDataManager からエネミー種別に対応するマスターデータを取得し、エネミーコントローラーへ適用する。
+        /// </summary>
+        /// <param name="enemy">対象のエネミーコントローラー</param>
+        /// <param name="enemyType">適用するエネミー種別</param>
+        public void LoadEnemyData(EnemyController enemy, EnemyType enemyType)
+        {
+            if (enemy == null) return;
+            var data = MasterDataManager.GetEnemyMasterData(enemyType);
+            enemy.ApplyData(data);
+        }
+
+        /// <summary>
         /// エネミーのオブジェクトプールを初期化する。
         /// </summary>
         private void InitializePool()
@@ -232,9 +244,13 @@ namespace Runner
                 FindPlayerTransform();
             }
 
-            var data = MasterDataManager.GetEnemyMasterData(enemyType);
-            enemyController.ApplyData(data);
+            LoadEnemyData(enemyController, enemyType);
             enemyController.SetTarget(playerTransform);
+
+            if (enemyController is IDroppable droppable)
+            {
+                DropManager.Instance.Register(droppable);
+            }
 
             DebugLogger.Log($"[EnemySpawner] エネミーを生成しました: {enemyController.name} (Type: {enemyType}, Position: {position})");
             return enemyController;
