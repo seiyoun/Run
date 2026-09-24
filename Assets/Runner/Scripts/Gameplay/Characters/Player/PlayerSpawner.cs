@@ -119,11 +119,6 @@ namespace Runner
             var playerData = MasterDataManager.GetPlayerMasterData();
             player.ApplyData(playerData);
 
-            if (GameRecordTracker.HasInstance || GameRecordTracker.Instance != null)
-            {
-                GameRecordTracker.Instance.BindPlayer(player);
-            }
-
             DebugLogger.Log($"[PlayerSpawner] Addressables からプレイヤーのロード・生成が完了しました。Pos: {spawnPos}");
             return player;
         }

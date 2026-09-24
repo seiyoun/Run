@@ -206,7 +206,7 @@ namespace Runner
             var waves = await SpawnWaveData.LoadByIdsAsync(stageData.WaveIds, cancellationToken: cancellationToken);
             if (GameProgressManager.Instance != null)
             {
-                GameProgressManager.Instance.SetEscapeDuration(stageData.EscapeTime);
+                GameProgressManager.Instance.ApplyStageData(stageData);
                 GameProgressManager.Instance.SetWaveData(waves);
                 DebugLogger.Log($"[GameLoadingState] GameProgressManager に ステージ {stageData.StageId} の設定（脱出時間: {stageData.EscapeTime}s, ウェーブ数: {waves.Count}）を反映しました。");
             }

@@ -17,21 +17,9 @@ namespace Runner
     /// </summary>
     public sealed class GamePlayingState : IState<GamePlayState>
     {
-        private const float DefaultEscapeDurationSeconds = 180f;
-        private const long SaleTriggerPointInterval = 300;
-
         private readonly IGameContext context;
-        private float remainingEscapeTime;
-        private bool isExitUnlocked;
-        private long nextSaleTriggerPoint = SaleTriggerPointInterval;
 
         public GamePlayState State => GamePlayState.Playing;
-
-        /// <summary>脱出制限時間の残り秒数</summary>
-        public float RemainingEscapeTime => remainingEscapeTime;
-
-        /// <summary>非常口が開放されているかどうか</summary>
-        public bool IsExitUnlocked => isExitUnlocked;
 
         /// <summary>
         /// GamePlayingState のコンストラクタ。
@@ -43,7 +31,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// プレイ中ステート開始時の初期化、入力バインド、および脱出タイマーのリセットを行う。
+        /// プレイ中ステート開始時の初期化、入力バインド、および進行管理イベントの購読を行う。
         /// </summary>
         /// <param name="parameter">開始パラメータ</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
@@ -52,15 +40,10 @@ namespace Runner
         {
             DebugLogger.Log("[GamePlayingState] ゲームプレイ開始！プレイヤー入力を有効化し、脱出タイマーを開始します。");
 
-            remainingEscapeTime = GameProgressManager.HasInstance && GameProgressManager.Instance != null
-                ? GameProgressManager.Instance.EscapeDuration
-                : DefaultEscapeDurationSeconds;
-            isExitUnlocked = false;
-            nextSaleTriggerPoint = SaleTriggerPointInterval;
-
             var player = PlayerController.Instance;
             if (player != null)
             {
+                // inputをプレイヤーにバインド
                 if (InputController.Instance != null)
                 {
                     player.BindInput(InputController.Instance);
@@ -70,27 +53,34 @@ namespace Runner
                 {
                     player.Status.OnDead += HandlePlayerDead;
                 }
+
+                // 記録処理（歩数・所持金管理）とプレイヤーをバインド
+                if (GameRecordTracker.HasInstance || GameRecordTracker.Instance != null)
+                {
+                    GameRecordTracker.Instance.BindPlayer(player);
+                }
             }
 
             if (GameHUDView.Instance != null)
             {
-                GameHUDView.Instance.BindPlayerEvents();
+                // HUD表示と記録処理をバインド
+                if (GameRecordTracker.HasInstance || GameRecordTracker.Instance != null)
+                {
+                    GameHUDView.Instance.BindRecordTracker(GameRecordTracker.Instance);
+                }
 
                 if (GameHUDView.Instance.EscapeTimerHUD != null)
                 {
-                    GameHUDView.Instance.EscapeTimerHUD.SetRemainingTime(remainingEscapeTime);
                     GameHUDView.Instance.EscapeTimerHUD.SetExitUnlocked(false);
                 }
-
-                long initialEarned = GameRecordTracker.HasInstance ? GameRecordTracker.Instance.EarnedMoney : 0;
-                long initialCycleEarned = initialEarned % SaleTriggerPointInterval;
-                long initialRemaining = SaleTriggerPointInterval - initialCycleEarned;
-                float initialProgress = (float)initialCycleEarned / SaleTriggerPointInterval;
-                GameHUDView.Instance.UpdateRestockProgress(initialRemaining, initialProgress, true);
             }
 
             if (GameProgressManager.Instance != null)
             {
+                GameProgressManager.Instance.OnRemainingTimeUpdated += HandleRemainingTimeUpdated;
+                GameProgressManager.Instance.OnExitUnlocked += HandleExitUnlocked;
+                GameProgressManager.Instance.OnRestockProgressUpdated += HandleRestockProgressUpdated;
+                GameProgressManager.Instance.OnShopTriggered += HandleShopTriggered;
                 GameProgressManager.Instance.StartProgress();
             }
 
@@ -119,8 +109,8 @@ namespace Runner
         }
 
         /// <summary>
-        /// 毎フレームのゲームプレイ更新処理（脱出タイマー減算、セール発火判定）を実行する。
-        /// ショップモーダル表示中などのポーズ時は deltaTime を 0 にして更新を一時停止します。
+        /// 毎フレームのゲームプレイ更新処理を実行する。
+        /// ショップモーダル表示中などのポーズ時は deltaTime を 0 にして進行を一時停止します。
         /// </summary>
         /// <param name="deltaTime">前フレームからの経過時間（秒）</param>
         public void Update(float deltaTime)
@@ -128,49 +118,6 @@ namespace Runner
             bool isPaused = (GameHUDView.Instance != null && GameHUDView.Instance.ShopView != null && GameHUDView.Instance.ShopView.IsOpen)
                             || Time.timeScale <= 0f;
             float actualDeltaTime = isPaused ? 0f : deltaTime;
-
-            var player = PlayerController.Instance;
-            if (player != null)
-            {
-                long totalEarned = GameRecordTracker.HasInstance ? GameRecordTracker.Instance.EarnedMoney : 0;
-                long cycleEarned = totalEarned % SaleTriggerPointInterval;
-                long remainingPoints = SaleTriggerPointInterval - cycleEarned;
-                float progress = (float)cycleEarned / SaleTriggerPointInterval;
-
-                // 累積ポイント到達によるアイテム入荷・ショップ直接オープンの判定
-                if (totalEarned >= nextSaleTriggerPoint)
-                {
-                    nextSaleTriggerPoint = ((totalEarned / SaleTriggerPointInterval) + 1) * SaleTriggerPointInterval;
-                    if (GameHUDView.Instance != null)
-                    {
-                        GameHUDView.Instance.OpenShop();
-                        GameHUDView.Instance.UpdateRestockProgress(remainingPoints, progress);
-                    }
-                }
-                else
-                {
-                    if (GameHUDView.Instance != null)
-                    {
-                        GameHUDView.Instance.UpdateRestockProgress(remainingPoints, progress);
-                    }
-                }
-            }
-
-            // 脱出タイマーの減算および非常口開放判定
-            if (!isPaused && !isExitUnlocked && remainingEscapeTime > 0f)
-            {
-                remainingEscapeTime -= actualDeltaTime;
-                if (remainingEscapeTime <= 0f)
-                {
-                    remainingEscapeTime = 0f;
-                    UnlockExit();
-                }
-
-                if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
-                {
-                    GameHUDView.Instance.EscapeTimerHUD.SetRemainingTime(remainingEscapeTime);
-                }
-            }
 
             if (GameProgressManager.Instance != null)
             {
@@ -196,6 +143,10 @@ namespace Runner
 
             if (GameProgressManager.HasInstance && GameProgressManager.Instance != null)
             {
+                GameProgressManager.Instance.OnRemainingTimeUpdated -= HandleRemainingTimeUpdated;
+                GameProgressManager.Instance.OnExitUnlocked -= HandleExitUnlocked;
+                GameProgressManager.Instance.OnRestockProgressUpdated -= HandleRestockProgressUpdated;
+                GameProgressManager.Instance.OnShopTriggered -= HandleShopTriggered;
                 GameProgressManager.Instance.StopProgress();
             }
 
@@ -208,22 +159,6 @@ namespace Runner
         }
 
         /// <summary>
-        /// 非常口を開放し、HUDへ開放通知を行う。
-        /// </summary>
-        public void UnlockExit()
-        {
-            if (isExitUnlocked) return;
-
-            isExitUnlocked = true;
-            DebugLogger.Log("[GamePlayingState] 非常口が開放されました！改札へ脱出可能になります。");
-
-            if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
-            {
-                GameHUDView.Instance.EscapeTimerHUD.SetExitUnlocked(true);
-            }
-        }
-
-        /// <summary>
         /// プレイヤー死亡時のGameOverステート遷移ハンドラ。
         /// </summary>
         private void HandlePlayerDead()
@@ -232,6 +167,54 @@ namespace Runner
             if (context.StateMachine != null)
             {
                 _ = context.StateMachine.ChangeStateAsync(GamePlayState.GameOver, CancellationToken.None);
+            }
+        }
+
+        /// <summary>
+        /// 脱出残り時間の更新イベントハンドラ。HUD のタイマー表示を更新する。
+        /// </summary>
+        /// <param name="remainingTime">残り秒数</param>
+        private void HandleRemainingTimeUpdated(float remainingTime)
+        {
+            if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
+            {
+                GameHUDView.Instance.EscapeTimerHUD.SetRemainingTime(remainingTime);
+            }
+        }
+
+        /// <summary>
+        /// 非常口開放イベントハンドラ。HUD の非常口開放表示を有効化する。
+        /// </summary>
+        private void HandleExitUnlocked()
+        {
+            if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
+            {
+                GameHUDView.Instance.EscapeTimerHUD.SetExitUnlocked(true);
+            }
+        }
+
+        /// <summary>
+        /// 入荷進捗更新イベントハンドラ。HUD の入荷ゲージ表示を更新する。
+        /// </summary>
+        /// <param name="remainingPoints">次の入荷までに必要な残りポイント</param>
+        /// <param name="progress">進捗率（0.0〜1.0）</param>
+        /// <param name="isInitial">初期化呼び出しであるかどうか</param>
+        private void HandleRestockProgressUpdated(long remainingPoints, float progress, bool isInitial)
+        {
+            if (GameHUDView.Instance != null)
+            {
+                GameHUDView.Instance.UpdateRestockProgress(remainingPoints, progress, isInitial);
+            }
+        }
+
+        /// <summary>
+        /// ショップ発生イベントハンドラ。ショップ画面を開く。
+        /// </summary>
+        private void HandleShopTriggered()
+        {
+            if (GameHUDView.Instance != null)
+            {
+                GameHUDView.Instance.OpenShop();
             }
         }
     }

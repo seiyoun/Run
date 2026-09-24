@@ -89,7 +89,10 @@ namespace Runner
                 shopModalView.BindPointHUD(pointStepHUD);
             }
 
-            BindPlayerEvents();
+            if (GameRecordTracker.HasInstance)
+            {
+                BindRecordTracker(GameRecordTracker.Instance);
+            }
         }
 
         /// <summary>
@@ -110,7 +113,10 @@ namespace Runner
                 Instance = null;
             }
 
-            UnbindPlayerEvents();
+            if (GameRecordTracker.HasInstance)
+            {
+                UnbindRecordTracker(GameRecordTracker.Instance);
+            }
         }
 
 
@@ -156,35 +162,34 @@ namespace Runner
         }
 
         /// <summary>
-        /// GameRecordTracker の状態変更イベント（歩数・所持金）を購読する。
+        /// GameRecordTracker の状態変更イベント（歩数・所持金）を購読し、HUD 表示を同期する。
         /// </summary>
-        public void BindPlayerEvents()
+        /// <param name="tracker">バインド対象の GameRecordTracker</param>
+        public void BindRecordTracker(GameRecordTracker tracker)
         {
-            if (GameRecordTracker.HasInstance)
-            {
-                var tracker = GameRecordTracker.Instance;
-                tracker.OnStepsChanged += HandleStepsChanged;
-                tracker.OnMoneyChanged += HandleMoneyChanged;
+            if (tracker == null) return;
 
-                if (pointStepHUD != null)
-                {
-                    pointStepHUD.SetSteps(tracker.TotalSteps);
-                    pointStepHUD.SetPoints(tracker.CurrentMoney, true);
-                }
+            UnbindRecordTracker(tracker);
+            tracker.OnStepsChanged += HandleStepsChanged;
+            tracker.OnMoneyChanged += HandleMoneyChanged;
+
+            if (pointStepHUD != null)
+            {
+                pointStepHUD.SetSteps(tracker.TotalSteps);
+                pointStepHUD.SetPoints(tracker.CurrentMoney, true);
             }
         }
 
         /// <summary>
         /// GameRecordTracker の状態変更イベント（歩数・所持金）の購読を解除する。
         /// </summary>
-        public void UnbindPlayerEvents()
+        /// <param name="tracker">バインド解除対象の GameRecordTracker</param>
+        public void UnbindRecordTracker(GameRecordTracker tracker)
         {
-            if (GameRecordTracker.HasInstance)
-            {
-                var tracker = GameRecordTracker.Instance;
-                tracker.OnStepsChanged -= HandleStepsChanged;
-                tracker.OnMoneyChanged -= HandleMoneyChanged;
-            }
+            if (tracker == null) return;
+
+            tracker.OnStepsChanged -= HandleStepsChanged;
+            tracker.OnMoneyChanged -= HandleMoneyChanged;
         }
 
         /// <summary>
