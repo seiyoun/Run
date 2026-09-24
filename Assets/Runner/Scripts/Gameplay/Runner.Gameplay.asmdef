@@ -3,6 +3,7 @@
     "rootNamespace": "Runner",
     "references": [
         "Runner.MasterData",
+        "Runner.Common",
         "Runner.Input",
         "Shiyuan.Foundation.Core",
         "Shiyuan.Foundation.Addressables",

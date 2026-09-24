@@ -59,7 +59,7 @@ namespace Runner
 
             await LoadPlayerAsync(playerSpawnPoint, cancellationToken);
             await LoadResultModalAsync(cancellationToken);
-            await LoadStageProgressAsync(stageData, cancellationToken);
+            LoadStageProgress(stageData);
             SetupGameHUD();
 
 #if SANDBOX || UNITY_EDITOR
@@ -196,14 +196,13 @@ namespace Runner
         /// ステージデータに基づき、指定された Wave 設定および脱出制限時間を GameProgressManager へ反映する。
         /// </summary>
         /// <param name="stageData">ステージマスターデータ</param>
-        /// <param name="cancellationToken">キャンセレーショントークン</param>
-        private async Task LoadStageProgressAsync(StageMasterData stageData, CancellationToken cancellationToken)
+        private void LoadStageProgress(StageMasterData stageData)
         {
             if (stageData == null) return;
 
-            DebugLogger.Log($"[GameLoadingState] ステージ {stageData.StageId} の進行データ（Wave, 脱出時間）のロードを開始します...");
+            DebugLogger.Log($"[GameLoadingState] ステージ {stageData.StageId} の進行データ（Wave, 脱出時間）の設定を開始します...");
 
-            var waves = await SpawnWaveData.LoadByIdsAsync(stageData.WaveIds, cancellationToken: cancellationToken);
+            var waves = MasterDataManager.GetWaveMasterDataList(stageData.WaveIds);
             if (GameProgressManager.Instance != null)
             {
                 GameProgressManager.Instance.ApplyStageData(stageData);

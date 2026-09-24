@@ -14,21 +14,21 @@ namespace Runner
     public sealed partial class GameProgressManager
     {
         /// <summary>ウェーブ切り替わりイベント（引数: 新しいウェーブ設定データ）</summary>
-        public event Action<SpawnWaveData> OnWaveChanged;
+        public event Action<WaveMasterData> OnWaveChanged;
 
         [Tooltip("時間帯ごとのスポーンウェーブ設定リスト")]
-        [SerializeField] private List<SpawnWaveData> waveDataList = new List<SpawnWaveData>();
+        [SerializeField] private List<WaveMasterData> waveDataList = new List<WaveMasterData>();
 
-        private SpawnWaveData currentWave;
+        private WaveMasterData currentWave;
 
         /// <summary>現在アクティブなウェーブ設定データ</summary>
-        public SpawnWaveData CurrentWave => currentWave;
+        public WaveMasterData CurrentWave => currentWave;
 
         /// <summary>
         /// GameLoadingState 等からロードされたウェーブ設定データを反映する。
         /// </summary>
         /// <param name="waves">設定するウェーブデータリスト</param>
-        public void SetWaveData(IReadOnlyList<SpawnWaveData> waves)
+        public void SetWaveData(IReadOnlyList<WaveMasterData> waves)
         {
             waveDataList.Clear();
             if (waves != null)
@@ -59,7 +59,7 @@ namespace Runner
         /// </summary>
         private void UpdateCurrentWave()
         {
-            SpawnWaveData matchingWave = null;
+            WaveMasterData matchingWave = null;
             if (waveDataList != null)
             {
                 for (int i = 0; i < waveDataList.Count; i++)

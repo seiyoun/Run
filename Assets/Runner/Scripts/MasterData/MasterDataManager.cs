@@ -23,6 +23,7 @@ namespace Runner
         private static readonly List<ShopItemData> ShopItemDataCache = new List<ShopItemData>();
         private static readonly Dictionary<WeaponType, WeaponMasterData> WeaponDataCache = new Dictionary<WeaponType, WeaponMasterData>();
         private static readonly Dictionary<int, BuffMasterData> BuffDataCache = new Dictionary<int, BuffMasterData>();
+        private static readonly Dictionary<int, WaveMasterData> WaveDataCache = new Dictionary<int, WaveMasterData>();
         private static PlayerMasterData cachedPlayerData;
         private static bool isInitialized;
 
@@ -130,7 +131,35 @@ namespace Runner
         }
 
         /// <summary>
-        /// 全マスターデータ（EnemyMasterData, PlayerMasterData, ShopItemData, StageMasterData, WeaponMasterData, BuffMasterData）を同期的にロードしてキャッシュする。
+        /// 指定された waveId リストに対応する WaveMasterData のリストをキャッシュから取得する。
+        /// </summary>
+        /// <param name="waveIds">ウェーブ識別番号のリスト</param>
+        /// <returns>合致した WaveMasterData のリスト</returns>
+        public static List<WaveMasterData> GetWaveMasterDataList(IReadOnlyList<int> waveIds)
+        {
+            var result = new List<WaveMasterData>();
+            if (waveIds == null || waveIds.Count == 0)
+            {
+                return result;
+            }
+
+            for (int i = 0; i < waveIds.Count; i++)
+            {
+                if (WaveDataCache.TryGetValue(waveIds[i], out var wave))
+                {
+                    result.Add(wave);
+                }
+                else
+                {
+                    DebugLogger.Warning($"[MasterDataManager] WaveId '{waveIds[i]}' のデータが見つかりません。");
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 全マスターデータ（EnemyMasterData, PlayerMasterData, ShopItemData, StageMasterData, WeaponMasterData, BuffMasterData, WaveMasterData）を同期的にロードしてキャッシュする。
         /// </summary>
         private static void Initialize()
         {
@@ -161,6 +190,12 @@ namespace Runner
             foreach (var buff in BuffMasterData.LoadAllFromResources())
             {
                 BuffDataCache[buff.BuffId] = buff;
+            }
+
+            WaveDataCache.Clear();
+            foreach (var wave in WaveMasterData.LoadAllFromResources())
+            {
+                WaveDataCache[wave.WaveId] = wave;
             }
 
             isInitialized = true;

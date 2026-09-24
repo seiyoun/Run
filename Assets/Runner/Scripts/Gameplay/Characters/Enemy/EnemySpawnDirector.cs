@@ -24,7 +24,7 @@ namespace Runner
         [Tooltip("初回スポーンまでの待機時間（秒）")]
         [SerializeField] private float initialSpawnDelay = 1.0f;
 
-        private SpawnWaveData currentWave;
+        private WaveMasterData currentWave;
         private float spawnTimer;
         private bool isSpawningActive;
         private bool isSpawningInProgress;
@@ -54,7 +54,7 @@ namespace Runner
         public bool IsSpawningActive => isSpawningActive;
 
         /// <summary>現在適用中のウェーブ設定データ</summary>
-        public SpawnWaveData CurrentWave => currentWave;
+        public WaveMasterData CurrentWave => currentWave;
 
         /// <summary>
         /// シングルトンの初期化を行う。
@@ -136,7 +136,7 @@ namespace Runner
         /// ウェーブ切り替わりイベントのハンドラ。最新のスポーン設定を適用する。
         /// </summary>
         /// <param name="newWave">切り替わった新しいウェーブデータ</param>
-        private void HandleWaveChanged(SpawnWaveData newWave)
+        private void HandleWaveChanged(WaveMasterData newWave)
         {
             currentWave = newWave;
             if (currentWave != null)

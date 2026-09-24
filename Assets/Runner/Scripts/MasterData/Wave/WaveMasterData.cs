@@ -6,8 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Shiyuan.Foundation.Core;
 using UnityEngine;
 
@@ -51,10 +49,10 @@ namespace Runner
     }
 
     /// <summary>
-    /// 指定された時間帯におけるエネミースポーン設定データ。
+    /// 指定された時間帯におけるエネミースポーン設定マスターデータ。
     /// </summary>
     [Serializable]
-    public sealed class SpawnWaveData
+    public sealed class WaveMasterData
     {
         /// <summary>デフォルトのリソース配置パス</summary>
         public const string DefaultResourcePath = "Data/WaveData";
@@ -98,7 +96,7 @@ namespace Runner
         /// <summary>
         /// デフォルトコンストラクタ（JSONデシリアライズ用）。
         /// </summary>
-        public SpawnWaveData()
+        public WaveMasterData()
         {
         }
 
@@ -113,86 +111,49 @@ namespace Runner
         }
 
         /// <summary>
-        /// Resources から WaveData.json を非同期ロードし、全 SpawnWaveData のリストを生成する。
+        /// Resources から WaveData.json を同期ロードし、全 WaveMasterData のリストを生成する。
         /// </summary>
         /// <param name="path">リソースパス（デフォルト: Data/WaveData）</param>
-        /// <param name="cancellationToken">キャンセレーショントークン</param>
-        /// <returns>SpawnWaveData のリスト</returns>
-        public static async Task<List<SpawnWaveData>> LoadAllFromResourcesAsync(string path = DefaultResourcePath, CancellationToken cancellationToken = default)
+        /// <returns>WaveMasterData のリスト</returns>
+        public static List<WaveMasterData> LoadAllFromResources(string path = DefaultResourcePath)
         {
-            var result = new List<SpawnWaveData>();
-            var request = Resources.LoadAsync<TextAsset>(path);
-            while (!request.isDone)
+            var result = new List<WaveMasterData>();
+            var textAsset = Resources.Load<TextAsset>(path);
+            if (textAsset == null || string.IsNullOrWhiteSpace(textAsset.text))
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                await Task.Yield();
-            }
-
-            var jsonAsset = request.asset as TextAsset;
-            if (jsonAsset == null || string.IsNullOrWhiteSpace(jsonAsset.text))
-            {
-                DebugLogger.Error($"[SpawnWaveData] '{path}' のロードに失敗しました。");
+                DebugLogger.Error($"[WaveMasterData] '{path}' のロードに失敗しました。");
                 return result;
             }
 
             try
             {
-                var container = JsonUtility.FromJson<SpawnWaveDataContainer>(jsonAsset.text);
+                var container = JsonUtility.FromJson<WaveMasterDataContainer>(textAsset.text);
                 if (container != null && container.waves != null && container.waves.Count > 0)
                 {
                     result.AddRange(container.waves);
-                    DebugLogger.Log($"[SpawnWaveData] {result.Count} 件のウェーブ設定をロードしました。");
+                    DebugLogger.Log($"[WaveMasterData] {result.Count} 件のウェーブ設定をロードしました。");
                 }
                 else
                 {
-                    DebugLogger.Warning($"[SpawnWaveData] '{path}' のパース結果が空です。");
+                    DebugLogger.Warning($"[WaveMasterData] '{path}' のパース結果が空です。");
                 }
             }
             catch (Exception ex)
             {
-                DebugLogger.Error($"[SpawnWaveData] JSONパースエラー: {ex.Message}");
+                DebugLogger.Error($"[WaveMasterData] JSONパースエラー: {ex.Message}");
             }
 
             return result;
         }
 
         /// <summary>
-        /// 指定された waveId リストに合致するウェーブ設定データを Resources から非同期ロードして抽出する。
-        /// </summary>
-        /// <param name="waveIds">抽出対象の waveId リスト</param>
-        /// <param name="path">リソースパス（デフォルト: Data/WaveData）</param>
-        /// <param name="cancellationToken">キャンセレーショントークン</param>
-        /// <returns>合致した SpawnWaveData のリスト</returns>
-        public static async Task<List<SpawnWaveData>> LoadByIdsAsync(IReadOnlyList<int> waveIds, string path = DefaultResourcePath, CancellationToken cancellationToken = default)
-        {
-            var allWaves = await LoadAllFromResourcesAsync(path, cancellationToken);
-            if (waveIds == null || waveIds.Count == 0)
-            {
-                return allWaves;
-            }
-
-            var idSet = new HashSet<int>(waveIds);
-            var filtered = new List<SpawnWaveData>();
-            foreach (var wave in allWaves)
-            {
-                if (idSet.Contains(wave.WaveId))
-                {
-                    filtered.Add(wave);
-                }
-            }
-
-            return filtered;
-        }
-
-        /// <summary>
         /// WaveData.json のリスト形式を JsonUtility でデシリアライズするための内部コンテナクラス。
         /// </summary>
         [Serializable]
-        private class SpawnWaveDataContainer
+        private class WaveMasterDataContainer
         {
             // ウェーブデータのリスト
-            public List<SpawnWaveData> waves = new List<SpawnWaveData>();
+            public List<WaveMasterData> waves = new List<WaveMasterData>();
         }
     }
 }
-
