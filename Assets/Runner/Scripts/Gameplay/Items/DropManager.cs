@@ -65,7 +65,20 @@ namespace Runner
         public void Register(IDroppable droppable)
         {
             if (droppable == null) return;
+
+            droppable.OnDropRequested -= HandleDropRequested;
             droppable.OnDropRequested += HandleDropRequested;
+        }
+
+        /// <summary>
+        /// IDroppable エンティティのドロップ要求イベント購読を解除する。
+        /// </summary>
+        /// <param name="droppable">解除する IDroppable インスタンス</param>
+        public void Unregister(IDroppable droppable)
+        {
+            if (droppable == null) return;
+
+            droppable.OnDropRequested -= HandleDropRequested;
         }
 
         /// <summary>

@@ -120,14 +120,26 @@ namespace Runner
         }
 
         /// <summary>
-        /// エネミーを登録し、死亡イベント（Status.OnDead）を購読して撃破記録を行う。
+        /// エネミーを登録し、撃破イベント（OnDefeated）を購読して撃破記録を行う。
         /// </summary>
         /// <param name="enemy">登録する EnemyController インスタンス</param>
         public void RegisterEnemy(EnemyController enemy)
         {
-            if (enemy == null || enemy.Status == null) return;
+            if (enemy == null) return;
 
-            enemy.Status.OnDead += () => RecordEnemyDefeat(enemy.EnemyType);
+            enemy.OnDefeated -= HandleEnemyDefeated;
+            enemy.OnDefeated += HandleEnemyDefeated;
+        }
+
+        /// <summary>
+        /// エネミーの撃破イベント購読を解除する。
+        /// </summary>
+        /// <param name="enemy">解除する EnemyController インスタンス</param>
+        public void UnregisterEnemy(EnemyController enemy)
+        {
+            if (enemy == null) return;
+
+            enemy.OnDefeated -= HandleEnemyDefeated;
         }
 
         /// <summary>
@@ -138,7 +150,19 @@ namespace Runner
         {
             if (item == null) return;
 
+            item.OnCollected -= HandleItemCollected;
             item.OnCollected += HandleItemCollected;
+        }
+
+        /// <summary>
+        /// ドロップアイテムの回収イベント購読を解除する。
+        /// </summary>
+        /// <param name="item">解除する IItem インスタンス</param>
+        public void UnregisterItem(IItem item)
+        {
+            if (item == null) return;
+
+            item.OnCollected -= HandleItemCollected;
         }
 
         /// <summary>
@@ -179,7 +203,17 @@ namespace Runner
         }
 
         /// <summary>
-        /// アイテム回収イベントを受信し、該当する処理（コイン加算等）を実行する。
+        /// エネミー撃破イベントを受信し、該当するエネミー種別の撃破数を加算・記録する。
+        /// </summary>
+        /// <param name="enemy">撃破された EnemyController インスタンス</param>
+        private void HandleEnemyDefeated(EnemyController enemy)
+        {
+            if (enemy == null) return;
+            RecordEnemyDefeat(enemy.EnemyType);
+        }
+
+        /// <summary>
+        /// アイテム回収イベントを受信し、該当する処理（コイン加算等）を実行してイベント購読を解除する。
         /// </summary>
         /// <param name="item">回収された IItem インスタンス</param>
         /// <param name="collector">回収者 GameObject</param>
@@ -189,6 +223,8 @@ namespace Runner
             {
                 AddMoney(moneyItem.MoneyAmount);
             }
+
+            UnregisterItem(item);
         }
 
         /// <summary>

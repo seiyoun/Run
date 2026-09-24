@@ -215,6 +215,16 @@ namespace Runner
                 {
                     if (enemy != null)
                     {
+                        if (DropManager.HasInstance)
+                        {
+                            DropManager.Instance.Unregister(enemy);
+                        }
+
+                        if (GameRecordTracker.HasInstance)
+                        {
+                            GameRecordTracker.Instance.UnregisterEnemy(enemy);
+                        }
+
                         Destroy(enemy.gameObject);
                     }
                 },

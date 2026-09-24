@@ -21,6 +21,9 @@ namespace Runner
         private const float DefaultInterval = 1.5f;
         private const float DefaultSearchRadius = 4.0f;
         private const float DefaultRotationSpeed = 720f;
+        private const int OverlapBufferSize = 32;
+
+        private static readonly Collider2D[] OverlapResults = new Collider2D[OverlapBufferSize];
 
         [Header("Attack Settings")]
         [Tooltip("発射する弾丸プレハブ")]
@@ -31,6 +34,9 @@ namespace Runner
 
         [Tooltip("エネミーを自動検知する最大半径")]
         [SerializeField] private float searchRadius = DefaultSearchRadius;
+
+        [Tooltip("検知対象のレイヤーマスク（エネミーレイヤー）")]
+        [SerializeField] private LayerMask targetLayerMask = ~0;
 
         [Tooltip("基本攻撃力")]
         [SerializeField] private int attackPower = DefaultPower;
@@ -43,6 +49,7 @@ namespace Runner
 
         private float attackCooldownTimer;
         private ObjectPool<DroneBullet> bulletPool;
+        private ContactFilter2D contactFilter;
 
         /// <summary>攻撃力</summary>
         public int AttackPower
@@ -72,10 +79,13 @@ namespace Runner
         public event Action OnAttack;
 
         /// <summary>
-        /// 弾丸用オブジェクトプールを初期化する。
+        /// 弾丸用オブジェクトプールおよびコンタクトフィルターを初期化する。
         /// </summary>
         private void Awake()
         {
+            contactFilter = new ContactFilter2D();
+            contactFilter.SetLayerMask(targetLayerMask);
+            contactFilter.useTriggers = true;
             InitializePool();
         }
 
@@ -89,11 +99,13 @@ namespace Runner
                 attackCooldownTimer -= Time.deltaTime;
             }
 
-            UpdateRotation();
+            var target = FindTarget(transform.position);
+            UpdateRotation(target);
 
-            if (CanAttack)
+            if (CanAttack && target != null)
             {
-                Attack();
+                Vector2 direction = (target.position - transform.position).normalized;
+                Attack(direction);
             }
         }
 
@@ -158,19 +170,22 @@ namespace Runner
         }
 
         /// <summary>
-        /// 指定された基準位置から最も近い生存エネミーを検索して返す。
+        /// 指定された基準位置から最も近い生存エネミーを検索して返す（NonAlloc 版）。
         /// </summary>
         /// <param name="origin">索敵の中心ワールド座標</param>
         /// <returns>検知された最も近い生存エネミーの Transform（未検知時は null）</returns>
         public Transform FindTarget(Vector3 origin)
         {
-            var hits = Physics2D.OverlapCircleAll(origin, searchRadius);
+            int count = Physics2D.OverlapCircle(origin, searchRadius, contactFilter, OverlapResults);
             Transform closestEnemy = null;
             float closestDistSqr = float.MaxValue;
 
-            for (int i = 0; i < hits.Length; i++)
+            for (int i = 0; i < count; i++)
             {
-                var enemy = hits[i].GetComponent<EnemyController>() ?? hits[i].GetComponentInParent<EnemyController>();
+                var hit = OverlapResults[i];
+                if (hit == null) continue;
+
+                var enemy = hit.GetComponent<EnemyController>() ?? hit.GetComponentInParent<EnemyController>();
                 if (enemy != null && !enemy.IsDead)
                 {
                     float distSqr = (enemy.transform.position - origin).sqrMagnitude;
@@ -188,9 +203,9 @@ namespace Runner
         /// <summary>
         /// 最も近いエネミーの方向へスムーズに回転する。エネミーが存在しない場合は正面（0度）に戻る。
         /// </summary>
-        private void UpdateRotation()
+        /// <param name="target">追従回転対象の Transform</param>
+        private void UpdateRotation(Transform target)
         {
-            var target = FindTarget(transform.position);
             float targetAngle = 0f;
 
             if (target != null)

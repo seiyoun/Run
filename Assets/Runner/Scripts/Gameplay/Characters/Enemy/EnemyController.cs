@@ -119,6 +119,9 @@ namespace Runner
         /// </summary>
         public event Action<Vector3> OnDropRequested;
 
+        /// <summary>撃破時に通知されるイベント (引数: 自身のエネミーコントローラー)</summary>
+        public event Action<EnemyController> OnDefeated;
+
         /// <summary>
         /// 必要なコンポーネントの参照取得と初期データのロードを行う。
         /// </summary>
@@ -183,6 +186,8 @@ namespace Runner
                 statusComponent.OnTakeDamage -= HandleTakeDamage;
             }
 
+            OnDefeated = null;
+            OnDropRequested = null;
             behaviorAgent = null;
         }
 
@@ -276,6 +281,7 @@ namespace Runner
             isDeathHandled = true;
             movementComponent?.Stop();
             OnDropRequested?.Invoke(transform.position);
+            OnDefeated?.Invoke(this);
         }
 
         /// <summary>

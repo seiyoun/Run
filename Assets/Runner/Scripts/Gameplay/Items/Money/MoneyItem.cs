@@ -114,7 +114,28 @@ namespace Runner
         }
 
         /// <summary>
-        /// プレイヤーによって回収された際の内部処理を実行し、GameObject を破棄する。
+        /// オブジェクトプールからの再取得時にコインの状態をリセットし、再初期化する。
+        /// </summary>
+        /// <param name="position">リスポーンワールド座標</param>
+        /// <param name="amount">獲得金額</param>
+        public void ResetForPool(Vector3 position, long amount)
+        {
+            transform.position = position;
+            spawnPosition = position;
+            moneyAmount = Math.Max(1, amount);
+            isCollected = false;
+            bobTimer = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+
+            if (attractable != null)
+            {
+                attractable.StopAttract();
+            }
+
+            gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// プレイヤーによって回収された際の内部処理を実行し、オブジェクトプールに返却する。
         /// </summary>
         /// <param name="collector">回収したプレイヤー等の GameObject</param>
         private void Collect(GameObject collector)
@@ -125,7 +146,15 @@ namespace Runner
             DebugLogger.Log($"[MoneyItem] コイン獲得！ +¥{moneyAmount} pt");
 
             OnCollected?.Invoke(this, collector);
-            Destroy(gameObject);
+
+            if (ItemSpawner.HasInstance && ItemSpawner.Instance != null)
+            {
+                ItemSpawner.Instance.ReturnMoneyItem(this);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
 
         /// <summary>
