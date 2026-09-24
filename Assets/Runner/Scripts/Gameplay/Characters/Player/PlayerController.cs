@@ -30,6 +30,9 @@ namespace Runner
 
         private const float StepDistanceThreshold = 0.65f;
 
+        /// <summary>歩数が変更された際に発火するイベント (現在の累積歩数)</summary>
+        public event Action<int> OnStepsChanged;
+
         private CharacterMovement2D movementComponent;
         private CharacterAttacker2D attackerComponent;
         private CharacterStatus statusComponent;
@@ -79,9 +82,6 @@ namespace Runner
 
         /// <summary>プレイヤーの累積移動歩数</summary>
         public int CurrentSteps => currentSteps;
-
-        /// <summary>歩数が変更された際に発火するイベント (現在の累積歩数)</summary>
-        public event Action<int> OnStepsChanged;
 
         /// <summary>
         /// シングルトンの初期化、サブコンポーネントの参照取得・初期化を行う。

@@ -19,14 +19,14 @@ namespace Runner
 
         private const float HealInterval = 1.0f;
 
+        /// <summary>1秒ごとの回復タイミングで発火するイベント (回復量)</summary>
+        public event Action<int> OnHealTick;
+
         private readonly float duration;
         private readonly int healAmountPerSecond;
         private float remainingDuration;
         private float intervalTimer;
         private bool isActive;
-
-        /// <summary>1秒ごとの回復タイミングで発火するイベント (回復量)</summary>
-        public event Action<int> OnHealTick;
 
         /// <summary>バフ固有の識別番号</summary>
         public int BuffId => Id;

@@ -16,13 +16,14 @@ namespace Runner
     /// </summary>
     public sealed class HomeView : MonoBehaviour
     {
-        [SerializeField]
-        private Button playButton;
-
         /// <summary>
         /// ゲーム開始ボタンが押下された際に発火するイベント。
         /// </summary>
         public event Action OnPlayClicked;
+
+        [Tooltip("ゲーム開始ボタン")]
+        [SerializeField]
+        private Button playButton;
 
         private void Awake()
         {

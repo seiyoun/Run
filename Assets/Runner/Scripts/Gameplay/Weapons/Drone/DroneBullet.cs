@@ -17,6 +17,8 @@ namespace Runner
     [RequireComponent(typeof(CircleCollider2D))]
     public sealed class DroneBullet : MonoBehaviour
     {
+        private Action<DroneBullet> returnToPool;
+
         [Header("Bullet Settings")]
         [Tooltip("弾の移動速度")]
         [SerializeField] private float speed = 12f;
@@ -30,7 +32,6 @@ namespace Runner
         private Vector2 direction;
         private int damage;
         private float elapsedLifeTime;
-        private Action<DroneBullet> returnToPool;
         private bool isReleased;
 
         /// <summary>

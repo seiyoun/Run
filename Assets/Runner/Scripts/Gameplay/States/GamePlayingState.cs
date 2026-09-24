@@ -137,13 +137,13 @@ namespace Runner
                 long remainingPoints = SaleTriggerPointInterval - cycleEarned;
                 float progress = (float)cycleEarned / SaleTriggerPointInterval;
 
-                // 累積ポイント到達によるアイテム入荷・タイムセール通知の判定
+                // 累積ポイント到達によるアイテム入荷・ショップ直接オープンの判定
                 if (totalEarned >= nextSaleTriggerPoint)
                 {
                     nextSaleTriggerPoint = ((totalEarned / SaleTriggerPointInterval) + 1) * SaleTriggerPointInterval;
                     if (GameHUDView.Instance != null)
                     {
-                        GameHUDView.Instance.TriggerItemArrivalNotification();
+                        GameHUDView.Instance.OpenShop();
                         GameHUDView.Instance.UpdateRestockProgress(remainingPoints, progress);
                     }
                 }

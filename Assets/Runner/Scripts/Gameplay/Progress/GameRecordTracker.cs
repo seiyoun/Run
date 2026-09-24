@@ -20,37 +20,6 @@ namespace Runner
     {
         private const long PointsPerStep = 2;
 
-        private long currentMoney;
-        private long earnedMoney;
-        private int totalSteps;
-        private int totalDefeatedCount;
-        private readonly Dictionary<EnemyType, int> defeatedEnemyCounts = new();
-        private PlayerController boundPlayer;
-
-        /// <summary>現在消費可能な所持通貨・ポイント</summary>
-        public long CurrentMoney => currentMoney;
-
-        /// <summary>ゲームプレイ中に獲得した累計通貨・ポイント</summary>
-        public long EarnedMoney => earnedMoney;
-
-        /// <summary>ゲームプレイ中に歩いた累計歩数</summary>
-        public int TotalSteps => totalSteps;
-
-        /// <summary>倒したエネミーの総数</summary>
-        public int TotalDefeatedCount => totalDefeatedCount;
-
-        /// <summary>エネミー種別ごとの撃破数内訳</summary>
-        public IReadOnlyDictionary<EnemyType, int> DefeatedEnemyCounts => defeatedEnemyCounts;
-
-        /// <summary>所持金残高が変動した際に発火するイベント (現在の所持金額)</summary>
-        public event Action<long> OnMoneyChanged;
-
-        /// <summary>累計歩数が変動した際に発火するイベント (現在の累計歩数)</summary>
-        public event Action<int> OnStepsChanged;
-
-        /// <summary>Game シーン破棄時に一緒に破棄させる</summary>
-        protected override bool ShouldDontDestroyOnLoad => false;
-
         /// <summary>インスタンスが既に存在するかどうか</summary>
         public static bool HasInstance => SingletonMonoBehaviour<GameRecordTracker>.Instance != null;
 
@@ -73,6 +42,37 @@ namespace Runner
                 return obj.AddComponent<GameRecordTracker>();
             }
         }
+
+        /// <summary>所持金残高が変動した際に発火するイベント (現在の所持金額)</summary>
+        public event Action<long> OnMoneyChanged;
+
+        /// <summary>累計歩数が変動した際に発火するイベント (現在の累計歩数)</summary>
+        public event Action<int> OnStepsChanged;
+
+        private long currentMoney;
+        private long earnedMoney;
+        private int totalSteps;
+        private int totalDefeatedCount;
+        private readonly Dictionary<EnemyType, int> defeatedEnemyCounts = new();
+        private PlayerController boundPlayer;
+
+        /// <summary>現在消費可能な所持通貨・ポイント</summary>
+        public long CurrentMoney => currentMoney;
+
+        /// <summary>ゲームプレイ中に獲得した累計通貨・ポイント</summary>
+        public long EarnedMoney => earnedMoney;
+
+        /// <summary>ゲームプレイ中に歩いた累計歩数</summary>
+        public int TotalSteps => totalSteps;
+
+        /// <summary>倒したエネミーの総数</summary>
+        public int TotalDefeatedCount => totalDefeatedCount;
+
+        /// <summary>エネミー種別ごとの撃破数内訳</summary>
+        public IReadOnlyDictionary<EnemyType, int> DefeatedEnemyCounts => defeatedEnemyCounts;
+
+        /// <summary>Game シーン破棄時に一緒に破棄させる</summary>
+        protected override bool ShouldDontDestroyOnLoad => false;
 
         /// <summary>
         /// シングルトンの初期化を行う。

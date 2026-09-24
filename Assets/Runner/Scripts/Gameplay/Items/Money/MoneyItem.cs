@@ -19,6 +19,9 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class MoneyItem : MonoBehaviour, IItem
     {
+        /// <summary>アイテムが回収された際に発火するイベント (IItem 実装)</summary>
+        public event Action<IItem, GameObject> OnCollected;
+
         [Header("Money Settings")]
         [Tooltip("獲得できるお金・ポイントの額")]
         [SerializeField] private long moneyAmount = 50;
@@ -27,17 +30,23 @@ namespace Runner
         [SerializeField] private bool enableBobbing = true;
         [SerializeField] private float bobHeight = 0.15f;
         [SerializeField] private float bobSpeed = 3f;
+
         private IAttractable attractable;
         private Vector3 spawnPosition;
         private float bobTimer;
         private bool isCollected;
-        public DropItemType ItemType => DropItemType.Money;
-        public long MoneyAmount => moneyAmount;
-        public IAttractable Attractable => attractable;
-        public bool IsAttracted => attractable != null && attractable.IsAttracted;
 
-        /// <summary>アイテムが回収された際に発火するイベント (IItem 実装)</summary>
-        public event Action<IItem, GameObject> OnCollected;
+        /// <summary>ドロップアイテム種別 (IItem 実装)</summary>
+        public DropItemType ItemType => DropItemType.Money;
+
+        /// <summary>獲得できるお金・ポイントの額</summary>
+        public long MoneyAmount => moneyAmount;
+
+        /// <summary>吸引制御コンポーネント</summary>
+        public IAttractable Attractable => attractable;
+
+        /// <summary>現在吸引中かどうか</summary>
+        public bool IsAttracted => attractable != null && attractable.IsAttracted;
         /// <summary>
         /// IAttractable コンポーネントの取得、イベント購読、および初期座標の記録を行う。
         /// </summary>

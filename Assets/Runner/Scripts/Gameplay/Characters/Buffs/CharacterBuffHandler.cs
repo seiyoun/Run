@@ -17,16 +17,16 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class CharacterBuffHandler : MonoBehaviour
     {
-        private readonly List<IBuff> activeBuffs = new List<IBuff>();
-
-        /// <summary>現在アクティブなバフの読み取り専用リスト</summary>
-        public IReadOnlyList<IBuff> ActiveBuffs => activeBuffs;
-
         /// <summary>バフが有効化された際に発火するイベント</summary>
         public event Action<IBuff> OnBuffApplied;
 
         /// <summary>バフが無効化された際に発火するイベント</summary>
         public event Action<IBuff> OnBuffRemoved;
+
+        private readonly List<IBuff> activeBuffs = new List<IBuff>();
+
+        /// <summary>現在アクティブなバフの読み取り専用リスト</summary>
+        public IReadOnlyList<IBuff> ActiveBuffs => activeBuffs;
 
         /// <summary>
         /// 毎フレーム登録されたバフの効果時間を更新し、終了したバフを除外する。

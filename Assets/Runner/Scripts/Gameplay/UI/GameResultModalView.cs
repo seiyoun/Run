@@ -24,6 +24,8 @@ namespace Runner
         /// </summary>
         public static GameResultModalView Instance { get; private set; }
 
+        private Action onOkAction;
+
         [Header("UI References")]
         [Tooltip("モーダルウィンドウ全体のルートGameObject")]
         [SerializeField] private GameObject modalRoot;
@@ -38,7 +40,6 @@ namespace Runner
         [SerializeField] private Button okButton;
 
         private Shiyuan.Foundation.Addressables.AddressablePrefabLoader prefabLoader;
-        private Action onOkAction;
 
         /// <summary>リザルトモーダルが表示中かどうか</summary>
         public bool IsOpen => modalRoot != null && modalRoot.activeSelf;

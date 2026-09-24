@@ -23,6 +23,16 @@ namespace Runner
         private const float DefaultAcceleration = 25f;
         private const float DefaultMaxSpeed = 35f;
         private const float DefaultArriveDistance = 0.45f;
+
+        /// <summary>吸引開始時イベント</summary>
+        public event Action<Transform> OnAttractStarted;
+
+        /// <summary>吸引到達時イベント</summary>
+        public event Action<Transform> OnAttractReached;
+
+        /// <summary>吸引停止時イベント</summary>
+        public event Action OnAttractStopped;
+
         [Header("Attract Settings")]
         [Tooltip("吸い込み初速")]
         [SerializeField] private float initialAttractSpeed = DefaultInitialSpeed;
@@ -35,16 +45,19 @@ namespace Runner
 
         [Tooltip("ターゲットへ近接到達とみなす距離(m)")]
         [SerializeField] private float arriveDistance = DefaultArriveDistance;
+
         private Transform targetTransform;
         private bool isAttracted;
         private float currentAttractSpeed;
-        public bool IsAttracted => isAttracted;
-        public Transform Target => targetTransform;
-        public float CurrentAttractSpeed => currentAttractSpeed;
 
-        public event Action<Transform> OnAttractStarted;
-        public event Action<Transform> OnAttractReached;
-        public event Action OnAttractStopped;
+        /// <summary>現在吸引中かどうか</summary>
+        public bool IsAttracted => isAttracted;
+
+        /// <summary>吸引ターゲットのTransform</summary>
+        public Transform Target => targetTransform;
+
+        /// <summary>現在の吸引速度</summary>
+        public float CurrentAttractSpeed => currentAttractSpeed;
         /// <summary>
         /// コライダーがトリガーに設定されていることを保証する。
         /// </summary>

@@ -34,6 +34,15 @@ namespace Runner
         private const string KnockbackDirectionVariableName = "KnockbackDirection";
         private const string KnockbackForceVariableName = "KnockbackForce";
 
+        /// <summary>
+        /// 撃破時にアイテムドロップを要求するイベント（引数: ドロップワールド座標）。
+        /// IDroppable インターフェースの実装。
+        /// </summary>
+        public event Action<Vector3> OnDropRequested;
+
+        /// <summary>撃破時に通知されるイベント (引数: 自身のエネミーコントローラー)</summary>
+        public event Action<EnemyController> OnDefeated;
+
         [Header("AI Settings")]
         [Tooltip("Blackboard に登録するターゲット変数名")]
         [SerializeField]
@@ -112,15 +121,6 @@ namespace Runner
 
         /// <summary>攻撃射程（m）</summary>
         public float AttackRange { get; private set; } = 1.0f;
-
-        /// <summary>
-        /// 撃破時にアイテムドロップを要求するイベント（引数: ドロップワールド座標）。
-        /// IDroppable インターフェースの実装。
-        /// </summary>
-        public event Action<Vector3> OnDropRequested;
-
-        /// <summary>撃破時に通知されるイベント (引数: 自身のエネミーコントローラー)</summary>
-        public event Action<EnemyController> OnDefeated;
 
         /// <summary>
         /// 必要なコンポーネントの参照取得と初期データのロードを行う。

@@ -16,9 +16,6 @@ namespace Runner
     /// </summary>
     public static class ShopItemEffectApplier
     {
-        private const int EnergyDrinkHealAmount = 100;
-        private const float SpeedSneakersMultiplier = 1.25f;
-
         /// <summary>
         /// 購入されたアイテムの効果を対象のプレイヤーコントローラーへ適用する。
         /// </summary>
@@ -28,7 +25,7 @@ namespace Runner
         {
             if (item == null) return;
 
-            DebugLogger.Log($"[ShopItemEffectApplier] アイテム効果適用開始: {item.itemName} ({item.itemType})");
+            DebugLogger.Log($"[ShopItemEffectApplier] アイテム効果適用開始: {item.itemName} (ID: {item.ItemId})");
 
             if (player == null)
             {
@@ -36,18 +33,19 @@ namespace Runner
                 return;
             }
 
-            switch (item.itemType)
+            switch (item.ItemId)
             {
-                case ShopItemType.Recovery:
-                    player.Status?.Heal(EnergyDrinkHealAmount);
+                case ShopItemId.Drone:
+                    if (WeaponManager.HasInstance || WeaponManager.Instance != null)
+                    {
+                        _ = WeaponManager.Instance.UpgradeWeaponAsync(WeaponType.Drone);
+                    }
+                    DebugLogger.Log($"[ShopItemEffectApplier] ドローン効果を発動: {item.itemName}");
                     break;
 
-                case ShopItemType.Enhancement:
-                    player.MoveSpeed *= SpeedSneakersMultiplier;
-                    break;
-
-                case ShopItemType.Attack:
-                    DebugLogger.Log($"[ShopItemEffectApplier] 攻撃系アイテム効果を発動: {item.itemName}");
+                case ShopItemId.SpeedUp:
+                    BuffManager.ApplyBuff(player, BuffType.Speed);
+                    DebugLogger.Log($"[ShopItemEffectApplier] 移動速度アップバフを付与: {item.itemName}");
                     break;
             }
         }

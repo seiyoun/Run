@@ -25,6 +25,9 @@ namespace Runner
 
         private static readonly Collider2D[] OverlapResults = new Collider2D[OverlapBufferSize];
 
+        /// <summary>攻撃実行時に発火するイベント</summary>
+        public event Action OnAttack;
+
         [Header("Attack Settings")]
         [Tooltip("発射する弾丸プレハブ")]
         [SerializeField] private DroneBullet bulletPrefab;
@@ -74,9 +77,6 @@ namespace Runner
 
         /// <summary>現在攻撃可能かどうか</summary>
         public bool CanAttack => attackCooldownTimer <= 0f && bulletPrefab != null;
-
-        /// <summary>攻撃実行時に発火するイベント</summary>
-        public event Action OnAttack;
 
         /// <summary>
         /// 弾丸用オブジェクトプールおよびコンタクトフィルターを初期化する。

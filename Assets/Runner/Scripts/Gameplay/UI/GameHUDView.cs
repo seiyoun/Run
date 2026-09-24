@@ -28,9 +28,6 @@ namespace Runner
         [Tooltip("脱出タイマーHUDコンポーネント")]
         [SerializeField] private EscapeTimerHUD escapeTimerHUD;
 
-        [Tooltip("タイムセール通知バナーコンポーネント")]
-        [SerializeField] private SaleNotificationBanner saleNotificationBanner;
-
         [Tooltip("スマホ通販ショップモーダルコンポーネント")]
         [SerializeField] private SmartphoneShopModalView shopModalView;
 
@@ -52,9 +49,6 @@ namespace Runner
 
         /// <summary>脱出タイマーHUD</summary>
         public EscapeTimerHUD EscapeTimerHUD => escapeTimerHUD;
-
-        /// <summary>アイテム入荷通知バナー</summary>
-        public SaleNotificationBanner SaleBanner => saleNotificationBanner;
 
         /// <summary>スマホ通販ショップモーダル</summary>
         public SmartphoneShopModalView ShopModal => shopModalView;
@@ -121,20 +115,15 @@ namespace Runner
 
 
         /// <summary>
-        /// アイテム入荷通知を発火する。
+        /// ショップモーダルを直接開く。
         /// </summary>
-        public void TriggerItemArrivalNotification()
+        public void OpenShop()
         {
-            if (saleNotificationBanner != null && !saleNotificationBanner.IsShowing)
+            if (shopModalView != null)
             {
-                saleNotificationBanner.ShowBanner();
+                shopModalView.OpenShop();
             }
         }
-
-        /// <summary>
-        /// アイテム入荷通知を発火する（後方互換エイリアス）。
-        /// </summary>
-        public void TriggerSaleNotification() => TriggerItemArrivalNotification();
 
         /// <summary>
         /// アイテム入荷までの進捗情報（残りポイント・進捗率）を描画HUDへ通知・更新する。
@@ -199,15 +188,10 @@ namespace Runner
         }
 
         /// <summary>
-        /// バナーやショップのクリックイベントをバインドする。
+        /// ショップの購入イベントをバインドする。
         /// </summary>
         private void SetupBindings()
         {
-            if (saleNotificationBanner != null)
-            {
-                saleNotificationBanner.OnBannerClicked += HandleSaleBannerClicked;
-            }
-
             if (shopModalView != null)
             {
                 shopModalView.OnItemPurchased += HandleItemPurchased;
@@ -235,17 +219,6 @@ namespace Runner
             if (pointStepHUD != null)
             {
                 pointStepHUD.SetPoints(currentMoney);
-            }
-        }
-
-        /// <summary>
-        /// セール通知バナーのクリックイベントを処理する。
-        /// </summary>
-        private void HandleSaleBannerClicked()
-        {
-            if (shopModalView != null)
-            {
-                shopModalView.OpenShop();
             }
         }
 

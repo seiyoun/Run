@@ -12,13 +12,26 @@ using UnityEngine;
 namespace Runner
 {
     /// <summary>
-    /// ショップアイテムの系統分類（強化系、攻撃系、回復系）。
+    /// ショップアイテムの一意な識別子。
+    /// </summary>
+    public enum ShopItemId
+    {
+        /// <summary>追従自律ドローン</summary>
+        Drone = 1,
+
+        /// <summary>移動速度アップ</summary>
+        SpeedUp = 2
+    }
+
+    /// <summary>
+    /// ショップアイテムの系統分類（強化系、攻撃系、回復系、バフ系）。
     /// </summary>
     public enum ShopItemType
     {
         Enhancement = 0, // 強化系
         Attack = 1,      // 攻撃系
-        Recovery = 2     // 回復系
+        Recovery = 2,    // 回復系
+        Buff = 3         // バフ系
     }
 
     /// <summary>
@@ -33,9 +46,11 @@ namespace Runner
         public int id;
         public string itemName;
         public string description;
-        public string iconEmoji;
         public int price;
         public ShopItemType itemType;
+
+        /// <summary>ショップアイテム識別子</summary>
+        public ShopItemId ItemId => (ShopItemId)id;
 
         /// <summary>
         /// デフォルトコンストラクタ（JSONデシリアライズ用）。
@@ -50,15 +65,13 @@ namespace Runner
         /// <param name="id">アイテム識別子（整数値）</param>
         /// <param name="name">アイテム名</param>
         /// <param name="desc">説明文</param>
-        /// <param name="emoji">表示用絵文字/アイコンタグ</param>
         /// <param name="price">必要ポイント数</param>
         /// <param name="type">アイテム機能種別</param>
-        public ShopItemData(int id, string name, string desc, string emoji, int price, ShopItemType type)
+        public ShopItemData(int id, string name, string desc, int price, ShopItemType type)
         {
             this.id = id;
             this.itemName = name;
             this.description = desc;
-            this.iconEmoji = emoji;
             this.price = price;
             this.itemType = type;
         }

@@ -35,20 +35,17 @@ namespace Runner
         /// <returns>選出されたアイテム配列</returns>
         public ShopItemData[] PickRandomOffers(int count)
         {
-            var result = new ShopItemData[count];
+            int offerCount = Mathf.Min(count, availableItemPool.Count);
+            var result = new ShopItemData[offerCount];
             var poolCopy = new List<ShopItemData>(availableItemPool);
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < offerCount; i++)
             {
                 if (poolCopy.Count > 0)
                 {
                     int randomIndex = UnityEngine.Random.Range(0, poolCopy.Count);
                     result[i] = poolCopy[randomIndex];
                     poolCopy.RemoveAt(randomIndex);
-                }
-                else if (availableItemPool.Count > 0)
-                {
-                    result[i] = availableItemPool[i % availableItemPool.Count];
                 }
             }
 
@@ -80,7 +77,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// マスターデータからアイテムプールを初期化・構築する。
+        /// マスターデータからアイテムプールを初期化・構築する（現在は追従自律ドローンおよび移動速度アップを登録）。
         /// </summary>
         private void InitializeDefaultItems()
         {
@@ -89,7 +86,13 @@ namespace Runner
             var shopItems = MasterDataManager.AllShopItemData;
             if (shopItems != null && shopItems.Count > 0)
             {
-                availableItemPool.AddRange(shopItems);
+                for (int i = 0; i < shopItems.Count; i++)
+                {
+                    if (shopItems[i].ItemId == ShopItemId.Drone || shopItems[i].ItemId == ShopItemId.SpeedUp)
+                    {
+                        availableItemPool.Add(shopItems[i]);
+                    }
+                }
             }
         }
     }

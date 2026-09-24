@@ -19,6 +19,9 @@ namespace Runner
         private const int DefaultPower = 10;
         private const float DefaultInterval = 1.0f;
 
+        /// <summary>攻撃実行時イベント</summary>
+        public event Action OnAttack;
+
         [Header("Combat Settings")]
         [Tooltip("基本攻撃力")]
         [SerializeField] private int attackPower = DefaultPower;
@@ -48,9 +51,6 @@ namespace Runner
 
         /// <summary>現在攻撃可能かどうか</summary>
         public bool CanAttack => (characterStatus == null || !characterStatus.IsDead) && attackCooldownTimer <= 0f;
-
-        /// <summary>攻撃実行時イベント</summary>
-        public event Action OnAttack;
 
         /// <summary>
         /// 関連インターフェースの参照を取得する。

@@ -264,7 +264,7 @@ namespace Runner.Editor
                 EditorGUILayout.Space(8);
                 EditorGUILayout.LabelField("Game & Event Actions", EditorStyles.boldLabel);
 
-                DrawButtonPair("セール通知 発火", OnTriggerSaleClicked, "ジャスト回避 演出", OnJustDodgeClicked);
+                DrawButtonPair("ショップ表示", OnTriggerSaleClicked, "ジャスト回避 演出", OnJustDodgeClicked);
                 DrawButtonPair("非常口 即時開放", OnOpenExitClicked, "敵スポーン x1", OnSpawnEnemyClicked);
             }
         }
@@ -374,14 +374,14 @@ namespace Runner.Editor
         }
 
         /// <summary>
-        /// タイムセール通知発火ボタンクリック時のデバッグ操作を処理する。
+        /// ショップ直接表示ボタンクリック時のデバッグ操作を処理する。
         /// </summary>
         private void OnTriggerSaleClicked()
         {
             if (GameHUDView.Instance != null)
             {
-                GameHUDView.Instance.TriggerSaleNotification();
-                DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: タイムセール通知を発火しました。");
+                GameHUDView.Instance.OpenShop();
+                DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: ショップモーダルを直接表示しました。");
             }
         }
 

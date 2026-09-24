@@ -17,6 +17,18 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class CharacterStatus : MonoBehaviour, ICharacterStatus, IDamageable, IHealable
     {
+        /// <summary>HPが変動した際に発火するイベント (現在のHP, 最大HP)</summary>
+        public event Action<int, int> OnHpChanged;
+
+        /// <summary>ダメージを受けた際に発火するイベント (実際のダメージ量)</summary>
+        public event Action<int> OnTakeDamage;
+
+        /// <summary>HPが回復した際に発火するイベント (実際の回復量)</summary>
+        public event Action<int> OnHeal;
+
+        /// <summary>HPが0になり死亡した際に発火するイベント</summary>
+        public event Action OnDead;
+
         [Header("HP Settings")]
         [Tooltip("最大HP")]
         [SerializeField]
@@ -52,18 +64,6 @@ namespace Runner
             get => isInvincible;
             set => isInvincible = value;
         }
-
-        /// <summary>HPが変動した際に発火するイベント (現在のHP, 最大HP)</summary>
-        public event Action<int, int> OnHpChanged;
-
-        /// <summary>ダメージを受けた際に発火するイベント (実際のダメージ量)</summary>
-        public event Action<int> OnTakeDamage;
-
-        /// <summary>HPが回復した際に発火するイベント (実際の回復量)</summary>
-        public event Action<int> OnHeal;
-
-        /// <summary>HPが0になり死亡した際に発火するイベント</summary>
-        public event Action OnDead;
 
         /// <summary>
         /// コンポーネントの初期化と初期HPの設定を行う。

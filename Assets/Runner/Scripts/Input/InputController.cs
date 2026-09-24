@@ -18,6 +18,11 @@ namespace Runner
     [DefaultExecutionOrder(-900)]
     public sealed class InputController : SingletonMonoBehaviour<InputController>
     {
+        /// <summary>
+        /// 移動入力が更新された際に発火するイベント (正規化されたVector2)。
+        /// </summary>
+        public event Action<Vector2> OnMoveInput;
+
         [Header("Input Actions Reference")]
         [Tooltip("使用する Input Actions アセット")]
         [SerializeField]
@@ -27,21 +32,14 @@ namespace Runner
         [SerializeField]
         private float touchSensitivity = 60f;
 
-        /// <summary>
-        /// 移動入力が更新された際に発火するイベント (正規化されたVector2)。
-        /// </summary>
-        public event Action<Vector2> OnMoveInput;
+        private InputAction moveAction;
+        private Vector2 touchStartPos;
+        private bool isTouching;
 
         /// <summary>
         /// 現在の移動入力ベクトル。
         /// </summary>
         public Vector2 MoveVector { get; private set; }
-
-        private InputAction moveAction;
-
-        // タッチ / マウスドラッグ用
-        private Vector2 touchStartPos;
-        private bool isTouching;
 
         protected override bool ShouldDontDestroyOnLoad => false;
 

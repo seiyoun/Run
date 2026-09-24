@@ -34,15 +34,16 @@ description: Unity C# スクリプトの設計・コーディング規約。ア�
 すべての C# クラス・コンポーネントは、**上から下へ以下の厳格な順序** でメンバーを記述します。
 
 ```
-1. const / static フィールド
-2. [SerializeField] シリアライズフィールド
-3. private インスタンス変数
-4. public インスタンス変数
-5. プロパティ & イベント (Properties & Events)
-6. Unity ライフサイクル関数 (Awake, Start, Update, OnDestroy 等)
-7. override 関数 (ToString や基底クラスの override)
-8. public 関数 (公開メソッド)
-9. private 関数 / 内部ヘルパー関数
+1. const / static / readonly フィールド
+2. System.Action (Action / event Action / Delegate)
+3. [SerializeField] シリアライズフィールド
+4. private インスタンス変数
+5. public インスタンス変数
+6. プロパティ (Properties)
+7. Unity ライフサイクル関数 (Awake, Start, Update, OnDestroy 等)
+8. override 関数 (ToString や基底クラスの override)
+9. public 関数 (公開メソッド)
+10. private 関数 / 内部ヘルパー関数
 ```
 
 > [!IMPORTANT]
@@ -93,6 +94,9 @@ namespace Runner.Gameplay
         public static SampleController Instance { get; private set; }
         private const float DefaultSpeed = 5.0f;
 
+        /// <summary>歩数変更時イベント</summary>
+        public event Action<int> OnStepsChanged;
+
         [Header("Settings")]
         [Tooltip("移動速度")]
         [SerializeField] private float moveSpeed = DefaultSpeed;
@@ -113,9 +117,6 @@ namespace Runner.Gameplay
 
         /// <summary>現在の歩数</summary>
         public int CurrentSteps => currentSteps;
-
-        /// <summary>歩数変更時イベント</summary>
-        public event Action<int> OnStepsChanged;
 
         /// <summary>
         /// シングルトンの初期化およびコンポーネントの参照取得を行う。

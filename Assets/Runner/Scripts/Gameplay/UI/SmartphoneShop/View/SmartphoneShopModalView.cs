@@ -19,6 +19,12 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class SmartphoneShopModalView : MonoBehaviour
     {
+        /// <summary>アイテム購入時のコールバック (購入したアイテム)</summary>
+        public event Action<ShopItemData> OnItemPurchased;
+
+        /// <summary>ショップが閉じられた際のコールバック</summary>
+        public event Action OnShopClosed;
+
         [Header("UI References")]
         [Tooltip("モーダルウィンドウ全体のルートGameObject")]
         [SerializeField] private GameObject modalRoot;
@@ -51,12 +57,6 @@ namespace Runner
 
         /// <summary>ショップモーダルが開いているかどうか</summary>
         public bool IsOpen => viewModel != null && viewModel.IsOpen && modalRoot != null && modalRoot.activeSelf;
-
-        /// <summary>アイテム購入時のコールバック (購入したアイテム)</summary>
-        public event Action<ShopItemData> OnItemPurchased;
-
-        /// <summary>ショップが閉じられた際のコールバック</summary>
-        public event Action OnShopClosed;
 
         /// <summary>
         /// コンポーネントの初期化を行う。
@@ -99,6 +99,10 @@ namespace Runner
         public void OpenShop()
         {
             InitializeIfNeeded();
+            if (closeButton != null)
+            {
+                closeButton.gameObject.SetActive(false);
+            }
             viewModel.OpenShop();
         }
 
@@ -203,11 +207,6 @@ namespace Runner
             }
 
             Time.timeScale = isOpen ? 0f : 1f;
-
-            if (isOpen)
-            {
-                PlayerController.Instance?.Stop();
-            }
         }
 
         /// <summary>
@@ -220,13 +219,18 @@ namespace Runner
             for (int i = 0; i < itemCards.Length && i < 3; i++)
             {
                 var card = itemCards[i];
-                var item = i < offers.Count ? offers[i] : null;
+                if (card == null) continue;
 
-                if (card != null && item != null)
+                var item = i < offers.Count ? offers[i] : null;
+                if (item != null)
                 {
                     int cardIndex = i;
                     bool canAfford = currentPoints >= item.price;
                     card.Bind(item, canAfford, () => viewModel.BuyItem(cardIndex));
+                }
+                else
+                {
+                    card.Bind(null, false, null);
                 }
             }
         }

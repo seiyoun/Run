@@ -296,7 +296,7 @@ namespace Runner
             var rangeBtn = rangeObj.GetComponent<Button>();
             rangeBtn.onClick.AddListener(OnToggleMagnetRangeClicked);
 
-            var saleObj = CreateButton("SaleButton", parent, new Vector2(115, 175), new Vector2(215, 75), NormalButtonColor, "セール発火", font, 26);
+            var saleObj = CreateButton("SaleButton", parent, new Vector2(115, 175), new Vector2(215, 75), NormalButtonColor, "ショップ表示", font, 26);
             var saleBtn = saleObj.GetComponent<Button>();
             saleBtn.onClick.AddListener(OnTriggerSaleClicked);
 
@@ -546,14 +546,14 @@ namespace Runner
         }
 
         /// <summary>
-        /// タイムセール通知発火ボタンクリック時のデバッグ操作を処理する。
+        /// ショップ直接表示ボタンクリック時のデバッグ操作を処理する。
         /// </summary>
         private void OnTriggerSaleClicked()
         {
             if (GameHUDView.Instance != null)
             {
-                GameHUDView.Instance.TriggerSaleNotification();
-                DebugLogger.Log("[GameDebugHUD] デバッグ操作: タイムセール通知を発火しました。");
+                GameHUDView.Instance.OpenShop();
+                DebugLogger.Log("[GameDebugHUD] デバッグ操作: ショップモーダルを直接表示しました。");
             }
         }
 

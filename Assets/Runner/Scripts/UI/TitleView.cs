@@ -16,13 +16,14 @@ namespace Runner
     /// </summary>
     public sealed class TitleView : MonoBehaviour
     {
-        [SerializeField]
-        private Button startButton;
-
         /// <summary>
         /// スタートボタンが押下された際に発火するイベント。
         /// </summary>
         public event Action OnStartClicked;
+
+        [Tooltip("スタートボタン")]
+        [SerializeField]
+        private Button startButton;
 
         private void Awake()
         {

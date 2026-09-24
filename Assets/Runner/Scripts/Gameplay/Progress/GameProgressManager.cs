@@ -18,14 +18,6 @@ namespace Runner
     [DisallowMultipleComponent]
     public sealed class GameProgressManager : SingletonMonoBehaviour<GameProgressManager>
     {
-        [Tooltip("時間帯ごとのスポーンウェーブ設定リスト")]
-        [SerializeField] private List<SpawnWaveData> waveDataList = new List<SpawnWaveData>();
-
-        private float elapsedTime;
-        private float escapeDuration = 180f;
-        private bool isProgressing;
-        private SpawnWaveData currentWave;
-
         /// <summary>インスタンスが既に存在するかどうか</summary>
         public static bool HasInstance => SingletonMonoBehaviour<GameProgressManager>.Instance != null;
 
@@ -47,6 +39,20 @@ namespace Runner
             }
         }
 
+        /// <summary>経過時間更新イベント（引数: 累計経過秒数）</summary>
+        public event Action<float> OnTimeUpdated;
+
+        /// <summary>ウェーブ切り替わりイベント（引数: 新しいウェーブ設定データ）</summary>
+        public event Action<SpawnWaveData> OnWaveChanged;
+
+        [Tooltip("時間帯ごとのスポーンウェーブ設定リスト")]
+        [SerializeField] private List<SpawnWaveData> waveDataList = new List<SpawnWaveData>();
+
+        private float elapsedTime;
+        private float escapeDuration = 180f;
+        private bool isProgressing;
+        private SpawnWaveData currentWave;
+
         /// <summary>ゲーム開始からの累計経過時間（秒）</summary>
         public float ElapsedTime => elapsedTime;
 
@@ -58,12 +64,6 @@ namespace Runner
 
         /// <summary>現在アクティブなウェーブ設定データ</summary>
         public SpawnWaveData CurrentWave => currentWave;
-
-        /// <summary>経過時間更新イベント（引数: 累計経過秒数）</summary>
-        public event Action<float> OnTimeUpdated;
-
-        /// <summary>ウェーブ切り替わりイベント（引数: 新しいウェーブ設定データ）</summary>
-        public event Action<SpawnWaveData> OnWaveChanged;
 
         /// <summary>
         /// シングルトンの初期化を行う。

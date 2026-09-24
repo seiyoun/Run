@@ -20,9 +20,6 @@ namespace Runner
         [Tooltip("商品カード全体のルートGameObject")]
         public GameObject cardRoot;
 
-        [Tooltip("アイコン・絵文字テキスト")]
-        public TextMeshProUGUI iconText;
-
         [Tooltip("アイテム名テキスト")]
         public TextMeshProUGUI nameText;
 
@@ -53,14 +50,6 @@ namespace Runner
             }
 
             if (cardRoot != null) cardRoot.SetActive(true);
-            if (iconText != null)
-            {
-                iconText.text = item.iconEmoji;
-                iconText.enableAutoSizing = true;
-                iconText.fontSizeMin = 14f;
-                iconText.fontSizeMax = 32f;
-                iconText.textWrappingMode = TextWrappingModes.NoWrap;
-            }
             if (nameText != null) nameText.text = item.itemName;
             if (descText != null) descText.text = item.description;
             if (priceText != null) priceText.text = $"¥{item.price:N0} <size=70%>pt</size>";

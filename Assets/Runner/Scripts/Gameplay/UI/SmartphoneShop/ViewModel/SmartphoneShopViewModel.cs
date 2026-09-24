@@ -17,6 +17,21 @@ namespace Runner
     {
         private const int OfferItemCount = 3;
 
+        /// <summary>開閉状態が変化した際のイベント (isOpen)</summary>
+        public event Action<bool> OnOpenStateChanged;
+
+        /// <summary>陳列商品が更新された際のイベント (offers, currentPoints)</summary>
+        public event Action<IReadOnlyList<ShopItemData>, long> OnOffersUpdated;
+
+        /// <summary>所持ポイント表示が更新された際のイベント (currentPoints)</summary>
+        public event Action<long> OnPointsUpdated;
+
+        /// <summary>アイテム購入が成功した際のイベント (purchasedItem)</summary>
+        public event Action<ShopItemData> OnItemPurchased;
+
+        /// <summary>ショップが閉じられた際のイベント</summary>
+        public event Action OnShopClosed;
+
         private readonly SmartphoneShopModel model;
         private readonly ShopItemData[] currentOfferedItems = new ShopItemData[OfferItemCount];
         private PointStepHUD pointStepHUD;
@@ -32,21 +47,6 @@ namespace Runner
         public long CurrentPoints => GameRecordTracker.HasInstance
             ? GameRecordTracker.Instance.CurrentMoney
             : (pointStepHUD != null ? pointStepHUD.CurrentPoint : 0);
-
-        /// <summary>開閉状態が変化した際のイベント (isOpen)</summary>
-        public event Action<bool> OnOpenStateChanged;
-
-        /// <summary>陳列商品が更新された際のイベント (offers, currentPoints)</summary>
-        public event Action<IReadOnlyList<ShopItemData>, long> OnOffersUpdated;
-
-        /// <summary>所持ポイント表示が更新された際のイベント (currentPoints)</summary>
-        public event Action<long> OnPointsUpdated;
-
-        /// <summary>アイテム購入が成功した際のイベント (purchasedItem)</summary>
-        public event Action<ShopItemData> OnItemPurchased;
-
-        /// <summary>ショップが閉じられた際のイベント</summary>
-        public event Action OnShopClosed;
 
         /// <summary>
         /// タイムセールショップViewModelインスタンスを生成する。

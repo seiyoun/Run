@@ -33,6 +33,9 @@ namespace Runner
     {
         private const float DefaultMovementRange = 50f;
 
+        /// <summary>入力ベクトル更新時のイベント</summary>
+        public event Action<Vector2> OnInputUpdated;
+
         [Header("Mode Settings")]
         [Tooltip("ジョイスティックの動作モード")]
         [SerializeField] private JoystickMode joystickMode = JoystickMode.Floating;
@@ -98,9 +101,6 @@ namespace Runner
 
         /// <summary>現在タッチ操作中かどうか</summary>
         public bool IsPointerDown => isPointerDown;
-
-        /// <summary>入力ベクトル更新時のイベント</summary>
-        public event Action<Vector2> OnInputUpdated;
 
         /// <summary>
         /// コンポーネントの初期化および参照のキャッシュを行う。
