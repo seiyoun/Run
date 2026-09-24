@@ -24,30 +24,35 @@
   - [x] 独立ドロップ管理クラス（`ItemDropDirector`）および `MoneyItem.SpawnAsync` による一律コインドロップの実装
   - [x] プレイヤーのマグネット（`PlayerMagnet`）による吸引回収・ポイント加算連携
 - [ ] **2. ショップ購入効果の本格接続**
-  - [ ] ショップで「追従自律ドローン」購入時に [`WeaponManager.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/Weapons/WeaponManager.cs) の `UpgradeWeaponAsync()` を呼び出し、ドローンを出現・強化
-  - [ ] [`ShopItemEffectApplier.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/SmartphoneShop/Model/ShopItemEffectApplier.cs) において各アイテムIDごとの効果適用を実装（超電導ポイ活マグネットの範囲拡大、ワンタイムガード保険のシールド付与等）
+  - [x] ショップで「追従自律ドローン」購入時に [`WeaponManager.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/Weapons/WeaponManager.cs) の `UpgradeWeaponAsync()` を呼び出し、ドローンを出現・強化
+  - [x] 入荷目標ポイント（300pt等）到達時のショップ直接強制オープン（スルー不可・ゲーム一時停止）
+  - [ ] [`ShopItemEffectApplier.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/Modal/SmartphoneShop/Model/ShopItemEffectApplier.cs) において各アイテムIDごとの効果適用を実装（超電導ポイ活マグネットの範囲拡大、ワンタイムガード保険のシールド付与等）
 - [ ] **3. 非常口（改札）オブジェクトと脱出クリア判定**
   - [ ] 非常口（改札ゲート）プレハブの作成およびステージ上への配置
-  - [ ] 180秒経過時の非常口開放イベントと [`EscapeTimerHUD.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/EscapeTimerHUD.cs) のナビゲーション矢印連携 (`SetExitTarget`)
-  - [ ] プレイヤー接触時の脱出成功（ゲームクリア）判定およびリザルト画面（[`GameResultModalView.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/GameResultModalView.cs)）のクリア文言表示
+  - [ ] 180秒経過時の非常口開放イベントと [`EscapeTimerHUD.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/HUD/EscapeTimerHUD.cs) のナビゲーション矢印連携 (`SetExitTarget`)
+  - [ ] プレイヤー接触時の脱出成功（ゲームクリア）判定およびリザルト画面（[`GameResultModalView.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/Modal/GameResultModalView.cs)）のクリア文言表示
+- [x] **4. ゲーム進行 & UI の責務分離・疎結合アーキテクチャ整備**
+  - [x] `GameProgressManager` の関心事別 `partial class` 分割（メイン進行、脱出タイマー、ウェーブ管理、ショップ入荷）
+  - [x] `WaveMasterData` の一元管理化（`MasterDataManager.Initialize` での一括同期ロード・キャッシュ化）
+  - [x] イベント駆動（Pub/Sub）設計の徹底および UI の `HUD` / `Modal` 分離、共通処理（`SafeArea`）の `Common` 独立 asmdef 化
 
 ---
 
 ### Phase 2: 基礎クオリティ & ゲーム体験の向上
 ゲームとしての手触り、臨場感、操作性を製品水準へ引き上げます。
 
-- [ ] **4. ポーズメニュー（一時停止）機能**
+- [ ] **5. ポーズメニュー（一時停止）機能**
   - [ ] ゲームプレイ中に任意でポーズできるUIとEscキー等のバインド
   - [ ] ポーズメニューから「ゲーム再開」「設定」「リタイアしてHomeへ戻る」の実行
-- [ ] **5. サウンド (BGM / SE) の導入**
+- [ ] **6. サウンド (BGM / SE) の導入**
   - [ ] サウンド管理基盤（AudioManager 等）の設計・導入
   - [ ] BGM 実装（タイトル、ホーム、ゲームプレイ通常、脱出アラート緊迫BGM、リザルト）
   - [ ] SE 実装（足音/歩行、コイン回収、ドローン射撃・着弾、敵撃破、被ダメージ、ジャスト回避、セールチャイム、ボタンUI音）
-- [ ] **6. 演出・ビジュアルフィードバック (VFX)**
+- [ ] **7. 演出・ビジュアルフィードバック (VFX)**
   - [ ] ジャスト回避成功時のスロー/エフェクト演出
   - [ ] 敵被弾・撃破時のポップ演出やパーティクル
   - [ ] 非常口開放時のスポットライト・アラート演出
-- [ ] **7. 初見向けチュートリアル・ルール説明UI**
+- [ ] **8. 初見向けチュートリアル・ルール説明UI**
   - [ ] ゲーム開始時やタイトル画面での操作方法（歩行ポイ活、セール通知、脱出ルール）の簡単な案内表示
 
 ---
@@ -55,13 +60,13 @@
 ### Phase 3: アウトゲームとリプレイ性 (メタゲーム)
 繰り返し遊びたくなる成長要素ややりこみ要素を構築します。
 
-- [ ] **8. セーブデータ管理 (`LocalStorageService`)**
+- [ ] **9. セーブデータ管理 (`LocalStorageService`)**
   - [ ] 最高記録（ベスト生存時間、最高歩数、最大獲得マネー）のローカル保存
   - [ ] 永続アップグレード状態のセーブ・ロード
-- [ ] **9. ホーム画面での永続アップグレード**
+- [ ] **10. ホーム画面での永続アップグレード**
   - [ ] [`HomeView.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/UI/HomeView.cs) にアップグレードUIを追加
   - [ ] 持ち帰ったポイントを消費して基礎HP、初期移動速度、初期マグネット範囲などを恒久強化
-- [ ] **10. コンテンツ拡張（ステージ・エネミー・武器の追加）**
+- [ ] **11. コンテンツ拡張（ステージ・エネミー・武器の追加）**
   - [ ] 新エネミーの追加（突進系、遠距離妨害系など）
   - [ ] 新武器・護衛（ボディガード等）の実装
   - [ ] 難易度の異なる新ステージ（`StageData.json`, `WaveData.json`）の拡張
