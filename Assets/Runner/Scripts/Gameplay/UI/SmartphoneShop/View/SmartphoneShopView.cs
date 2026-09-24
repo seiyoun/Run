@@ -14,10 +14,10 @@ using UnityEngine.UI;
 namespace Runner
 {
     /// <summary>
-    /// スマートフォンのECアプリ風「ネット通販タイムセール」モーダルウィンドウのViewコンポーネント。
+    /// スマートフォンのECアプリ風「ネット通販タイムセール」ウィンドウのViewコンポーネント。
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SmartphoneShopModalView : MonoBehaviour
+    public sealed class SmartphoneShopView : MonoBehaviour
     {
         /// <summary>アイテム購入時のコールバック (購入したアイテム)</summary>
         public event Action<ShopItemData> OnItemPurchased;

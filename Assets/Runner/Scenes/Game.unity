@@ -2318,7 +2318,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64fbf0c59850e4059b417bde85258c48, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Runner.Gameplay::Runner.SmartphoneShopModalView
+  m_EditorClassIdentifier: Runner.Gameplay::Runner.SmartphoneShopView
   modalRoot: {fileID: 735064995}
   userPointsText: {fileID: 2015989845}
   closeButton: {fileID: 1026939210}

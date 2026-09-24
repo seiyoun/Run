@@ -139,7 +139,7 @@ namespace Runner
         /// </summary>
         private void Update()
         {
-            bool isPaused = (GameHUDView.Instance != null && GameHUDView.Instance.ShopModal != null && GameHUDView.Instance.ShopModal.IsOpen)
+            bool isPaused = (GameHUDView.Instance != null && GameHUDView.Instance.ShopView != null && GameHUDView.Instance.ShopView.IsOpen)
                             || Time.timeScale <= 0f;
             if (isPaused)
             {

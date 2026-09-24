@@ -125,7 +125,7 @@ namespace Runner
         /// <param name="deltaTime">前フレームからの経過時間（秒）</param>
         public void Update(float deltaTime)
         {
-            bool isPaused = (GameHUDView.Instance != null && GameHUDView.Instance.ShopModal != null && GameHUDView.Instance.ShopModal.IsOpen)
+            bool isPaused = (GameHUDView.Instance != null && GameHUDView.Instance.ShopView != null && GameHUDView.Instance.ShopView.IsOpen)
                             || Time.timeScale <= 0f;
             float actualDeltaTime = isPaused ? 0f : deltaTime;
 

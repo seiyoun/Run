@@ -29,7 +29,7 @@ namespace Runner
         [SerializeField] private EscapeTimerHUD escapeTimerHUD;
 
         [Tooltip("スマホ通販ショップモーダルコンポーネント")]
-        [SerializeField] private SmartphoneShopModalView shopModalView;
+        [SerializeField] private SmartphoneShopView shopModalView;
 
         [Tooltip("バーチャルジョイスティックUIコンポーネント")]
         [SerializeField] private VirtualJoystickView virtualJoystickView;
@@ -50,8 +50,8 @@ namespace Runner
         /// <summary>脱出タイマーHUD</summary>
         public EscapeTimerHUD EscapeTimerHUD => escapeTimerHUD;
 
-        /// <summary>スマホ通販ショップモーダル</summary>
-        public SmartphoneShopModalView ShopModal => shopModalView;
+        /// <summary>スマホ通販ショップUI</summary>
+        public SmartphoneShopView ShopView => shopModalView;
 
         /// <summary>バーチャルジョイスティックUI</summary>
         public VirtualJoystickView VirtualJoystick => virtualJoystickView;
