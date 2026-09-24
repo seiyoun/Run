@@ -23,10 +23,10 @@
   - [x] エネミー撃破イベント（`EnemyController.OnEnemyDefeated`）による位置通知（エネミーのアイテム完全非依存化）
   - [x] 独立ドロップ管理クラス（`ItemDropDirector`）および `MoneyItem.SpawnAsync` による一律コインドロップの実装
   - [x] プレイヤーのマグネット（`PlayerMagnet`）による吸引回収・ポイント加算連携
-- [ ] **2. ショップ購入効果の本格接続**
+- [x] **2. ショップ購入効果の本格接続（MVP完了）**
   - [x] ショップで「追従自律ドローン」購入時に [`WeaponManager.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/Weapons/WeaponManager.cs) の `UpgradeWeaponAsync()` を呼び出し、ドローンを出現・強化
   - [x] 入荷目標ポイント（300pt等）到達時のショップ直接強制オープン（スルー不可・ゲーム一時停止）
-  - [ ] [`ShopItemEffectApplier.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/Modal/SmartphoneShop/Model/ShopItemEffectApplier.cs) において各アイテムIDごとの効果適用を実装（超電導ポイ活マグネットの範囲拡大、ワンタイムガード保険のシールド付与等）
+  - [x] 移動速度アップアイテムの効果適用（[`ShopItemEffectApplier.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/Modal/SmartphoneShop/Model/ShopItemEffectApplier.cs) 経由で速度バフ付与）
 - [ ] **3. 非常口（改札）オブジェクトと脱出クリア判定**
   - [ ] 非常口（改札ゲート）プレハブの作成およびステージ上への配置
   - [ ] 180秒経過時の非常口開放イベントと [`EscapeTimerHUD.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/HUD/EscapeTimerHUD.cs) のナビゲーション矢印連携 (`SetExitTarget`)
@@ -66,9 +66,10 @@
 - [ ] **10. ホーム画面での永続アップグレード**
   - [ ] [`HomeView.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/UI/HomeView.cs) にアップグレードUIを追加
   - [ ] 持ち帰ったポイントを消費して基礎HP、初期移動速度、初期マグネット範囲などを恒久強化
-- [ ] **11. コンテンツ拡張（ステージ・エネミー・武器の追加）**
+- [ ] **11. コンテンツ拡張（ステージ・エネミー・武器・アイテムの追加）**
   - [ ] 新エネミーの追加（突進系、遠距離妨害系など）
   - [ ] 新武器・護衛（ボディガード等）の実装
+  - [ ] 追加ショップアイテム効果の検討・実装（仕様確定後に実装: マグネット拡大、シールド、回復ドリンク等）
   - [ ] 難易度の異なる新ステージ（`StageData.json`, `WaveData.json`）の拡張
 
 ---
