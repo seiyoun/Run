@@ -18,6 +18,7 @@ namespace Runner
     public sealed class GamePlayingState : IState<GamePlayState>
     {
         private readonly IGameContext context;
+        private bool isEnding;
 
         public GamePlayState State => GamePlayState.Playing;
 
@@ -36,8 +37,9 @@ namespace Runner
         /// <param name="parameter">開始パラメータ</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
         /// <returns>完了タスク</returns>
-        public async Task EnterAsync(object parameter, CancellationToken cancellationToken)
+        public Task EnterAsync(object parameter, CancellationToken cancellationToken)
         {
+            isEnding = false;
             DebugLogger.Log("[GamePlayingState] ゲームプレイ開始！プレイヤー入力を有効化し、脱出タイマーを開始します。");
 
             var player = PlayerController.Instance;
@@ -96,6 +98,7 @@ namespace Runner
             }
 
             DebugLogger.Log("[GamePlayingState] ゲームプレイ準備が完了しました。");
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -130,6 +133,19 @@ namespace Runner
         /// </summary>
         public void Exit()
         {
+            isEnding = true;
+            var escapePoint = EscapePoint.Instance;
+            if (escapePoint != null)
+            {
+                escapePoint.OnPlayerEntered -= HandlePlayerEscaped;
+            }
+            if (EscapePointSpawner.HasInstance) EscapePointSpawner.Instance.Hide();
+
+            if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
+            {
+                GameHUDView.Instance.EscapeTimerHUD.SetExitTarget(null, null);
+            }
+
             var player = PlayerController.Instance;
             if (player != null && player.Status != null)
             {
@@ -163,6 +179,8 @@ namespace Runner
         /// </summary>
         private void HandlePlayerDead()
         {
+            if (isEnding) return;
+            isEnding = true;
             DebugLogger.Log("[GamePlayingState] プレイヤーが死亡しました。GameOver ステートへ遷移します。");
             if (context.StateMachine != null)
             {
@@ -187,9 +205,61 @@ namespace Runner
         /// </summary>
         private void HandleExitUnlocked()
         {
+            var player = PlayerController.Instance;
+            var boundary = ArenaBackground.Instance != null ? ArenaBackground.Instance.BoundaryCollider : null;
+            var escapePoint = EscapePoint.Instance;
+            var escapePointSpawner = EscapePointSpawner.HasInstance ? EscapePointSpawner.Instance : null;
+            if (isEnding || player == null || boundary == null || escapePointSpawner == null || escapePoint == null)
+            {
+                DebugLogger.Error("[GamePlayingState] 脱出ポイントを表示できません。ロード済みゲート、プレイヤー、またはステージ境界がありません。");
+                return;
+            }
+
+            const float margin = 2f;
+            const float minPlayerDistance = 8f;
+            var bounds = boundary.bounds;
+            float minX = bounds.min.x + margin;
+            float maxX = bounds.max.x - margin;
+            float minY = bounds.min.y + margin;
+            float maxY = bounds.max.y - margin;
+            if (minX > maxX || minY > maxY)
+            {
+                DebugLogger.Error("[GamePlayingState] ステージ境界が狭すぎるため脱出ポイントを配置できません。");
+                return;
+            }
+
+            Vector2 position = Vector2.zero;
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                position = new Vector2(UnityEngine.Random.Range(minX, maxX), UnityEngine.Random.Range(minY, maxY));
+                if (Vector2.Distance(position, player.transform.position) >= minPlayerDistance) break;
+            }
+
+            escapePoint.OnPlayerEntered += HandlePlayerEscaped;
+            escapePointSpawner.Show(new Vector3(position.x, position.y, 0f));
+
             if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
             {
                 GameHUDView.Instance.EscapeTimerHUD.SetExitUnlocked(true);
+                GameHUDView.Instance.EscapeTimerHUD.SetExitTarget(escapePoint.transform, player.transform);
+            }
+
+            DebugLogger.Log($"[GamePlayingState] ロード済み脱出ポイントを {position} に表示しました。");
+        }
+
+        /// <summary>
+        /// 脱出ポイントに到達したときにクリアステートへ遷移する。
+        /// </summary>
+        private void HandlePlayerEscaped()
+        {
+            if (isEnding || PlayerController.Instance == null || PlayerController.Instance.Status == null || PlayerController.Instance.Status.IsDead) return;
+            if (!GameProgressManager.HasInstance || !GameProgressManager.Instance.IsExitUnlocked) return;
+
+            isEnding = true;
+            DebugLogger.Log("[GamePlayingState] プレイヤーが脱出ポイントに到達しました。");
+            if (context.StateMachine != null)
+            {
+                _ = context.StateMachine.ChangeStateAsync(GamePlayState.GameClear, CancellationToken.None);
             }
         }
 

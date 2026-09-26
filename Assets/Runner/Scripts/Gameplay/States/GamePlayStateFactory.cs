@@ -24,6 +24,7 @@ namespace Runner
             stateMachine.AddState(new GameLoadingState(context));
             stateMachine.AddState(new GamePlayingState(context));
             stateMachine.AddState(new GameOverState(context));
+            stateMachine.AddState(new GameClearState(context));
             return stateMachine;
         }
     }

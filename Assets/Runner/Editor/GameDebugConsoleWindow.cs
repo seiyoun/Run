@@ -402,9 +402,9 @@ namespace Runner.Editor
         /// </summary>
         private void OnOpenExitClicked()
         {
-            if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
+            if (GameProgressManager.HasInstance && GameProgressManager.Instance.IsProgressing)
             {
-                GameHUDView.Instance.EscapeTimerHUD.SetExitUnlocked(true);
+                GameProgressManager.Instance.Tick(GameProgressManager.Instance.RemainingEscapeTime);
                 DebugLogger.Log("[GameDebugConsoleWindow] デバッグ操作: 非常口を即時開放しました。");
             }
         }
@@ -514,4 +514,3 @@ namespace Runner.Editor
         }
     }
 }
-

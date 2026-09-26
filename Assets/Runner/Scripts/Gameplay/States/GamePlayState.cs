@@ -14,6 +14,7 @@ namespace Runner
         None = 0,
         Loading = 1,
         Playing = 2,
-        GameOver = 3
+        GameOver = 3,
+        GameClear = 4
     }
 }

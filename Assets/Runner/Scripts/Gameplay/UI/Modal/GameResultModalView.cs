@@ -96,13 +96,15 @@ namespace Runner
         /// <param name="title">タイトル文字列（例: GAME OVER）</param>
         /// <param name="message">詳細結果メッセージ</param>
         /// <param name="onOkClicked">OKボタン押下時のコールバック</param>
-        public void Show(string title, string message, Action onOkClicked = null)
+        /// <param name="titleColor">指定した場合のタイトル色</param>
+        public void Show(string title, string message, Action onOkClicked = null, Color? titleColor = null)
         {
             onOkAction = onOkClicked;
 
             if (titleText != null)
             {
                 titleText.text = title;
+                if (titleColor.HasValue) titleText.color = titleColor.Value;
             }
 
             if (messageText != null)

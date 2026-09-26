@@ -27,10 +27,10 @@
   - [x] ショップで「追従自律ドローン」購入時に [`WeaponManager.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/Weapons/WeaponManager.cs) の `UpgradeWeaponAsync()` を呼び出し、ドローンを出現・強化
   - [x] 入荷目標ポイント（300pt等）到達時のショップ直接強制オープン（スルー不可・ゲーム一時停止）
   - [x] 移動速度アップアイテムの効果適用（[`ShopItemEffectApplier.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/Modal/SmartphoneShop/Model/ShopItemEffectApplier.cs) 経由で速度バフ付与）
-- [ ] **3. 非常口（改札）オブジェクトと脱出クリア判定**
-  - [ ] 非常口（改札ゲート）プレハブの作成およびステージ上への配置
-  - [ ] 180秒経過時の非常口開放イベントと [`EscapeTimerHUD.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/HUD/EscapeTimerHUD.cs) のナビゲーション矢印連携 (`SetExitTarget`)
-  - [ ] プレイヤー接触時の脱出成功（ゲームクリア）判定およびリザルト画面（[`GameResultModalView.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/Modal/GameResultModalView.cs)）のクリア文言表示
+- [x] **3. 非常口（改札）オブジェクトと脱出クリア判定**
+  - [x] 非常口（改札ゲート）プレハブのAddressables登録とステージ上へのランダム配置
+  - [x] 180秒経過時の非常口開放イベントと [`EscapeTimerHUD.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/HUD/EscapeTimerHUD.cs) のナビゲーション矢印連携 (`SetExitTarget`)
+  - [x] プレイヤー接触時の脱出成功（ゲームクリア）判定およびリザルト画面（[`GameResultModalView.cs`](file:///Users/jinshiyuan/Documents/Project/GitHub/Runner/Assets/Runner/Scripts/Gameplay/UI/Modal/GameResultModalView.cs)）のクリア文言表示
 - [x] **4. ゲーム進行 & UI の責務分離・疎結合アーキテクチャ整備**
   - [x] `GameProgressManager` の関心事別 `partial class` 分割（メイン進行、脱出タイマー、ウェーブ管理、ショップ入荷）
   - [x] `WaveMasterData` の一元管理化（`MasterDataManager.Initialize` での一括同期ロード・キャッシュ化）
@@ -77,4 +77,3 @@
 ## 🛠️ 進捗ステータス凡例
 - [ ] 未着手
 - [x] 完了
-

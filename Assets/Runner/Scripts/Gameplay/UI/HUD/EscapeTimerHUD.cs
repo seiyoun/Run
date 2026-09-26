@@ -49,6 +49,7 @@ namespace Runner
         /// </summary>
         private void Awake()
         {
+            EnsureNavigationUI();
             if (exitAlertBanner != null) exitAlertBanner.SetActive(false);
             if (exitArrowIndicator != null) exitArrowIndicator.gameObject.SetActive(false);
 
@@ -119,13 +120,14 @@ namespace Runner
 
                 if (exitArrowIndicator != null)
                 {
-                    exitArrowIndicator.gameObject.SetActive(true);
+                    exitArrowIndicator.gameObject.SetActive(exitTargetTransform != null);
                 }
             }
             else
             {
                 if (exitAlertBanner != null) exitAlertBanner.SetActive(false);
                 if (exitArrowIndicator != null) exitArrowIndicator.gameObject.SetActive(false);
+                if (exitDistanceText != null) exitDistanceText.gameObject.SetActive(false);
             }
         }
 
@@ -138,6 +140,9 @@ namespace Runner
         {
             exitTargetTransform = exitTransform;
             playerTransform = player;
+            bool showNavigation = isExitUnlocked && exitTargetTransform != null && playerTransform != null;
+            if (exitArrowIndicator != null) exitArrowIndicator.gameObject.SetActive(showNavigation);
+            if (exitDistanceText != null) exitDistanceText.gameObject.SetActive(showNavigation);
         }
 
         /// <summary>
@@ -157,6 +162,49 @@ namespace Runner
             exitAlertText = alertText;
             exitArrowIndicator = arrow;
             exitDistanceText = distText;
+        }
+
+        /// <summary>
+        /// シーンに未設定のナビゲーション表示を既存HUDの親Canvas上に生成する。
+        /// </summary>
+        private void EnsureNavigationUI()
+        {
+            var parent = transform.parent as RectTransform;
+            if (parent == null || timerText == null) return;
+
+            if (exitArrowIndicator == null)
+            {
+                var arrowObject = new GameObject("ExitArrowIndicator", typeof(RectTransform));
+                exitArrowIndicator = arrowObject.GetComponent<RectTransform>();
+                exitArrowIndicator.SetParent(parent, false);
+                exitArrowIndicator.anchorMin = new Vector2(0.5f, 1f);
+                exitArrowIndicator.anchorMax = new Vector2(0.5f, 1f);
+                exitArrowIndicator.anchoredPosition = new Vector2(0f, -165f);
+                exitArrowIndicator.sizeDelta = new Vector2(80f, 70f);
+                var arrowText = arrowObject.AddComponent<TextMeshProUGUI>();
+                arrowText.font = timerText.font;
+                arrowText.text = "▲";
+                arrowText.fontSize = 52f;
+                arrowText.alignment = TextAlignmentOptions.Center;
+                arrowText.color = new Color(0f, 1f, 0.53f);
+                arrowText.raycastTarget = false;
+            }
+
+            if (exitDistanceText == null)
+            {
+                var distanceObject = new GameObject("ExitDistanceText", typeof(RectTransform));
+                var distanceTransform = distanceObject.GetComponent<RectTransform>();
+                distanceTransform.SetParent(parent, false);
+                distanceTransform.anchorMin = new Vector2(0.5f, 1f);
+                distanceTransform.anchorMax = new Vector2(0.5f, 1f);
+                distanceTransform.anchoredPosition = new Vector2(0f, -225f);
+                distanceTransform.sizeDelta = new Vector2(400f, 42f);
+                exitDistanceText = distanceObject.AddComponent<TextMeshProUGUI>();
+                exitDistanceText.font = timerText.font;
+                exitDistanceText.fontSize = 25f;
+                exitDistanceText.alignment = TextAlignmentOptions.Center;
+                exitDistanceText.raycastTarget = false;
+            }
         }
 
         /// <summary>

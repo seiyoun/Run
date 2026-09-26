@@ -59,6 +59,7 @@ namespace Runner
 
             await LoadPlayerAsync(playerSpawnPoint, cancellationToken);
             await LoadResultModalAsync(cancellationToken);
+            await LoadEscapePointAsync(cancellationToken);
             LoadStageProgress(stageData);
             SetupGameHUD();
 
@@ -189,6 +190,30 @@ namespace Runner
             catch (Exception ex)
             {
                 DebugLogger.Error($"[GameLoadingState] GameResultModalView のロードに失敗しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>EscapePointSpawnerを通じて脱出ゲートを事前ロードする。</summary>
+        /// <param name="cancellationToken">キャンセレーショントークン</param>
+        /// <returns>ロード処理の完了タスク</returns>
+        private async Task LoadEscapePointAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var spawner = EscapePointSpawner.Instance;
+                var point = spawner != null ? await spawner.PreloadAsync(cancellationToken) : null;
+                if (point != null)
+                    DebugLogger.Log("[GameLoadingState] 脱出ゲートをAddressablesからロードし、非表示で待機させました。");
+                else
+                    DebugLogger.Error("[GameLoadingState] 脱出ゲートの事前ロードに失敗しました。");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Error($"[GameLoadingState] 脱出ゲートのロードに失敗しました: {ex.Message}");
             }
         }
 
