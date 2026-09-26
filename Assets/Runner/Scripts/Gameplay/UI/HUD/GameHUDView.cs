@@ -193,6 +193,33 @@ namespace Runner
         }
 
         /// <summary>
+        /// ゲーム進行管理のイベント（残り時間・入荷進捗・ショップ発生）を購読し、HUD 表示を同期する。
+        /// </summary>
+        /// <param name="progress">バインド対象の GameProgressManager</param>
+        public void BindProgressManager(GameProgressManager progress)
+        {
+            if (progress == null) return;
+
+            UnbindProgressManager(progress);
+            progress.OnRemainingTimeUpdated += HandleRemainingTimeUpdated;
+            progress.OnRestockProgressUpdated += UpdateRestockProgress;
+            progress.OnShopTriggered += OpenShop;
+        }
+
+        /// <summary>
+        /// ゲーム進行管理のイベント購読を解除する。
+        /// </summary>
+        /// <param name="progress">バインド解除対象の GameProgressManager</param>
+        public void UnbindProgressManager(GameProgressManager progress)
+        {
+            if (progress == null) return;
+
+            progress.OnRemainingTimeUpdated -= HandleRemainingTimeUpdated;
+            progress.OnRestockProgressUpdated -= UpdateRestockProgress;
+            progress.OnShopTriggered -= OpenShop;
+        }
+
+        /// <summary>
         /// ショップの購入イベントをバインドする。
         /// </summary>
         private void SetupBindings()
@@ -224,6 +251,18 @@ namespace Runner
             if (pointStepHUD != null)
             {
                 pointStepHUD.SetPoints(currentMoney);
+            }
+        }
+
+        /// <summary>
+        /// 残り時間更新時のHUD表示を更新する。
+        /// </summary>
+        /// <param name="remainingTime">残り秒数</param>
+        private void HandleRemainingTimeUpdated(float remainingTime)
+        {
+            if (escapeTimerHUD != null)
+            {
+                escapeTimerHUD.SetRemainingTime(remainingTime);
             }
         }
 

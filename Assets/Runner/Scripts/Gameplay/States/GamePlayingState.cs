@@ -1,7 +1,7 @@
 /*
  * 作成者: shiyuan.jin
  * 連絡先: shiyuan0106bot@gmail.com
- * スクリプト説明: ゲームプレイ中ステート。入力コントローラーの接続、脱出タイマー・セール通知トリガーの管理、死亡判定を統括する。
+ * スクリプト説明: ゲームプレイ中ステート。プレイライフサイクルとクリア・死亡時のステート遷移を統括する。
  */
 
 using System.Threading;
@@ -13,13 +13,14 @@ namespace Runner
 {
     /// <summary>
     /// ゲームプレイ中のステート。
-    /// プレイヤー入力・アクション、制限時間（脱出タイマー）、一定ポイント到達によるセール発火判定を統合管理します。
+    /// プレイ中のライフサイクル管理およびクリア・死亡によるステート遷移を統括します。
     /// </summary>
     public sealed class GamePlayingState : IState<GamePlayState>
     {
         private readonly IGameContext context;
         private bool isEnding;
 
+        /// <summary>対応するステート列挙値</summary>
         public GamePlayState State => GamePlayState.Playing;
 
         /// <summary>
@@ -32,7 +33,7 @@ namespace Runner
         }
 
         /// <summary>
-        /// プレイ中ステート開始時の初期化、入力バインド、および進行管理イベントの購読を行う。
+        /// プレイ中ステート開始時の初期化、各サブシステムの接続、および進行開始を行う。
         /// </summary>
         /// <param name="parameter">開始パラメータ</param>
         /// <param name="cancellationToken">キャンセレーショントークン</param>
@@ -40,62 +41,15 @@ namespace Runner
         public Task EnterAsync(object parameter, CancellationToken cancellationToken)
         {
             isEnding = false;
-            DebugLogger.Log("[GamePlayingState] ゲームプレイ開始！プレイヤー入力を有効化し、脱出タイマーを開始します。");
+            DebugLogger.Log("[GamePlayingState] ゲームプレイ開始！プレイヤー入力を有効化し、ゲーム進行を開始します。");
 
-            var player = PlayerController.Instance;
-            if (player != null)
-            {
-                // inputをプレイヤーにバインド
-                if (InputController.Instance != null)
-                {
-                    player.BindInput(InputController.Instance);
-                }
+            var tracker = GameRecordTracker.Instance;
+            var progress = GameProgressManager.Instance;
+            var hud = GameHUDView.Instance;
 
-                if (player.Status != null)
-                {
-                    player.Status.OnDead += HandlePlayerDead;
-                }
-
-                // 記録処理（歩数・所持金管理）とプレイヤーをバインド
-                if (GameRecordTracker.HasInstance || GameRecordTracker.Instance != null)
-                {
-                    GameRecordTracker.Instance.BindPlayer(player);
-                }
-            }
-
-            if (GameHUDView.Instance != null)
-            {
-                // HUD表示と記録処理をバインド
-                if (GameRecordTracker.HasInstance || GameRecordTracker.Instance != null)
-                {
-                    GameHUDView.Instance.BindRecordTracker(GameRecordTracker.Instance);
-                }
-
-                if (GameHUDView.Instance.EscapeTimerHUD != null)
-                {
-                    GameHUDView.Instance.EscapeTimerHUD.SetExitUnlocked(false);
-                }
-            }
-
-            if (GameProgressManager.Instance != null)
-            {
-                GameProgressManager.Instance.OnRemainingTimeUpdated += HandleRemainingTimeUpdated;
-                GameProgressManager.Instance.OnExitUnlocked += HandleExitUnlocked;
-                GameProgressManager.Instance.OnRestockProgressUpdated += HandleRestockProgressUpdated;
-                GameProgressManager.Instance.OnShopTriggered += HandleShopTriggered;
-                GameProgressManager.Instance.StartProgress();
-            }
-
-            if (EnemySpawnDirector.Instance != null)
-            {
-                EnemySpawnDirector.Instance.StartSpawning();
-            }
-
-            _ = DropManager.Instance;
-            if (GameRecordTracker.HasInstance || GameRecordTracker.Instance != null)
-            {
-                GameRecordTracker.Instance.ResetRecord();
-            }
+            SetupPlayer(tracker);
+            SetupHUD(hud, tracker, progress);
+            StartGameplay(progress, tracker);
 
             DebugLogger.Log("[GamePlayingState] ゲームプレイ準備が完了しました。");
             return Task.CompletedTask;
@@ -118,14 +72,13 @@ namespace Runner
         /// <param name="deltaTime">前フレームからの経過時間（秒）</param>
         public void Update(float deltaTime)
         {
-            bool isPaused = (GameHUDView.Instance != null && GameHUDView.Instance.ShopView != null && GameHUDView.Instance.ShopView.IsOpen)
-                            || Time.timeScale <= 0f;
+            var hud = GameHUDView.Instance;
+            var shop = hud != null ? hud.ShopView : null;
+            bool isPaused = (shop != null && shop.IsOpen) || Time.timeScale <= 0f;
             float actualDeltaTime = isPaused ? 0f : deltaTime;
 
-            if (GameProgressManager.Instance != null)
-            {
-                GameProgressManager.Instance.Tick(actualDeltaTime);
-            }
+            var progress = GameProgressManager.HasInstance ? GameProgressManager.Instance : null;
+            if (progress != null) progress.Tick(actualDeltaTime);
         }
 
         /// <summary>
@@ -134,44 +87,103 @@ namespace Runner
         public void Exit()
         {
             isEnding = true;
-            var escapePoint = EscapePoint.Instance;
-            if (escapePoint != null)
-            {
-                escapePoint.OnPlayerEntered -= HandlePlayerEscaped;
-            }
-            if (EscapePointSpawner.HasInstance) EscapePointSpawner.Instance.Hide();
-
-            if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
-            {
-                GameHUDView.Instance.EscapeTimerHUD.SetExitTarget(null, null);
-            }
-
-            var player = PlayerController.Instance;
-            if (player != null && player.Status != null)
-            {
-                player.Status.OnDead -= HandlePlayerDead;
-            }
-
-            if (EnemySpawnDirector.HasInstance && EnemySpawnDirector.Instance != null)
-            {
-                EnemySpawnDirector.Instance.StopSpawning();
-            }
-
-            if (GameProgressManager.HasInstance && GameProgressManager.Instance != null)
-            {
-                GameProgressManager.Instance.OnRemainingTimeUpdated -= HandleRemainingTimeUpdated;
-                GameProgressManager.Instance.OnExitUnlocked -= HandleExitUnlocked;
-                GameProgressManager.Instance.OnRestockProgressUpdated -= HandleRestockProgressUpdated;
-                GameProgressManager.Instance.OnShopTriggered -= HandleShopTriggered;
-                GameProgressManager.Instance.StopProgress();
-            }
-
-            if (GameAssetLoader.HasInstance)
-            {
-                GameAssetLoader.Instance.ReleaseAll();
-            }
+            CleanupEscapePoint();
+            CleanupPlayer();
+            StopGameplay();
 
             DebugLogger.Log("[GamePlayingState] プレイ中ステートを終了しました。");
+        }
+
+        /// <summary>
+        /// プレイヤーの入力と死亡イベントを接続し、記録対象に設定する。
+        /// </summary>
+        /// <param name="tracker">プレイ記録の管理者</param>
+        private void SetupPlayer(GameRecordTracker tracker)
+        {
+            var player = PlayerController.Instance;
+            if (player == null) return;
+
+            var input = InputController.Instance;
+            if (input != null) player.BindInput(input);
+            if (player.Status != null) player.Status.OnDead += HandlePlayerDead;
+            if (tracker != null) tracker.BindPlayer(player);
+        }
+
+        /// <summary>
+        /// HUDにプレイ記録およびゲーム進行イベントをバインドし、脱出表示を初期化する。
+        /// </summary>
+        /// <param name="hud">対象の GameHUDView</param>
+        /// <param name="tracker">プレイ記録の管理者</param>
+        /// <param name="progress">ゲーム進行マネージャー</param>
+        private void SetupHUD(GameHUDView hud, GameRecordTracker tracker, GameProgressManager progress)
+        {
+            if (hud == null) return;
+
+            if (tracker != null) hud.BindRecordTracker(tracker);
+            if (progress != null) hud.BindProgressManager(progress);
+            if (hud.EscapeTimerHUD != null) hud.EscapeTimerHUD.SetExitUnlocked(false);
+        }
+
+        /// <summary>
+        /// ゲーム進行と敵のスポーンを開始し、プレイ記録をリセットする。
+        /// </summary>
+        /// <param name="progress">ゲーム進行マネージャー</param>
+        /// <param name="tracker">プレイ記録の管理者</param>
+        private void StartGameplay(GameProgressManager progress, GameRecordTracker tracker)
+        {
+            if (progress != null)
+            {
+                progress.OnExitUnlocked += HandleExitUnlocked;
+                progress.StartProgress();
+            }
+
+            var enemyDirector = EnemySpawnDirector.Instance;
+            if (enemyDirector != null) enemyDirector.StartSpawning();
+
+            _ = DropManager.Instance;
+            if (tracker != null) tracker.ResetRecord();
+        }
+
+        /// <summary>
+        /// 脱出ゲートのイベント購読とHUDの案内表示を解除する。
+        /// </summary>
+        private void CleanupEscapePoint()
+        {
+            var escapePoint = EscapePoint.Instance;
+            if (escapePoint != null) escapePoint.OnPlayerEntered -= HandlePlayerEscaped;
+            if (EscapePointSpawner.HasInstance) EscapePointSpawner.Instance.Hide();
+
+            var timerHUD = GameHUDView.Instance != null ? GameHUDView.Instance.EscapeTimerHUD : null;
+            if (timerHUD != null) timerHUD.SetExitTarget(null, null);
+        }
+
+        /// <summary>
+        /// プレイヤーの死亡イベント購読を解除する。
+        /// </summary>
+        private void CleanupPlayer()
+        {
+            var player = PlayerController.Instance;
+            if (player != null && player.Status != null) player.Status.OnDead -= HandlePlayerDead;
+        }
+
+        /// <summary>
+        /// 敵と進行管理を停止し、HUDのイベントバインド解除およびプレイ中のアセット解放を行う。
+        /// </summary>
+        private void StopGameplay()
+        {
+            var enemyDirector = EnemySpawnDirector.HasInstance ? EnemySpawnDirector.Instance : null;
+            if (enemyDirector != null) enemyDirector.StopSpawning();
+
+            var progress = GameProgressManager.HasInstance ? GameProgressManager.Instance : null;
+            var hud = GameHUDView.Instance;
+            if (progress != null)
+            {
+                progress.OnExitUnlocked -= HandleExitUnlocked;
+                if (hud != null) hud.UnbindProgressManager(progress);
+                progress.StopProgress();
+            }
+
+            if (GameAssetLoader.HasInstance) GameAssetLoader.Instance.ReleaseAll();
         }
 
         /// <summary>
@@ -189,62 +201,39 @@ namespace Runner
         }
 
         /// <summary>
-        /// 脱出残り時間の更新イベントハンドラ。HUD のタイマー表示を更新する。
-        /// </summary>
-        /// <param name="remainingTime">残り秒数</param>
-        private void HandleRemainingTimeUpdated(float remainingTime)
-        {
-            if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
-            {
-                GameHUDView.Instance.EscapeTimerHUD.SetRemainingTime(remainingTime);
-            }
-        }
-
-        /// <summary>
-        /// 非常口開放イベントハンドラ。HUD の非常口開放表示を有効化する。
+        /// 非常口開放イベントハンドラ。脱出ゲートを安全な位置に表示し、HUD の案内を開始する。
         /// </summary>
         private void HandleExitUnlocked()
         {
+            if (isEnding) return;
+
             var player = PlayerController.Instance;
             var boundary = ArenaBackground.Instance != null ? ArenaBackground.Instance.BoundaryCollider : null;
-            var escapePoint = EscapePoint.Instance;
-            var escapePointSpawner = EscapePointSpawner.HasInstance ? EscapePointSpawner.Instance : null;
-            if (isEnding || player == null || boundary == null || escapePointSpawner == null || escapePoint == null)
+            var spawner = EscapePointSpawner.HasInstance ? EscapePointSpawner.Instance : null;
+
+            if (player == null || boundary == null || spawner == null)
             {
-                DebugLogger.Error("[GamePlayingState] 脱出ポイントを表示できません。ロード済みゲート、プレイヤー、またはステージ境界がありません。");
+                DebugLogger.Error("[GamePlayingState] 脱出ポイントを表示できません。プレイヤー、ステージ境界、または Spawner がありません。");
                 return;
             }
 
-            const float margin = 2f;
-            const float minPlayerDistance = 8f;
-            var bounds = boundary.bounds;
-            float minX = bounds.min.x + margin;
-            float maxX = bounds.max.x - margin;
-            float minY = bounds.min.y + margin;
-            float maxY = bounds.max.y - margin;
-            if (minX > maxX || minY > maxY)
+            if (spawner.TryShowAtSafePosition(boundary, player.transform.position, out var escapePoint))
             {
-                DebugLogger.Error("[GamePlayingState] ステージ境界が狭すぎるため脱出ポイントを配置できません。");
-                return;
-            }
+                escapePoint.OnPlayerEntered += HandlePlayerEscaped;
 
-            Vector2 position = Vector2.zero;
-            for (int attempt = 0; attempt < 20; attempt++)
+                var timerHUD = GameHUDView.Instance != null ? GameHUDView.Instance.EscapeTimerHUD : null;
+                if (timerHUD != null)
+                {
+                    timerHUD.SetExitUnlocked(true);
+                    timerHUD.SetExitTarget(escapePoint.transform, player.transform);
+                }
+
+                DebugLogger.Log($"[GamePlayingState] 脱出ポイントを {escapePoint.transform.position} に表示しました。");
+            }
+            else
             {
-                position = new Vector2(UnityEngine.Random.Range(minX, maxX), UnityEngine.Random.Range(minY, maxY));
-                if (Vector2.Distance(position, player.transform.position) >= minPlayerDistance) break;
+                DebugLogger.Error("[GamePlayingState] 脱出ポイントの安全配置に失敗しました。");
             }
-
-            escapePoint.OnPlayerEntered += HandlePlayerEscaped;
-            escapePointSpawner.Show(new Vector3(position.x, position.y, 0f));
-
-            if (GameHUDView.Instance != null && GameHUDView.Instance.EscapeTimerHUD != null)
-            {
-                GameHUDView.Instance.EscapeTimerHUD.SetExitUnlocked(true);
-                GameHUDView.Instance.EscapeTimerHUD.SetExitTarget(escapePoint.transform, player.transform);
-            }
-
-            DebugLogger.Log($"[GamePlayingState] ロード済み脱出ポイントを {position} に表示しました。");
         }
 
         /// <summary>
@@ -252,39 +241,16 @@ namespace Runner
         /// </summary>
         private void HandlePlayerEscaped()
         {
-            if (isEnding || PlayerController.Instance == null || PlayerController.Instance.Status == null || PlayerController.Instance.Status.IsDead) return;
-            if (!GameProgressManager.HasInstance || !GameProgressManager.Instance.IsExitUnlocked) return;
+            var player = PlayerController.Instance;
+            if (isEnding || player == null || player.Status == null || player.Status.IsDead) return;
+            var progress = GameProgressManager.HasInstance ? GameProgressManager.Instance : null;
+            if (progress == null || !progress.IsExitUnlocked) return;
 
             isEnding = true;
-            DebugLogger.Log("[GamePlayingState] プレイヤーが脱出ポイントに到達しました。");
+            DebugLogger.Log("[GamePlayingState] プレイヤーが脱出ポイントに到達しました。GameClear ステートへ遷移します。");
             if (context.StateMachine != null)
             {
                 _ = context.StateMachine.ChangeStateAsync(GamePlayState.GameClear, CancellationToken.None);
-            }
-        }
-
-        /// <summary>
-        /// 入荷進捗更新イベントハンドラ。HUD の入荷ゲージ表示を更新する。
-        /// </summary>
-        /// <param name="remainingPoints">次の入荷までに必要な残りポイント</param>
-        /// <param name="progress">進捗率（0.0〜1.0）</param>
-        /// <param name="isInitial">初期化呼び出しであるかどうか</param>
-        private void HandleRestockProgressUpdated(long remainingPoints, float progress, bool isInitial)
-        {
-            if (GameHUDView.Instance != null)
-            {
-                GameHUDView.Instance.UpdateRestockProgress(remainingPoints, progress, isInitial);
-            }
-        }
-
-        /// <summary>
-        /// ショップ発生イベントハンドラ。ショップ画面を開く。
-        /// </summary>
-        private void HandleShopTriggered()
-        {
-            if (GameHUDView.Instance != null)
-            {
-                GameHUDView.Instance.OpenShop();
             }
         }
     }

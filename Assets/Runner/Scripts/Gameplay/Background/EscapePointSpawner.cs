@@ -110,6 +110,40 @@ namespace Runner
             if (loadedPoint != null) loadedPoint.gameObject.SetActive(false);
         }
 
+        /// <summary>
+        /// 指定されたステージ境界内で、プレイヤーから一定距離離れた位置に脱出ゲートを表示する。
+        /// </summary>
+        /// <param name="boundary">ステージ境界コライダー</param>
+        /// <param name="playerPosition">プレイヤーの現在位置</param>
+        /// <param name="spawnedPoint">表示された脱出ゲート</param>
+        /// <returns>配置に成功した場合は true</returns>
+        public bool TryShowAtSafePosition(Collider2D boundary, Vector3 playerPosition, out EscapePoint spawnedPoint)
+        {
+            spawnedPoint = null;
+            if (loadedPoint == null || boundary == null) return false;
+
+            const float margin = 2f;
+            const float minPlayerDistance = 8f;
+            var bounds = boundary.bounds;
+            float minX = bounds.min.x + margin;
+            float maxX = bounds.max.x - margin;
+            float minY = bounds.min.y + margin;
+            float maxY = bounds.max.y - margin;
+
+            if (minX > maxX || minY > maxY) return false;
+
+            Vector2 position = Vector2.zero;
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                position = new Vector2(Random.Range(minX, maxX), Random.Range(minY, maxY));
+                if (Vector2.Distance(position, playerPosition) >= minPlayerDistance) break;
+            }
+
+            Show(new Vector3(position.x, position.y, 0f));
+            spawnedPoint = loadedPoint;
+            return true;
+        }
+
         /// <summary>脱出ゲートが先に破棄された場合もAddressablesの参照を解放する。</summary>
         private void HandlePointDestroyed()
         {
